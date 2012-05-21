@@ -1,0 +1,27 @@
+HTML,
+BODY {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	background: url(../images/body-bg.jpg) no-repeat center center;
+}
+#canvas {
+	position: absolute;
+	width: 800px;
+	height: 537px;
+	border: 10px solid rgba(50, 100, 200, 0.5);
+	border-radius: 10px;
+	left: 50%;
+	top: 50%;
+	margin-left: -400px;
+	margin-top: -300px;
+}
+
+.debug-value {
+	position: absolute;
+	background-color: rgba(0, 0, 0, 0.5);
+	border-radius: 3px;
+	padding: 5px 10px;
+	color: #FFF;
+	left: 20px;
+}
