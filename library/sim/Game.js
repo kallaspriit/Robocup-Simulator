@@ -18,7 +18,8 @@ Sim.Game.prototype.init = function() {
 	this.fpsCounter = new Sim.FpsCounter();
 	this.robot = new Sim.Robot(0.125, 0.125, 0.12);
 	
-	this.robot.setDir(new Sim.Math.Vec2(0.1, 0.1), Math.PI * 2);
+	//this.robot.setDir(0.1, 0.1, Math.PI * 2 * 0);
+	this.robot.setDir(0.1, 0.1, Math.PI / 4);
 };
 
 Sim.Game.prototype.step = function() {
@@ -26,11 +27,14 @@ Sim.Game.prototype.step = function() {
 		fps = this.fpsCounter.getLastFPS(),
 		fpsDiff = this.targetFramerate - fps,
 		dt;
+	
+	sim.dbg.box('FPS', fps, 2);
+	//sim.dbg.box('Adjust', this.fpsAdjustTime, 2);
 		
 	if (this.lastStepTime == null) {
 		dt = this.timeStep;
 	} else {
-		dt = this.lastStepTime - time;
+		dt = time - this.lastStepTime;
 	}
 	
 	this.fpsCounter.step();
@@ -42,11 +46,13 @@ Sim.Game.prototype.step = function() {
 	});
 	
 	this.lastStepDuration = dt;
+	this.lastStepTime = Sim.Util.getMicrotime();
 	
-	this.fpsAdjustTime += fpsDiff * -0.0005;
+	this.fpsAdjustTime += fpsDiff * -0.0005; // add PID
 	
-	sim.dbg.box('FPS', fps, 2);
-	sim.dbg.box('Adjust', this.fpsAdjustTime, 2);
+	if (this.fpsAdjustTime < -this.timeStep) {
+		this.fpsAdjustTime = -this.timeStep;
+	}
 };
 
 Sim.Game.prototype.run = function() {

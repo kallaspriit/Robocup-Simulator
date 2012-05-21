@@ -5,16 +5,43 @@ BODY {
 	height: 100%;
 	background: url(../images/body-bg.jpg) no-repeat center center;
 }
-#canvas {
+#contents {
 	position: absolute;
+	width: 820px;
+	height: 557px;
+	left: 50%;
+	top: 50%;
+	margin-left: -410px;
+	margin-top: -310px;
+	overflow: visible;
+}
+#canvas {
 	width: 800px;
 	height: 537px;
 	border: 10px solid rgba(50, 100, 200, 0.5);
 	border-radius: 10px;
+}
+.joystick {
+	position: absolute;
+	left: -140px;
+	top: 0;
+	width: 100px;
+	height: 100px;
+	background-color: rgba(0, 0, 0, 0.25);
+	border: 5px solid rgba(255, 0, 0, 0.5);
+	border-radius: 60px;
+}
+.joystick > A {
+	display: block;
+	position: absolute;
+	width: 40px;
+	height: 40px;
 	left: 50%;
 	top: 50%;
-	margin-left: -400px;
-	margin-top: -300px;
+	margin-left: -20px;
+	margin-top: -20px;
+	background-color: rgba(0, 255, 0, 0.5);
+	border-radius: 20px;
 }
 
 .debug-value {

@@ -295,6 +295,13 @@ Vector.prototype = {
   setElements: function(els) {
     this.elements = (els.elements || els).slice();
     return this;
+  },
+  
+  x: function() {
+	  return this.elements[0];
+  },
+  y: function() {
+	  return this.elements[1];
   }
 };
   
@@ -1249,6 +1256,7 @@ Plane.YX = Plane.XY; Plane.ZY = Plane.YZ; Plane.XZ = Plane.ZX;
 
 // Utility functions
 var $V = Vector.create;
+var $V2 = function(x, y) { return Vector.create([x, y]); };
 var $M = Matrix.create;
 var $L = Line.create;
 var $P = Plane.create;
