@@ -7,10 +7,8 @@ Sim.Robot = function(x, y) {
 	this.targetDir = $V2(0, 0);
 	this.targetOmega = 0;
 	
-	this.velocity = 0;
-	this.velocityX = 0;
-	this.velocityY = 0;
-	this.omega = 0;
+	this.lastMovement = null;
+	this.lastGlobalVelocity = null;
 	this.orientation = 0;
 	
 	this.wheelOmega = [
@@ -30,17 +28,22 @@ Sim.Robot = function(x, y) {
 Sim.Robot.prototype.step = function(dt) {
 	var movement = this.getMovement();
 	
-	this.velocityX = movement.velocityX;
-	this.velocityY = movement.velocityY;
-	this.velocity = $V2(movement.velocityX, movement.velocityY);
-	this.omega = movement.omega;
+	this.lastMovement = movement;
 	
+    var velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation);
+    var velocityY = movement.velocityX * Math.sin(this.orientation) - movement.velocityY * Math.cos(this.orientation);
+
+	this.lastGlobalVelocity = {
+		x: velocityX,
+		y: velocityY
+	};
+
 	this.orientation = (this.orientation + movement.omega * dt) % (Math.PI * 2.0);
-	this.x += movement.velocityX * dt;
-	this.y += movement.velocityY * dt;
+	this.x += velocityX * dt;
+	this.y += velocityY * dt;
 	
 	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmega[0], 2) + ',' + Sim.Math.round(this.wheelOmega[1], 2) + ',' + Sim.Math.round(this.wheelOmega[2], 2));
-	sim.dbg.box('Velocity', this.velocity.modulus(), 2);
+	sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
 };
 
 /*

@@ -19,7 +19,7 @@ Sim.Game.prototype.init = function() {
 	this.robot = new Sim.Robot(0.125, 0.125, 0.12);
 	
 	//this.robot.setDir(0.1, 0.1, Math.PI * 2 * 0);
-	this.robot.setDir(0.1, 0.1, Math.PI / 4);
+	this.robot.setDir(0.1, 0.0, Math.PI / 4);
 };
 
 Sim.Game.prototype.step = function() {
