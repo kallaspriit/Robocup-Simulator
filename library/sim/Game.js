@@ -1,5 +1,5 @@
 Sim.Game = function() {
-	this.robot = null;
+	this.robots = {};
 	this.fpsCounter = null;
 	this.targetFramerate = 60.0;
 	this.timeStep = 1.0 / this.targetFramerate;
@@ -11,15 +11,49 @@ Sim.Game = function() {
 Sim.Game.prototype = new Sim.EventTarget();
 
 Sim.Game.Event = {
+	ROBOT_ADDED: 'robot-added',
 	ROBOT_UPDATED: 'robot-updated'
+};
+
+Sim.Game.Side = {
+	YELLOW: 'yellow',
+	BLUE: 'blue'
+};
+
+Sim.Game.prototype.getRobot = function(name) {
+	if (typeof(this.robots[name]) == 'object') {
+		return this.robots[name];
+	} else {
+		return null;
+	}
+};
+
+Sim.Game.prototype.addRobot = function(name, robot) {
+	this.robots[name] = robot;
+	
+	this.fire({
+		type: Sim.Game.Event.ROBOT_ADDED,
+		name: name,
+		robot: robot
+	});
 };
 
 Sim.Game.prototype.init = function() {
 	this.fpsCounter = new Sim.FpsCounter();
-	this.robot = new Sim.Robot(0.125, 0.125, 0.12);
 	
-	//this.robot.setDir(0.1, 0.1, Math.PI * 2 * 0);
-	this.robot.setDir(0.1, 0.0, Math.PI / 4);
+	this.initRobots();
+};
+
+Sim.Game.prototype.initRobots = function() {
+	var yellowRobot = new Sim.Robot(
+		0.125,
+		Sim.Game.Side.YELLOW,
+		0.125,
+		0.125,
+		0
+	);
+		
+	this.addRobot(Sim.Game.Side.YELLOW, yellowRobot);
 };
 
 Sim.Game.prototype.step = function() {
@@ -38,12 +72,25 @@ Sim.Game.prototype.step = function() {
 	}
 	
 	this.fpsCounter.step();
-	this.robot.step(dt);
 	
-	this.fire({
-		type: Sim.Game.Event.ROBOT_UPDATED,
-		robot: this.robot
-	});
+	for (var name in this.robots) {
+		var robot = this.robots[name];
+		
+		robot.step(dt);
+		
+		this.confine(robot, {
+			xMin: robot.radius,
+			xMax: sim.conf.field.width - robot.radius,
+			yMin: robot.radius,
+			yMax: sim.conf.field.height - robot.radius
+		});
+		
+		this.fire({
+			type: Sim.Game.Event.ROBOT_UPDATED,
+			name: name,
+			robot: robot
+		});
+	}
 	
 	this.lastStepDuration = dt;
 	this.lastStepTime = Sim.Util.getMicrotime();
@@ -52,6 +99,20 @@ Sim.Game.prototype.step = function() {
 	
 	if (this.fpsAdjustTime < -this.timeStep) {
 		this.fpsAdjustTime = -this.timeStep;
+	}
+};
+
+Sim.Game.prototype.confine = function(obj, box) {
+	if (obj.x < box.xMin) {
+		obj.x = box.xMin;
+	} else if (obj.x > box.xMax) {
+		obj.x = box.xMax;
+	}
+	
+	if (obj.y < box.yMin) {
+		obj.y = box.yMin;
+	} else if (obj.y > box.yMax) {
+		obj.y = box.yMax;
 	}
 };
 

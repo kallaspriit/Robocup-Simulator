@@ -26,6 +26,7 @@
 
 Sim.Renderer = function(game) {
 	this.game = game;
+	this.robots = {};
 	this.containerId = 'canvas';
 	this.wrap = null;
 	this.canvasWidth = null;
@@ -35,17 +36,6 @@ Sim.Renderer = function(game) {
 	this.bg = null;
 	this.c = null;
 	
-	// dimensions
-	this.worldWidth = 6000;
-	this.worldHeight = 4000;
-	this.fieldWidth = 4500;
-	this.fieldHeight = 3000;
-	this.lineWidth = 50;
-	this.wallWidth = 50;
-	this.centerCircleRadius = 400;
-	this.goalDepth = 250;
-	this.goalWidth = 700;
-	
 	// appearance
 	this.bgStyle = {fill: '#0C0', stroke: 'none'};
 	this.fieldStyle = {fill: '#0F0', stroke: 'none'};
@@ -53,11 +43,11 @@ Sim.Renderer = function(game) {
 	this.lineStyle = {fill: '#FFF', stroke: 'none'};
 	this.centerCircleOuterStyle = {fill: '#FFF', stroke: 'none'};
 	this.centerCircleInnerStyle = {fill: '#0F0', stroke: 'none'};
-	this.leftGoalStyle = {fill: '#FF0', stroke: 'none'};
-	this.rightGoalStyle = {fill: '#00F', stroke: 'none'};
+	this.leftGoalStyle = {fill: '#DD0', stroke: 'none'};
+	this.rightGoalStyle = {fill: '#00D', stroke: 'none'};
 	
-	this.fieldOffsetX = -(this.worldWidth - this.fieldWidth) / 2;
-	this.fieldOffsetY = -(this.worldHeight - this.fieldHeight) / 2;
+	this.fieldOffsetX = -(sim.conf.world.width - sim.conf.field.width) / 2;
+	this.fieldOffsetY = -(sim.conf.world.height - sim.conf.field.height) / 2;
 	
 	// objects
 	this.robot = null;
@@ -71,17 +61,15 @@ Sim.Renderer.prototype.init = function() {
 };
 
 Sim.Renderer.prototype.initCanvas = function() {
-	
-	this.widthToHeightRatio = this.worldWidth / this.worldHeight;
-	
+	this.widthToHeightRatio = sim.conf.world.width / sim.conf.world.height;
 	this.wrap = $('#' + this.containerId);
 	this.canvasWidth = this.wrap.width();
 	this.canvasHeight = this.canvasWidth / this.widthToHeightRatio;
-	this.canvasToWorldRatio = this.canvasWidth / this.worldWidth;
+	this.canvasToWorldRatio = this.canvasWidth / sim.conf.world.width;
 	this.wrap.height(this.canvasHeight);
 	
 	this.c = Raphael(this.containerId, this.canvasWidth, this.canvasHeight);
-	this.c.setViewBox(this.fieldOffsetX, this.fieldOffsetY, this.worldWidth, this.worldHeight);
+	this.c.setViewBox(this.fieldOffsetX, this.fieldOffsetY, sim.conf.world.width, sim.conf.world.height);
 	
 	this.draw();
 	
@@ -90,21 +78,23 @@ Sim.Renderer.prototype.initCanvas = function() {
 	this.wrap.resize(function() {
 		self.canvasWidth = $(this).width();
 		self.canvasHeight = self.canvasWidth / self.widthToHeightRatio;
-		self.canvasToWorldRatio = self.canvasWidth / self.worldWidth;
+		self.canvasToWorldRatio = self.canvasWidth / sim.conf.world.width;
+		
 		self.wrap.height(self.canvasHeight);
-		
-		sim.dbg.console('resize!', self.canvasToWorldRatio, self.canvasWidth);
-		
+
 		self.c.setSize(self.canvasWidth, self.canvasHeight);
-		//self.c.setViewBox(self.fieldOffsetX, self.fieldOffsetY, self.worldWidth, self.worldHeight);
 	});
 };
 
 Sim.Renderer.prototype.initGameListeners = function() {
 	var self = this;
 	
+	this.game.bind(Sim.Game.Event.ROBOT_ADDED, function(e) {
+		self.addRobot(e.name, e.robot);
+	});
+	
 	this.game.bind(Sim.Game.Event.ROBOT_UPDATED, function(e) {
-		self.updateRobot(e.robot);
+		self.updateRobot(e.name, e.robot);
 	});
 };
 
@@ -123,12 +113,11 @@ Sim.Renderer.prototype.draw = function() {
 	this.drawBackground();
 	this.drawField();
 	this.drawGoals();
-	this.drawRobots();
 	//this.drawGrid();
 };
 
 Sim.Renderer.prototype.drawBackground = function() {
-	this.bg = this.c.rect(this.fieldOffsetX, this.fieldOffsetY, this.worldWidth, this.worldHeight)
+	this.bg = this.c.rect(this.fieldOffsetX, this.fieldOffsetY, sim.conf.world.width, sim.conf.world.height)
 	this.bg.attr(this.bgStyle);
 };
 
@@ -141,8 +130,8 @@ Sim.Renderer.prototype.drawGrid = function() {
 		y,
 		line;
 	
-	for (x = 0; x < this.worldWidth; x += minorStep) {
-		line = this.c.path('M' + x + ' 0L' + x + ' ' + this.worldHeight);
+	for (x = 0; x < sim.conf.world.width; x += minorStep) {
+		line = this.c.path('M' + x + ' 0L' + x + ' ' + sim.conf.world.height);
 		
 		if (x % majorStep == 0) {
 			line.attr({stroke: majorColor, 'stroke-width': 1});
@@ -153,8 +142,8 @@ Sim.Renderer.prototype.drawGrid = function() {
 		line.attr(this.getFieldOffsetTransformAttr());
 	}
 	
-	for (y = 0; y < this.worldHeight; y += minorStep) {
-		line = this.c.path('M0 ' + y + 'L ' + this.worldWidth + ' ' + y);
+	for (y = 0; y < sim.conf.world.height; y += minorStep) {
+		line = this.c.path('M0 ' + y + 'L ' + sim.conf.world.width + ' ' + y);
 		
 		if (y % majorStep == 0) {
 			line.attr({stroke: majorColor, 'stroke-width': 1});
@@ -166,95 +155,92 @@ Sim.Renderer.prototype.drawGrid = function() {
 	}
 };
 
-Sim.Renderer.prototype.getFieldOffsetTransformAttr = function() {
-	return {'transform': 't' + this.fieldOffsetX + ',' + this.fieldOffsetY};
-};
-
 Sim.Renderer.prototype.drawField = function() {
 	// main field
-	this.c.rect(0, 0, this.fieldWidth, this.fieldHeight).attr(this.fieldStyle);
+	this.c.rect(0, 0, sim.conf.field.width, sim.conf.field.height).attr(this.fieldStyle);
 	
 	// top and bottom wall
-	this.c.rect(-this.wallWidth, -this.wallWidth, this.fieldWidth + this.wallWidth * 2, this.wallWidth).attr(this.wallStyle);
-	this.c.rect(-this.wallWidth, this.fieldHeight, this.fieldWidth + this.wallWidth * 2, this.wallWidth).attr(this.wallStyle);
+	this.c.rect(-sim.conf.field.wallWidth, -sim.conf.field.wallWidth, sim.conf.field.width + sim.conf.field.wallWidth * 2, sim.conf.field.wallWidth).attr(this.wallStyle);
+	this.c.rect(-sim.conf.field.wallWidth, sim.conf.field.height, sim.conf.field.width + sim.conf.field.wallWidth * 2, sim.conf.field.wallWidth).attr(this.wallStyle);
 	
 	// left and right wall
-	this.c.rect(-this.wallWidth, 0, this.wallWidth, this.fieldHeight).attr(this.wallStyle);
-	this.c.rect(this.fieldWidth, 0, this.wallWidth, this.fieldHeight).attr(this.wallStyle);
+	this.c.rect(-sim.conf.field.wallWidth, 0, sim.conf.field.wallWidth, sim.conf.field.height).attr(this.wallStyle);
+	this.c.rect(sim.conf.field.width, 0, sim.conf.field.wallWidth, sim.conf.field.height).attr(this.wallStyle);
 	
 	// top and bottom line
-	this.c.rect(0, 0, this.fieldWidth, this.wallWidth).attr(this.lineStyle);
-	this.c.rect(0, this.fieldHeight - this.wallWidth, this.fieldWidth, this.wallWidth).attr(this.lineStyle);
+	this.c.rect(0, 0, sim.conf.field.width, sim.conf.field.wallWidth).attr(this.lineStyle);
+	this.c.rect(0, sim.conf.field.height - sim.conf.field.wallWidth, sim.conf.field.width, sim.conf.field.wallWidth).attr(this.lineStyle);
 	
 	// left and right line
-	this.c.rect(0, this.wallWidth, this.wallWidth, this.fieldHeight - this.wallWidth * 2).attr(this.lineStyle);
-	this.c.rect(this.fieldWidth - this.wallWidth, this.wallWidth, this.wallWidth, this.fieldHeight - this.wallWidth * 2).attr(this.lineStyle);
+	this.c.rect(0, sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.height - sim.conf.field.wallWidth * 2).attr(this.lineStyle);
+	this.c.rect(sim.conf.field.width - sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.height - sim.conf.field.wallWidth * 2).attr(this.lineStyle);
 	
 	// center circle
-	this.c.circle(this.fieldWidth / 2, this.fieldHeight / 2, this.centerCircleRadius).attr(this.centerCircleOuterStyle);
-	this.c.circle(this.fieldWidth / 2, this.fieldHeight / 2, this.centerCircleRadius - this.lineWidth).attr(this.centerCircleInnerStyle);
+	this.c.circle(sim.conf.field.width / 2, sim.conf.field.height / 2, sim.conf.field.centerCircleRadius).attr(this.centerCircleOuterStyle);
+	this.c.circle(sim.conf.field.width / 2, sim.conf.field.height / 2, sim.conf.field.centerCircleRadius - sim.conf.field.lineWidth).attr(this.centerCircleInnerStyle);
 	
 	// center vertical line
-	this.c.rect(this.fieldWidth / 2 - this.wallWidth / 2, this.wallWidth, this.wallWidth, this.fieldHeight - this.wallWidth * 2).attr(this.lineStyle);
+	this.c.rect(sim.conf.field.width / 2 - sim.conf.field.wallWidth / 2, sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.height - sim.conf.field.wallWidth * 2).attr(this.lineStyle);
 };
 
 Sim.Renderer.prototype.drawGoals = function() {
 	// left goal
-	this.c.rect(-this.goalDepth, this.fieldHeight / 2 - this.goalWidth / 2, this.goalDepth, this.goalWidth).attr(this.leftGoalStyle);
+	this.c.rect(-sim.conf.field.goalDepth, sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2, sim.conf.field.goalDepth, sim.conf.field.goalWidth).attr(this.leftGoalStyle);
 	
 	// right goal
-	this.c.rect(this.fieldWidth, this.fieldHeight / 2 - this.goalWidth / 2, this.goalDepth, this.goalWidth).attr(this.rightGoalStyle);
+	this.c.rect(sim.conf.field.width, sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2, sim.conf.field.goalDepth, sim.conf.field.goalWidth).attr(this.rightGoalStyle);
 };
 
-Sim.Renderer.prototype.drawRobots = function() {
-	//this.c.setStart();
+Sim.Renderer.prototype.getFieldOffsetTransformAttr = function() {
+	return {'transform': 't' + this.fieldOffsetX + ',' + this.fieldOffsetY};
+};
+
+Sim.Renderer.prototype.addRobot = function(name, robot) {
+	this.robots[name] = {
+		robot: robot
+	};
 	
-	this.robotFrame = this.c.circle(0, 0, 125),
-	//this.robotFrame = this.c.rect(0, 0, 250, 250),
-	this.robotDir = this.c.rect(0, 0, 100, 30);
-	
-	//this.robotFrame.attr({fill: 'url(images/robot-bg.png)', stroke: 'none'});
-	this.robotFrame.attr({
-		fill: '#666',
+	var robotFrame = this.c.circle(0, 0, robot.radius),
+		robotDir = this.c.rect(0, 0, 0.100, 0.030),
+		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
+		
+	robotFrame.attr({
+		fill: color,
 		stroke: 'none'
 	});
-	this.robotDir.attr({
+	
+	robotDir.attr({
 		fill: '#FFF',
 		stroke: 'none',
 		transform: 't0 -15'
 	});
 	
-	//this.robot = this.c.setFinish();
-	
+	this.robots[name].frame = robotFrame;
+	this.robots[name].dir = robotDir;
 };
 
-Sim.Renderer.prototype.updateRobot = function(robot) {
-	/*if (this.robot == null) {
-		return;
-	}*/
+Sim.Renderer.prototype.updateRobot = function(name, robot) {
+	if (typeof(this.robots[name]) == 'undefined') {
+		this.addRobot(name, robot);
+	};
 	
-	//sim.dbg.console('update', robot.x, robot.y);
+	this.robots[name].robot = robot;
 	
-	this.robotFrame.attr({
-		cx: robot.x * 1000,
-		cy: robot.y * 1000,
+	var frame = this.robots[name].frame,
+		dir = this.robots[name].dir;
+	
+	frame.attr({
+		cx: robot.x,
+		cy: robot.y,
 		transform: 'r' + Raphael.deg(robot.orientation)
 	});
 	
-	var dirLength = this.robotDir.attr('width'),
-		dirWidth = this.robotDir.attr('height');
+	var dirLength = dir.attr('width'),
+		dirWidth = dir.attr('height');
 	
-	this.robotDir.attr({
-		x: robot.x * 1000,
-		y: robot.y * 1000,
+	dir.attr({
+		x: robot.x,
+		y: robot.y,
 		transform: 't-' + (dirLength / 2) + ' -' + (dirWidth / 2) + 'r' + Raphael.deg(robot.orientation) + 't ' + (dirLength / 2) + ' 0'
 	});
-	
-	//this.robotDir.rotate(1);
-	
-	//this.robotFrame.rotate(Raphael.deg(robot.orientation));
-
-	//sim.dbg.console('r' + Raphael.deg(robot.orientation));
-	
-	//this.robotFrame.transform('r' + Raphael.deg(robot.orientation));
 };

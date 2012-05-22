@@ -3,6 +3,7 @@ Sim.Bootstrapper = function() {
 };
 
 Sim.Bootstrapper.prototype.bootstrap = function() {
+	window.sim.conf = Sim.Config;
 	window.sim.dbg = new Sim.Debug();
 	window.sim.game = new Sim.Game();
 	window.sim.ui = new Sim.UI(sim.game);

@@ -48,9 +48,11 @@ Sim.UI.prototype.initMovementJoystick = function() {
 	this.movementJoystick = new Sim.UI.Joystick('movement-joystick');
 	
 	this.movementJoystick.onMove(function(xPos, yPos) {
-		sim.game.robot.setDir(-yPos, xPos);
+		sim.game.getRobot(Sim.Game.Side.YELLOW).setTargetDir(-yPos, xPos);
 	}).onBlur(function() {
-		sim.game.robot.setDir(0, 0);
+		sim.game.getRobot(Sim.Game.Side.YELLOW).setTargetDir(0, 0);
+	}).onMouseWheel(function(event, delta, deltaX, deltaY) {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).turnBy(Math.PI / 4 * delta, 0.25);
 	});
 };
 
@@ -58,11 +60,18 @@ Sim.UI.prototype.initFullscreenToggle = function() {
 	
 };
 
-Sim.UI.Joystick = function(id, focusCallback, moveCallback, blurCallback) {
+Sim.UI.Joystick = function(
+	id,
+	focusCallback,
+	moveCallback,
+	blurCallback,
+	mouseWheelCallback
+) {
 	this.id = id;
 	this.focusCallback = focusCallback;
 	this.moveCallback = moveCallback;
 	this.blurCallback = blurCallback;
+	this.mouseWheelCallback = mouseWheelCallback;
 	
 	this.dragging = false;
 	this.offsetX = 0;
@@ -128,17 +137,15 @@ Sim.UI.Joystick.prototype.init = function() {
 		} else if (left > parentWidth) {
 			left = parentWidth
 		}
-		var xOffset = left - parentWidth / 2,
-			maxY = Math.cos(xOffset / parentWidth * 2) * parentHeight,
-			minY = parentHeight - maxY;
-			
-		if (top < minY) {
-			top = minY;
-		} else if (top > maxY) {
-			top = maxY;
+		
+		if (top < 0) {
+			top = 0;
+		} else if (top > parentHeight) {
+			top = parentHeight
 		}
 		
-		var yOffset = top - parentHeight / 2;
+		var xOffset = left - parentWidth / 2,
+			yOffset = top - parentHeight / 2;
 		
 		self.handle.css({
 			'left': left + 'px',
@@ -147,6 +154,16 @@ Sim.UI.Joystick.prototype.init = function() {
 		
 		if (typeof(self.moveCallback) == 'function') {
 			self.moveCallback(xOffset / (parentWidth / 2), yOffset / (parentHeight / 2));
+		}
+	});
+	
+	$(window).mousewheel(function(event, delta, deltaX, deltaY) {
+		if (!self.dragging) {
+			return;
+		}
+		
+		if (typeof(self.mouseWheelCallback) == 'function') {
+			self.mouseWheelCallback(event, delta, deltaX, deltaY);
 		}
 	});
 };
@@ -165,6 +182,12 @@ Sim.UI.Joystick.prototype.onMove = function(listener) {
 
 Sim.UI.Joystick.prototype.onBlur = function(listener) {
 	this.blurCallback = listener;
+	
+	return this;
+};
+
+Sim.UI.Joystick.prototype.onMouseWheel = function(listener) {
+	this.mouseWheelCallback = listener;
 	
 	return this;
 };
