@@ -30,5 +30,5 @@ Sim.Cmd.TurnBy.prototype.toString = function() {
 		duration = Sim.Math.round(this.duration, 1),
 		percent = Sim.Math.round(this.elapsed * 100 / this.duration, 0);
 	
-	return 'Turn-by ' + angle + ' ' + elapsed + '/' + duration + ' - ' + percent + '%';
+	return 'TurnBy ' + angle + ' ' + elapsed + '/' + duration + ' - ' + percent + '%';
 };

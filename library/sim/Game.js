@@ -2,8 +2,7 @@ Sim.Game = function() {
 	this.robots = {};
 	this.balls = [];
 	this.fpsCounter = null;
-	this.targetFramerate = 60.0;
-	this.timeStep = 1.0 / this.targetFramerate;
+	this.timeStep = 1.0 / sim.conf.simulation.targetFramerate;
 	this.lastStepTime = null;
 	this.lastStepDuration = this.timeStep;
 	this.fpsAdjustTime = 0;
@@ -81,7 +80,7 @@ Sim.Game.prototype.initRobots = function() {
 Sim.Game.prototype.step = function() {
 	var time = Sim.Util.getMicrotime(),
 		fps = this.fpsCounter.getLastFPS(),
-		fpsDiff = this.targetFramerate - fps,
+		fpsDiff = sim.conf.simulation.targetFramerate - fps,
 		dt;
 	
 	sim.dbg.box('FPS', fps, 2);

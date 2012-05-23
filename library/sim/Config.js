@@ -15,5 +15,8 @@ Sim.Config = {
 	ball: {
 		radius: 0.021335,
 		drag: 0.15
+	},
+	simulation: {
+		targetFramerate: 60
 	}
 };
