@@ -1,14 +1,16 @@
-Sim.Robot = function(radius, side, x, y, orientation) {
-	this.radius = radius;
+Sim.Robot = function(side, x, y, orientation) {
 	this.side = side;
-	this.x = x || radius;
-	this.y = y || radius;
+	this.x = x;
+	this.y = y;
 	this.orientation = orientation;
 	
+	this.radius = 0.125;
 	this.wheelRadius = 0.025;
 	this.wheelOffset = 0.12;
+	this.cameraDistance = 5.0;
+	this.cameraWidth = 3.0;
 	
-	this.targetDir = $V2(0, 0);
+	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
 	
 	this.lastMovement = null;
@@ -37,7 +39,7 @@ Sim.Robot.prototype.step = function(dt) {
 	this.lastMovement = movement;
 	
     var velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation);
-    var velocityY = movement.velocityX * Math.sin(this.orientation) - movement.velocityY * Math.cos(this.orientation);
+    var velocityY = movement.velocityX * Math.sin(this.orientation) + movement.velocityY * Math.cos(this.orientation);
 
 	this.lastGlobalVelocity = {
 		x: velocityX,

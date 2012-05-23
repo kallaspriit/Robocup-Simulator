@@ -63,7 +63,7 @@ Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 		
 		var boxElement = $('#' + boxId);
 		
-		boxElement.css('top', ((this.boxCount * 34) + 60) + 'px');
+		boxElement.css('top', ((this.boxCount * 34) + 20) + 'px');
 		
 		this.boxes[name] = {
 			id: boxId,

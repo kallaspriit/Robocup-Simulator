@@ -27,6 +27,8 @@
 Sim.Renderer = function(game) {
 	this.game = game;
 	this.robots = {};
+	this.balls = {};
+	this.ballCount = 0;
 	this.containerId = 'canvas';
 	this.wrap = null;
 	this.canvasWidth = null;
@@ -89,6 +91,14 @@ Sim.Renderer.prototype.initCanvas = function() {
 Sim.Renderer.prototype.initGameListeners = function() {
 	var self = this;
 	
+	this.game.bind(Sim.Game.Event.BALL_ADDED, function(e) {
+		self.addBall(e.ball);
+	});
+	
+	this.game.bind(Sim.Game.Event.BALL_UPDATED, function(e) {
+		self.updateBall(e.ball);
+	});
+	
 	this.game.bind(Sim.Game.Event.ROBOT_ADDED, function(e) {
 		self.addRobot(e.name, e.robot);
 	});
@@ -122,8 +132,8 @@ Sim.Renderer.prototype.drawBackground = function() {
 };
 
 Sim.Renderer.prototype.drawGrid = function() {
-	var majorStep = 1000,
-		minorStep = 100,
+	var majorStep = 1.0,
+		minorStep = 0.1,
 		majorColor = '#0C0',
 		minorColor = '#0E0',
 		x,
@@ -195,15 +205,55 @@ Sim.Renderer.prototype.getFieldOffsetTransformAttr = function() {
 	return {'transform': 't' + this.fieldOffsetX + ',' + this.fieldOffsetY};
 };
 
+Sim.Renderer.prototype.addBall = function(ball) {
+	var id = this.ballCount;
+	
+	ball._id = id;
+	
+	this.balls[id] = {
+		ball: ball
+	};
+	
+	var visual = this.c.circle(ball.x, ball.y, sim.conf.ball.radius);
+	
+	visual.attr({
+		fill: '#F90',
+		stroke: 'none'
+	});
+	
+	this.balls[id].visual = visual;
+	
+	this.ballCount++;
+};
+
+Sim.Renderer.prototype.updateBall = function(ball) {
+	if (typeof(ball._id) == 'undefined') {
+		this.addBall(ball);
+	};
+	
+	/*this.balls[ball._id].visual.attr({
+		transform: 'T' + ball.x + ' ' + ball.y
+	});*/
+	
+	this.balls[ball._id].visual.attr({
+		cx: ball.x,
+		cy: ball.y
+	});
+};
+
 Sim.Renderer.prototype.addRobot = function(name, robot) {
 	this.robots[name] = {
 		robot: robot
 	};
 	
-	var robotFrame = this.c.circle(0, 0, robot.radius),
-		robotDir = this.c.rect(0, 0, 0.100, 0.030),
+	this.c.setStart();
+	
+	var dirWidth = 0.03,
+		robotFrame = this.c.circle(0, 0, robot.radius),
+		robotDir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
+		cameraFocus = this.c.path('M-' + robot.cameraDistance + ' 0M0 0L' + robot.cameraDistance + ' -' + (robot.cameraWidth / 2) + 'L' + robot.cameraDistance + ' ' + (robot.cameraWidth / 2) + 'L0 0'),
 		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
-		
+	
 	robotFrame.attr({
 		fill: color,
 		stroke: 'none'
@@ -211,12 +261,17 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	
 	robotDir.attr({
 		fill: '#FFF',
-		stroke: 'none',
-		transform: 't0 -15'
+		stroke: 'none'
+	});
+	
+	cameraFocus.attr({
+		fill: 'rgba(255, 255, 255, 0.5)',
+		stroke: 'none'
 	});
 	
 	this.robots[name].frame = robotFrame;
 	this.robots[name].dir = robotDir;
+	this.robots[name].visual = this.c.setFinish();
 };
 
 Sim.Renderer.prototype.updateRobot = function(name, robot) {
@@ -224,23 +279,7 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		this.addRobot(name, robot);
 	};
 	
-	this.robots[name].robot = robot;
-	
-	var frame = this.robots[name].frame,
-		dir = this.robots[name].dir;
-	
-	frame.attr({
-		cx: robot.x,
-		cy: robot.y,
-		transform: 'r' + Raphael.deg(robot.orientation)
-	});
-	
-	var dirLength = dir.attr('width'),
-		dirWidth = dir.attr('height');
-	
-	dir.attr({
-		x: robot.x,
-		y: robot.y,
-		transform: 't-' + (dirLength / 2) + ' -' + (dirWidth / 2) + 'r' + Raphael.deg(robot.orientation) + 't ' + (dirLength / 2) + ' 0'
+	this.robots[name].visual.attr({
+		transform: 'T' + robot.x + ' ' + robot.y + 'R' + Raphael.deg(robot.orientation)
 	});
 };

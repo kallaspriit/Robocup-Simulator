@@ -11,5 +11,9 @@ Sim.Config = {
 		centerCircleRadius: 0.4,
 		goalDepth: 0.25,
 		goalWidth: 0.7
+	},
+	ball: {
+		radius: 0.021335,
+		drag: 0.15
 	}
 };
