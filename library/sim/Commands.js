@@ -23,3 +23,12 @@ Sim.Cmd.TurnBy.prototype.step = function(robot, dt) {
 Sim.Cmd.TurnBy.prototype.onEnd = function(robot, dt) {
 	robot.setTargetOmega(0);
 };
+
+Sim.Cmd.TurnBy.prototype.toString = function() {
+	var angle = Sim.Math.round(Sim.Math.radToDeg(this.angle), 2),
+		elapsed = Sim.Math.round(this.elapsed, 1),
+		duration = Sim.Math.round(this.duration, 1),
+		percent = Sim.Math.round(this.elapsed * 100 / this.duration, 0);
+	
+	return 'Turn-by ' + angle + ' ' + elapsed + '/' + duration + ' - ' + percent + '%';
+};

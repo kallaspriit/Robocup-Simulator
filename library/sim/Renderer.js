@@ -282,4 +282,18 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	this.robots[name].visual.attr({
 		transform: 'T' + robot.x + ' ' + robot.y + 'R' + Raphael.deg(robot.orientation)
 	});
+	
+	this.showCommandsQueue(this.robots[name].robot);
+};
+
+Sim.Renderer.prototype.showCommandsQueue = function(robot) {
+	var commands = robot.commands,
+		wrap = $('#commands'),
+		i;
+	
+	wrap.empty();
+	
+	for (i = 0; i < commands.length; i++) {
+		wrap.append('<li>' + robot.commands[i].toString() + '</li>');
+	}
 };
