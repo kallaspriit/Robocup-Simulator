@@ -214,14 +214,24 @@ Sim.Renderer.prototype.addBall = function(ball) {
 		ball: ball
 	};
 	
-	var visual = this.c.circle(ball.x, ball.y, sim.conf.ball.radius);
+	this.c.setStart();
 	
-	visual.attr({
+	var yellowIndicator = this.c.circle(ball.x, ball.y, sim.conf.ball.radius * 3),
+		body = this.c.circle(ball.x, ball.y, sim.conf.ball.radius);
+	
+	yellowIndicator.attr({
+		fill: 'rgba(255, 255, 0, 0.8)',
+		stroke: 'none'
+	});
+	
+	body.attr({
 		fill: '#F90',
 		stroke: 'none'
 	});
 	
-	this.balls[id].visual = visual;
+	this.balls[id].yellowIndicator = yellowIndicator;
+	this.balls[id].body = body;
+	this.balls[id].visual = this.c.setFinish();
 	
 	this.ballCount++;
 };
@@ -231,11 +241,15 @@ Sim.Renderer.prototype.updateBall = function(ball) {
 		this.addBall(ball);
 	};
 	
-	/*this.balls[ball._id].visual.attr({
-		transform: 'T' + ball.x + ' ' + ball.y
-	});*/
+	var ballObj = this.balls[ball._id];
 	
-	this.balls[ball._id].visual.attr({
+	if (ball._yellowVisible) {
+		ballObj.yellowIndicator.attr({fill: 'rgba(255, 255, 0, 0.8)'});
+	} else {
+		ballObj.yellowIndicator.attr({fill: 'none'});
+	}
+	
+	ballObj.visual.attr({
 		cx: ball.x,
 		cy: ball.y
 	});
@@ -251,7 +265,7 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	var dirWidth = 0.03,
 		robotFrame = this.c.circle(0, 0, robot.radius),
 		robotDir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
-		cameraFocus = this.c.path('M-' + robot.cameraDistance + ' 0M0 0L' + robot.cameraDistance + ' -' + (robot.cameraWidth / 2) + 'L' + robot.cameraDistance + ' ' + (robot.cameraWidth / 2) + 'L0 0'),
+		cameraFocus = this.c.path(Sim.Util.polygonToPath(robot.cameraPoly, robot.cameraDistance, 0)),
 		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
 	
 	robotFrame.attr({
@@ -284,6 +298,8 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	});
 	
 	this.showCommandsQueue(this.robots[name].robot);
+	
+	
 };
 
 Sim.Renderer.prototype.showCommandsQueue = function(robot) {

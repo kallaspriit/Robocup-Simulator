@@ -6,6 +6,20 @@ Sim.UI.prototype.init = function() {
 	this.initDebugListener();
 	this.initFullscreenToggle();
 	this.initMovementJoystick();
+	
+	/*
+	$('#render-camera-btn').click(function() {
+		var r = sim.game.robots.yellow,
+			currentCameraPoly = r.cameraPoly.rotate(r.orientation).translate(r.x, r.y);
+		
+		sim.dbg.console('poly', currentCameraPoly);
+	
+		sim.renderer.c.path(Sim.Util.polygonToPath(currentCameraPoly)).attr({
+			fill: 'rgba(255, 0, 0, 0.5)',
+			stroke: 'none'
+		});
+	});
+	*/
 };
 
 Sim.UI.prototype.initDebugListener = function() {

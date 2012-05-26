@@ -50,3 +50,21 @@ Sim.Util.confine = function(
 		obj.y = yMax - padding;
 	}
 };
+
+Sim.Util.polygonToPath = function(polygon, centerX, centerY) {
+	centerX = centerX || 0;
+	centerY = centerY || 0;
+	
+	var path = '',
+		i;
+	
+	if (centerX != 0 ||centerY != 0) {
+		path = 'M-' + centerX + ' -' + centerY;
+	}
+	
+	for (i = 0; i < polygon.points.length; i++) {
+		path += (i == 0 ? 'M' : 'L') + polygon.points[i].x + ' ' + polygon.points[i].y;
+	}
+	
+	return path;
+};

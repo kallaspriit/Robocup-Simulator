@@ -5,6 +5,7 @@ Sim.Robot = function(side, x, y, orientation) {
 	this.orientation = orientation;
 	
 	this.radius = 0.125;
+	this.mass = 2.5;
 	this.wheelRadius = 0.025;
 	this.wheelOffset = 0.12;
 	this.cameraDistance = 5.0;
@@ -14,7 +15,8 @@ Sim.Robot = function(side, x, y, orientation) {
 	this.targetOmega = 0;
 	
 	this.lastMovement = null;
-	this.lastGlobalVelocity = null;
+	this.velocityX = 0;
+	this.velocityY = 0;
 	
 	this.wheelOmega = [
 		0.0, 0.0, 0.0
@@ -30,6 +32,13 @@ Sim.Robot = function(side, x, y, orientation) {
 	
 	this.omegaMatrixInv = this.omegaMatrix.inverse();
 	
+	this.cameraPoly = new Sim.Math.Polygon([
+		{x: 0, y: 0},
+		{x: this.cameraDistance, y: -this.cameraWidth / 2},
+		{x: this.cameraDistance, y: this.cameraWidth / 2},
+		{x: 0, y: 0}
+	]);
+	
 	this.commands = [];
 };
 
@@ -38,22 +47,33 @@ Sim.Robot.prototype.step = function(dt) {
 	
 	this.lastMovement = movement;
 	
-    var velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation);
-    var velocityY = movement.velocityX * Math.sin(this.orientation) + movement.velocityY * Math.cos(this.orientation);
-
-	this.lastGlobalVelocity = {
-		x: velocityX,
-		y: velocityY
-	};
+    this.velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation),
+	this.velocityY = movement.velocityX * Math.sin(this.orientation) + movement.velocityY * Math.cos(this.orientation);
 
 	this.orientation = (this.orientation + movement.omega * dt) % (Math.PI * 2.0);
-	this.x += velocityX * dt;
-	this.y += velocityY * dt;
+	this.x += this.velocityX * dt;
+	this.y += this.velocityY * dt;
 	
+	this.updateVision();
 	this.handleCommands(dt);
 	
 	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmega[0], 2) + ',' + Sim.Math.round(this.wheelOmega[1], 2) + ',' + Sim.Math.round(this.wheelOmega[2], 2));
 	sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
+};
+
+Sim.Robot.prototype.updateVision = function() {
+	var currentCameraPoly = this.cameraPoly.rotate(this.orientation).translate(this.x, this.y),
+		ball;
+	
+	for (var i = 0; i < sim.game.balls.length; i++) {
+		ball = sim.game.balls[i];
+		
+		if (currentCameraPoly.containsPoint(ball.x, ball.y)) {
+			ball._yellowVisible = true;
+		} else {
+			ball._yellowVisible = false;
+		}
+	}
 };
 
 /*

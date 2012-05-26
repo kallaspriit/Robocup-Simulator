@@ -96,6 +96,18 @@ Sim.Game.prototype.step = function() {
 	this.fpsCounter.step();
 	
 	for (var i = 0; i < this.balls.length; i++) {
+		for (var robotName in this.robots) {
+			Sim.Math.collideCircles(this.balls[i], this.robots[robotName]);
+		}
+		
+		for (var j = 0; j < this.balls.length; j++) {
+			if (i == j) {
+				continue;
+			}
+			
+			Sim.Math.collideCircles(this.balls[i], this.balls[j]);
+		}
+		
 		this.balls[i].step(dt);
 		
 		this.fire({

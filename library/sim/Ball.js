@@ -1,32 +1,37 @@
-Sim.Ball = function(x, y) {
+Sim.Ball = function(x, y, radius, mass, elasticity) {
 	this.x = x;
 	this.y = y;
-	this.velocityX = 1.0;
-	this.velocityY = 1.0;
+	this.radius = radius || sim.conf.ball.radius;
+	this.mass = mass || sim.conf.ball.mass;
+	this.elasticity = elasticity || sim.conf.ball.elasticity;
+	this.velocityX = 0.0;
+	this.velocityY = 0.0;
 };
 
 Sim.Ball.prototype.step = function(dt) {
 	this.x += this.velocityX * dt;
 	this.y += this.velocityY * dt;
 	
+	var bounceMultiplier = this.elasticity * -1;
+	
 	if (this.x < sim.conf.ball.radius) {
 		this.x = sim.conf.ball.radius;
-		this.velocityX *= -1;
+		this.velocityX *= bounceMultiplier;
 	}
 	
 	if (this.x > sim.conf.field.width - sim.conf.ball.radius) {
 		this.x = sim.conf.field.width - sim.conf.ball.radius;
-		this.velocityX *= -1;
+		this.velocityX *= bounceMultiplier;
 	}
 	
 	if (this.y < sim.conf.ball.radius) {
 		this.y = sim.conf.ball.radius;
-		this.velocityY *= -1;
+		this.velocityY *= bounceMultiplier;
 	}
 	
 	if (this.y > sim.conf.field.height - sim.conf.ball.radius) {
 		this.y = sim.conf.field.height - sim.conf.ball.radius;
-		this.velocityY *= -1;
+		this.velocityY *= bounceMultiplier;
 	}
 	
 	var xSign = this.velocityX > 0 ? 1 : -1,
