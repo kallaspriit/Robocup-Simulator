@@ -63,13 +63,21 @@ Sim.Robot.prototype.step = function(dt) {
 
 Sim.Robot.prototype.updateVision = function() {
 	var currentCameraPoly = this.cameraPoly.rotate(this.orientation).translate(this.x, this.y),
-		ball;
+		ball,
+		distance,
+		angle,
+		i;
 	
-	for (var i = 0; i < sim.game.balls.length; i++) {
+	for (i = 0; i < sim.game.balls.length; i++) {
 		ball = sim.game.balls[i];
-		
+
 		if (currentCameraPoly.containsPoint(ball.x, ball.y)) {
 			ball._yellowVisible = true;
+			
+			distance = Sim.Math.getDistanceBetween(ball, this) - this.radius;
+			angle = Sim.Math.getAngleBetween(ball, this, this.orientation);
+		
+			sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
 		} else {
 			ball._yellowVisible = false;
 		}

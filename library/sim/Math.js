@@ -108,4 +108,16 @@ Sim.Math.collideCircles = function(a, b) {
 	b.velocityY -= (collisionWeightB * yCollision);
 	
 	return true;
-}
+};
+
+Sim.Math.getDistanceBetween = function(a, b) {
+	return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+};
+
+
+Sim.Math.getAngleBetween = function(a, b, orientation) {
+	var forwardVec = $V2(Math.cos(orientation), Math.sin(orientation)).toUnitVector(),
+		ballHeading = $V2(a.x - b.x, a.y - b.y).toUnitVector();
+
+	return Math.atan2(ballHeading.y(), ballHeading.x()) - Math.atan2(forwardVec.y(), forwardVec.x());
+};
