@@ -14,23 +14,23 @@ Sim.Ball.prototype.step = function(dt) {
 	
 	var bounceMultiplier = this.elasticity * -1;
 	
-	if (this.x < sim.conf.ball.radius) {
-		this.x = sim.conf.ball.radius;
+	if (this.x < this.radius) {
+		this.x = this.radius;
 		this.velocityX *= bounceMultiplier;
 	}
 	
-	if (this.x > sim.conf.field.width - sim.conf.ball.radius) {
-		this.x = sim.conf.field.width - sim.conf.ball.radius;
+	if (this.x > sim.conf.field.width - this.radius) {
+		this.x = sim.conf.field.width - this.radius;
 		this.velocityX *= bounceMultiplier;
 	}
 	
-	if (this.y < sim.conf.ball.radius) {
-		this.y = sim.conf.ball.radius;
+	if (this.y < this.radius) {
+		this.y = this.radius;
 		this.velocityY *= bounceMultiplier;
 	}
 	
-	if (this.y > sim.conf.field.height - sim.conf.ball.radius) {
-		this.y = sim.conf.field.height - sim.conf.ball.radius;
+	if (this.y > sim.conf.field.height - this.radius) {
+		this.y = sim.conf.field.height - this.radius;
 		this.velocityY *= bounceMultiplier;
 	}
 	

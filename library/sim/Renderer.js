@@ -298,8 +298,6 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	});
 	
 	this.showCommandsQueue(this.robots[name].robot);
-	
-	
 };
 
 Sim.Renderer.prototype.showCommandsQueue = function(robot) {

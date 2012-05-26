@@ -6,6 +6,8 @@ Sim.Game = function() {
 	this.lastStepTime = null;
 	this.lastStepDuration = this.timeStep;
 	this.fpsAdjustTime = 0;
+	this.yellowScore = 0;
+	this.blueScore = 0;
 };
 
 Sim.Game.prototype = new Sim.EventTarget();
@@ -13,8 +15,10 @@ Sim.Game.prototype = new Sim.EventTarget();
 Sim.Game.Event = {
 	BALL_ADDED: 'ball-added',
 	BALL_UPDATED: 'ball-updated',
+	BALL_REMOVED: 'ball-removed',
 	ROBOT_ADDED: 'robot-added',
-	ROBOT_UPDATED: 'robot-updated'
+	ROBOT_UPDATED: 'robot-updated',
+	SCORE_CHANGED: 'score-changed'
 };
 
 Sim.Game.Side = {
@@ -84,8 +88,8 @@ Sim.Game.prototype.step = function() {
 		dt;
 	
 	sim.dbg.box('FPS', fps, 2);
-	sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
-	sim.dbg.box('Sleep', this.timeStep * 1000 + this.fpsAdjustTime * 1000, 1);
+	//sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
+	//sim.dbg.box('Sleep', this.timeStep * 1000 + this.fpsAdjustTime * 1000, 1);
 		
 	if (this.lastStepTime == null) {
 		dt = this.timeStep;
@@ -109,6 +113,10 @@ Sim.Game.prototype.step = function() {
 		}
 		
 		this.balls[i].step(dt);
+		
+		if (this.isBallInYellowGoal(this.balls[i])) {
+			sim.dbg.console('BALL IN YELLOW');
+		}
 		
 		this.fire({
 			type: Sim.Game.Event.BALL_UPDATED,
@@ -147,6 +155,30 @@ Sim.Game.prototype.step = function() {
 	}
 };
 
+Sim.Game.prototype.isBallInYellowGoal = function(ball) {
+	if (
+		ball.x <= ball.radius
+		&& ball.y >= sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
+		&& ball.y <= sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
+	) {
+		return true;
+	} else {
+		return false;
+	}
+};
+
+Sim.Game.prototype.isBallInBlueGoal = function(ball) {
+	if (
+		ball.x >= sim.conf.field.width - ball.radius
+		&& ball.y >= sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
+		&& ball.y <= sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
+	) {
+		return true;
+	} else {
+		return false;
+	}
+};
+
 Sim.Game.prototype.run = function() {
 	var self = this;
 	
@@ -155,4 +187,8 @@ Sim.Game.prototype.run = function() {
 	window.setTimeout(function() {
 		self.run();
 	}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
+	
+	/*window.requestAnimationFrame(function(time){
+		self.run();
+	});*/
 };

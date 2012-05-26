@@ -77,10 +77,33 @@ Sim.Robot.prototype.updateVision = function() {
 			distance = Sim.Math.getDistanceBetween(ball, this) - this.radius;
 			angle = Sim.Math.getAngleBetween(ball, this, this.orientation);
 		
-			sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+			//sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
 		} else {
 			ball._yellowVisible = false;
 		}
+	}
+	
+	var yellowGoalPos = {
+			x: 0,
+			y: sim.conf.field.height / 2
+		},
+		blueGoalPos = {
+			x: sim.conf.field.width,
+			y: sim.conf.field.height / 2
+		};
+	
+	if (currentCameraPoly.containsPoint(yellowGoalPos.x, yellowGoalPos.y)) {
+		distance = Sim.Math.getDistanceBetween(yellowGoalPos, this) - this.radius;
+		angle = Sim.Math.getAngleBetween(yellowGoalPos, this, this.orientation);
+
+		//sim.dbg.box('Yellow', Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+	}
+	
+	if (currentCameraPoly.containsPoint(blueGoalPos.x, blueGoalPos.y)) {
+		distance = Sim.Math.getDistanceBetween(blueGoalPos, this) - this.radius;
+		angle = Sim.Math.getAngleBetween(blueGoalPos, this, this.orientation);
+
+		//sim.dbg.box('Blue', Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
 	}
 };
 
