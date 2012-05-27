@@ -134,6 +134,12 @@ Sim.Renderer.prototype.draw = function() {
 	this.drawField();
 	this.drawGoals();
 	//this.drawGrid();
+	
+	this.l1 = this.c.circle(0, 0, 0.15);
+	this.l2 = this.c.circle(0, 0, 0.15);
+	
+	this.l1.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
+	this.l2.attr({stroke: 'none', fill: 'rgba(0, 0, 255, 0.5)'}).hide();
 };
 
 Sim.Renderer.prototype.drawBackground = function() {

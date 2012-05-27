@@ -121,3 +121,40 @@ Sim.Math.getAngleBetween = function(a, b, orientation) {
 
 	return Math.atan2(ballHeading.y(), ballHeading.x()) - Math.atan2(forwardVec.y(), forwardVec.x());
 };
+
+Sim.Math.Circle = function(x, y, radius) {
+	this.x = x;
+	this.y = y;
+	this.radius = radius;
+};
+
+Sim.Math.Circle.prototype.getIntersections = function(other) {
+	var distanceSquared = Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2),
+		distance = Math.sqrt(distanceSquared);
+	
+	if (
+		distance > this.radius + other.radius
+		|| distance < Math.abs(this.radius - other.radius)
+		|| distance == 0
+	) {
+		// not touching
+		return false;
+	}
+	
+	var a = (Math.pow(this.radius, 2) - Math.pow(other.radius, 2) + distanceSquared) / (2 * distance),
+		h = Math.sqrt(Math.pow(this.radius, 2) - Math.pow(a, 2)),
+		centerX = this.x + a * (other.x - this.x) / distance,
+		centerY = this.y + a * (other.y - this.y) / distance;
+	
+	var solutionX1 = centerX + h * (other.y - this.y) / distance,
+		solutionY1 = centerY + h * (other.x - this.x) / distance,
+		solutionX2 = centerX - h * (other.y - this.y) / distance,
+		solutionY2 = centerY - h * (other.x - this.x) / distance;
+		
+	return {
+		x1: solutionX1,
+		y1: solutionY1,
+		x2: solutionX2,
+		y2: solutionY2
+	};
+};
