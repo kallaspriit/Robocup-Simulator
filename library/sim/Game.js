@@ -85,7 +85,9 @@ Sim.Game.prototype.step = function() {
 	var time = Sim.Util.getMicrotime(),
 		fps = this.fpsCounter.getLastFPS(),
 		fpsDiff = sim.conf.simulation.targetFramerate - fps,
-		dt;
+		dt,
+		i,
+		j;
 	
 	sim.dbg.box('FPS', fps, 2);
 	//sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
@@ -99,12 +101,14 @@ Sim.Game.prototype.step = function() {
 	
 	this.fpsCounter.step();
 	
-	for (var i = 0; i < this.balls.length; i++) {
+	var removeBalls = [];
+	
+	for (i = 0; i < this.balls.length; i++) {
 		for (var robotName in this.robots) {
 			Sim.Math.collideCircles(this.balls[i], this.robots[robotName]);
 		}
 		
-		for (var j = 0; j < this.balls.length; j++) {
+		for (j = 0; j < this.balls.length; j++) {
 			if (i == j) {
 				continue;
 			}
@@ -115,13 +119,30 @@ Sim.Game.prototype.step = function() {
 		this.balls[i].step(dt);
 		
 		if (this.isBallInYellowGoal(this.balls[i])) {
-			sim.dbg.console('BALL IN YELLOW');
+			this.increaseBlueScore();
+			
+			removeBalls.push(i);
+		} else if (this.isBallInBlueGoal(this.balls[i])) {
+			this.increaseYellowScore();
+			
+			removeBalls.push(i);
 		}
 		
 		this.fire({
 			type: Sim.Game.Event.BALL_UPDATED,
 			ball: this.balls[i]
 		});
+	}
+	
+	if (removeBalls.length > 0) {
+		for (i = 0; i < removeBalls.length; i++) {
+			this.fire({
+				type: Sim.Game.Event.BALL_REMOVED,
+				ball: this.balls[removeBalls[i]]
+			});
+			
+			this.balls.remove(removeBalls[i]);
+		}
 	}
 	
 	for (var name in this.robots) {
@@ -177,6 +198,26 @@ Sim.Game.prototype.isBallInBlueGoal = function(ball) {
 	} else {
 		return false;
 	}
+};
+
+Sim.Game.prototype.increaseYellowScore = function() {
+	this.yellowScore++;
+	
+	this.fire({
+		type: Sim.Game.Event.SCORE_CHANGED,
+		yellowScore: this.yellowScore,
+		blueScore: this.blueScore
+	});
+};
+
+Sim.Game.prototype.increaseBlueScore = function() {
+	this.blueScore++;
+	
+	this.fire({
+		type: Sim.Game.Event.SCORE_CHANGED,
+		yellowScore: this.yellowScore,
+		blueScore: this.blueScore
+	});
 };
 
 Sim.Game.prototype.run = function() {

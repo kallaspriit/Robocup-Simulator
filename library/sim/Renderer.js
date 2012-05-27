@@ -55,6 +55,8 @@ Sim.Renderer = function(game) {
 	this.robot = null;
 	this.robotFrame = null;
 	this.robotDir = null;
+	this.yellowScore = null;
+	this.blueScore = null;
 };
 
 Sim.Renderer.prototype.init = function() {
@@ -99,12 +101,20 @@ Sim.Renderer.prototype.initGameListeners = function() {
 		self.updateBall(e.ball);
 	});
 	
+	this.game.bind(Sim.Game.Event.BALL_REMOVED, function(e) {
+		self.removeBall(e.ball);
+	});
+	
 	this.game.bind(Sim.Game.Event.ROBOT_ADDED, function(e) {
 		self.addRobot(e.name, e.robot);
 	});
 	
 	this.game.bind(Sim.Game.Event.ROBOT_UPDATED, function(e) {
 		self.updateRobot(e.name, e.robot);
+	});
+	
+	this.game.bind(Sim.Game.Event.SCORE_CHANGED, function(e) {
+		self.updateScore(e.yellowScore, e.blueScore);
 	});
 };
 
@@ -197,8 +207,26 @@ Sim.Renderer.prototype.drawGoals = function() {
 	// left goal
 	this.c.rect(-sim.conf.field.goalDepth, sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2, sim.conf.field.goalDepth, sim.conf.field.goalWidth).attr(this.leftGoalStyle);
 	
+	this.blueScore = this.c.text(0, 0);
+	this.blueScore.attr({
+		fill: '#FFF',
+		'font-size': 1,
+		'transform':
+		'S0.4T-0.12 -0.55',
+		'text': 0
+	});
+	
 	// right goal
 	this.c.rect(sim.conf.field.width, sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2, sim.conf.field.goalDepth, sim.conf.field.goalWidth).attr(this.rightGoalStyle);
+	
+	this.yellowScore = this.c.text(0, 0);
+	this.yellowScore.attr({
+		fill: '#FFF',
+		'font-size': 1,
+		'transform':
+		'S0.4T' + (sim.conf.field.width + 0.12) + ' -0.55',
+		'text': 0
+	});
 };
 
 Sim.Renderer.prototype.getFieldOffsetTransformAttr = function() {
@@ -255,6 +283,25 @@ Sim.Renderer.prototype.updateBall = function(ball) {
 	});
 };
 
+Sim.Renderer.prototype.removeBall = function(ball) {
+	if (typeof(ball._id) == 'undefined') {
+		return;
+	};
+	
+	this.balls[ball._id].visual.remove();
+	
+	var newBalls = {},
+		ballName;
+	
+	for (ballName in this.balls) {
+		if (ballName != ball._id) {
+			newBalls[ballName] = this.balls[ballName];
+		}
+	}
+	
+	this.balls = newBalls;
+};
+
 Sim.Renderer.prototype.addRobot = function(name, robot) {
 	this.robots[name] = {
 		robot: robot
@@ -298,6 +345,11 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	});
 	
 	this.showCommandsQueue(this.robots[name].robot);
+};
+
+Sim.Renderer.prototype.updateScore = function(yellowScore, blueScore) {
+	this.blueScore.attr('text', blueScore);
+	this.yellowScore.attr('text', yellowScore);
 };
 
 Sim.Renderer.prototype.showCommandsQueue = function(robot) {

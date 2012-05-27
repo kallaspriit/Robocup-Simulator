@@ -1,11 +1,18 @@
 Sim.UI = function() {
 	this.movementJoystick = null;
+	this.forwardDown = false;
+	this.leftDown = false;
+	this.reverseDown = false;
+	this.rightDown = false;
+	this.turnRightDown = false;
+	this.turnLeftDown = false;
 };
 
 Sim.UI.prototype.init = function() {
 	this.initDebugListener();
 	this.initFullscreenToggle();
 	this.initMovementJoystick();
+	this.initKeyboardControls();
 	
 	/*
 	$('#render-camera-btn').click(function() {
@@ -70,8 +77,111 @@ Sim.UI.prototype.initMovementJoystick = function() {
 	});
 };
 
+Sim.UI.prototype.initKeyboardControls = function() {
+	var self = this;
+
+	$(window).keydown(function(e) {
+		switch (e.keyCode) {
+			case 87:
+				self.forwardDown = true;
+			break;
+			
+			case 65:
+				self.leftDown = true;
+			break;
+			
+			case 83:
+				self.reverseDown = true;
+			break;
+			
+			case 68:
+				self.rightDown = true;
+			break;
+			
+			case 81:
+				self.turnLeftDown = true;
+			break;
+			
+			case 69:
+				self.turnRightDown = true;
+			break;
+		}
+		
+		self.updateRobotDir();
+	});
+	
+	$(window).keyup(function(e) {
+		switch (e.keyCode) {
+			case 87:
+				self.forwardDown = false;
+			break;
+			
+			case 65:
+				self.leftDown = false;
+			break;
+			
+			case 83:
+				self.reverseDown = false;
+			break;
+			
+			case 68:
+				self.rightDown = false;
+			break;
+			
+			case 81:
+				self.turnLeftDown = false;
+			break;
+			
+			case 69:
+				self.turnRightDown = false;
+			break;
+		}
+		
+		self.updateRobotDir();
+	});
+	
+	$(window).blur(function() {
+		self.forwardDown = false;
+		self.leftDown = false;
+		self.reverseDown = false;
+		self.rightDown = false;
+		self.turnLeftDown = false;
+		self.turnRightDown = false;
+		
+		self.updateRobotDir();
+	});
+};
+
 Sim.UI.prototype.initFullscreenToggle = function() {
 	
+};
+
+Sim.UI.prototype.updateRobotDir = function() {
+	var speed = 1,
+		turnRate = Math.PI,
+		x = 0,
+		y = 0,
+		omega = 0;
+	
+	if (this.forwardDown) {
+		x = speed;
+	} else if (this.reverseDown) {
+		x = -speed;
+	}
+	
+	if (this.rightDown) {
+		y = speed;
+	} else if (this.leftDown) {
+		y = -speed;
+	}
+	
+	if (this.turnRightDown) {
+		omega = turnRate;
+	} else if (this.turnLeftDown) {
+		omega = -turnRate;
+	}
+	
+	sim.game.robots.yellow.setTargetDir(x, y, omega);
 };
 
 Sim.UI.Joystick = function(
