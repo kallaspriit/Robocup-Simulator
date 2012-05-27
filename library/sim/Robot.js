@@ -9,7 +9,7 @@ Sim.Robot = function(side, x, y, orientation) {
 	this.wheelRadius = 0.025;
 	this.wheelOffset = 0.12;
 	this.cameraDistance = 5.0;
-	this.cameraWidth = 3.0;
+	this.cameraWidth = 8.0;
 	
 	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
@@ -32,10 +32,17 @@ Sim.Robot = function(side, x, y, orientation) {
 	
 	this.omegaMatrixInv = this.omegaMatrix.inverse();
 	
-	this.cameraPoly = new Sim.Math.Polygon([
+	this.cameraPoly1 = new Sim.Math.Polygon([
 		{x: 0, y: 0},
 		{x: this.cameraDistance, y: -this.cameraWidth / 2},
 		{x: this.cameraDistance, y: this.cameraWidth / 2},
+		{x: 0, y: 0}
+	]);
+	
+	this.cameraPoly2 = new Sim.Math.Polygon([
+		{x: 0, y: 0},
+		{x: -this.cameraDistance, y: -this.cameraWidth / 2},
+		{x: -this.cameraDistance, y: this.cameraWidth / 2},
 		{x: 0, y: 0}
 	]);
 	
@@ -62,7 +69,8 @@ Sim.Robot.prototype.step = function(dt) {
 };
 
 Sim.Robot.prototype.updateVision = function() {
-	var currentCameraPoly = this.cameraPoly.rotate(this.orientation).translate(this.x, this.y),
+	var currentCameraPoly1 = this.cameraPoly1.rotate(this.orientation).translate(this.x, this.y),
+		currentCameraPoly2 = this.cameraPoly2.rotate(this.orientation).translate(this.x, this.y),
 		ball,
 		distance,
 		angle,
@@ -71,15 +79,20 @@ Sim.Robot.prototype.updateVision = function() {
 	for (i = 0; i < sim.game.balls.length; i++) {
 		ball = sim.game.balls[i];
 
-		if (currentCameraPoly.containsPoint(ball.x, ball.y)) {
+		if (
+			currentCameraPoly1.containsPoint(ball.x, ball.y)
+			|| currentCameraPoly2.containsPoint(ball.x, ball.y)
+		) {
 			ball._yellowVisible = true;
 			
 			distance = Sim.Math.getDistanceBetween(ball, this) - this.radius;
 			angle = Sim.Math.getAngleBetween(ball, this, this.orientation);
 		
-			//sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+			sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
 		} else {
 			ball._yellowVisible = false;
+			
+			sim.dbg.box('#' + i, 'n/a');
 		}
 	}
 	
@@ -92,18 +105,28 @@ Sim.Robot.prototype.updateVision = function() {
 			y: sim.conf.field.height / 2
 		};
 	
-	if (currentCameraPoly.containsPoint(yellowGoalPos.x, yellowGoalPos.y)) {
+	if (
+		currentCameraPoly1.containsPoint(yellowGoalPos.x, yellowGoalPos.y)
+		|| currentCameraPoly2.containsPoint(yellowGoalPos.x, yellowGoalPos.y)
+	) {
 		distance = Sim.Math.getDistanceBetween(yellowGoalPos, this) - this.radius;
 		angle = Sim.Math.getAngleBetween(yellowGoalPos, this, this.orientation);
 
-		//sim.dbg.box('Yellow', Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+		sim.dbg.box('Yellow', Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+	} else {
+		sim.dbg.box('Yellow', 'n/a');
 	}
 	
-	if (currentCameraPoly.containsPoint(blueGoalPos.x, blueGoalPos.y)) {
+	if (
+		currentCameraPoly1.containsPoint(blueGoalPos.x, blueGoalPos.y)
+		|| currentCameraPoly2.containsPoint(blueGoalPos.x, blueGoalPos.y)
+	) {
 		distance = Sim.Math.getDistanceBetween(blueGoalPos, this) - this.radius;
 		angle = Sim.Math.getAngleBetween(blueGoalPos, this, this.orientation);
 
-		//sim.dbg.box('Blue', Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+		sim.dbg.box('Blue', Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+	} else {
+		sim.dbg.box('Blue', 'n/a');
 	}
 };
 

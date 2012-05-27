@@ -17,7 +17,7 @@ Sim.UI.prototype.init = function() {
 	/*
 	$('#render-camera-btn').click(function() {
 		var r = sim.game.robots.yellow,
-			currentCameraPoly = r.cameraPoly.rotate(r.orientation).translate(r.x, r.y);
+			currentCameraPoly = r.cameraPoly1.rotate(r.orientation).translate(r.x, r.y);
 		
 		sim.dbg.console('poly', currentCameraPoly);
 	

@@ -58,11 +58,12 @@ Sim.Util.polygonToPath = function(polygon, centerX, centerY) {
 	var path = '',
 		i;
 	
-	if (centerX != 0 ||centerY != 0) {
-		path = 'M-' + centerX + ' -' + centerY;
-	}
+	//if (centerX != 0 ||centerY != 0) {
+		path = 'M' + (centerX * -1) + ' ' + (centerY * -1);
+	//}
 	
 	for (i = 0; i < polygon.points.length; i++) {
+		//path += 'L' + polygon.points[i].x + ' ' + polygon.points[i].y;
 		path += (i == 0 ? 'M' : 'L') + polygon.points[i].x + ' ' + polygon.points[i].y;
 	}
 	
