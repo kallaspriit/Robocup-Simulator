@@ -135,7 +135,9 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 	}
 	
 	sim.renderer.l1.hide();
-			sim.renderer.l2.hide();
+	sim.renderer.l1c.hide();
+	sim.renderer.l2.hide();
+	sim.renderer.l2c.hide();
 	
 	if (yellowDistance != null && blueDistance != null) {
 		var yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, yellowDistance),
@@ -151,9 +153,21 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 			cy: intersections.y1
 		}).show();
 		
+		sim.renderer.l1c.attr({
+			cx: yellowGoalPos.x,
+			cy: yellowGoalPos.y,
+			r: yellowDistance
+		}).show();
+		
 		sim.renderer.l2.attr({
 			cx: intersections.x2,
 			cy: intersections.y2
+		}).show();
+		
+		sim.renderer.l2c.attr({
+			cx: blueGoalPos.x,
+			cy: blueGoalPos.y,
+			r: blueDistance
 		}).show();
 	}
 }
