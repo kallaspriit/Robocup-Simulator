@@ -88,18 +88,19 @@ Sim.Robot.prototype.updateVision = function() {
 			distance = Sim.Math.getDistanceBetween(this, ball) - this.radius;
 			angle = Sim.Math.getAngleBetween(this, ball, this.orientation);
 		
-			sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
+			//sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
 		} else {
 			ball._yellowVisible = false;
 			
-			sim.dbg.box('#' + i, 'n/a');
+			//sim.dbg.box('#' + i, 'n/a');
 		}
 	}
 	
-	this.locate(currentCameraPoly1, currentCameraPoly2);
+	this.locateByDistances(currentCameraPoly1, currentCameraPoly2);
+	this.locateByAngles(currentCameraPoly1, currentCameraPoly2);
 };
 
-Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
+Sim.Robot.prototype.locateByDistances = function(currentCameraPoly1, currentCameraPoly2) {
 	var yellowGoalPos = {
 			x: 0,
 			y: sim.conf.field.height / 2
@@ -118,9 +119,9 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 	) {
 		yellowDistance = Sim.Math.getDistanceBetween(this, yellowGoalPos);
 			
-		sim.dbg.box('Yellow', yellowDistance, 1);
+		//sim.dbg.box('Yellow', yellowDistance, 1);
 	} else {
-		sim.dbg.box('Yellow', 'n/a');
+		//sim.dbg.box('Yellow', 'n/a');
 	}
 	
 	if (
@@ -129,9 +130,9 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 	) {
 		blueDistance = Sim.Math.getDistanceBetween(this, blueGoalPos);
 			
-		sim.dbg.box('Blue', blueDistance, 1);
+		//sim.dbg.box('Blue', blueDistance, 1);
 	} else {
-		sim.dbg.box('Blue', 'n/a');
+		//sim.dbg.box('Blue', 'n/a');
 	}
 	
 	sim.renderer.l1.hide();
@@ -172,8 +173,7 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 	}
 }
 
-/*
-Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
+Sim.Robot.prototype.locateByAngles = function(currentCameraPoly1, currentCameraPoly2) {
 	var yellowGoalPos1 = {
 			x: 0,
 			y: sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
@@ -211,9 +211,9 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 		
 		yellowGoalAngle = Math.abs(angle1 - angle2);
 
-		sim.dbg.box('Yellow', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1));
+		//sim.dbg.box('Yellow', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1));
 	} else {
-		sim.dbg.box('Yellow', 'n/a');
+		//sim.dbg.box('Yellow', 'n/a');
 	}
 	
 	if (
@@ -233,14 +233,43 @@ Sim.Robot.prototype.locate = function(currentCameraPoly1, currentCameraPoly2) {
 		
 		blueGoalAngle = Math.abs(angle1 - angle2);
 
-		sim.dbg.box('Blue', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1));
+		//sim.dbg.box('Blue', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1));
 	} else {
-		sim.dbg.box('Blue', 'n/a');
+		//sim.dbg.box('Blue', 'n/a');
 	}
 	
-	sim.dbg.box('Goal angles',  Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1) + '; ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1));
+	sim.renderer.a1c.hide();
+	sim.renderer.a2c.hide();
+	
+	if (yellowGoalAngle != null && blueGoalAngle != null) {
+		var yellowRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(yellowGoalAngle))),
+			blueRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(blueGoalAngle))),
+			centerY = sim.conf.field.height / 2.0,
+			yellowCenterX = yellowRadius * Math.cos(yellowGoalAngle),
+			blueCenterX = sim.conf.field.width - blueRadius * Math.cos(blueGoalAngle),
+			yellowCircle = new Sim.Math.Circle(yellowCenterX, centerY, yellowRadius),
+			blueCircle = new Sim.Math.Circle(blueCenterX, centerY, blueRadius),
+			intersections = yellowCircle.getIntersections(blueCircle);
+			
+		sim.renderer.a1c.attr({
+			cx: yellowCircle.x,
+			cy: yellowCircle.y,
+			r: yellowCircle.radius
+		}).show();
+
+		sim.renderer.a2c.attr({
+			cx: blueCircle.x,
+			cy: blueCircle.y,
+			r: blueCircle.radius
+		}).show();
+		
+		//sim.dbg.console('intersections', intersections);
+
+		//sim.dbg.box('Goal angles', Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1) + ' (' + Sim.Math.round(yellowRadius, 2) + '); ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1) + '(' + Sim.Math.round(blueRadius, 2) + ')');
+	} else {
+		//sim.dbg.box('Goal angles', 'n/a');
+	}
 }
-*/
 
 /*
 Sim.Robot.prototype.getOmega = function() {
