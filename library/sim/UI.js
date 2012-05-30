@@ -8,11 +8,17 @@ Sim.UI = function() {
 	this.turnLeftDown = false;
 };
 
+Sim.UI.prototype = new Sim.EventTarget();
+
+Sim.UI.Event = {};
+
 Sim.UI.prototype.init = function() {
 	this.initDebugListener();
+	this.initEventListeners();
 	this.initFullscreenToggle();
 	this.initMovementJoystick();
 	this.initKeyboardControls();
+	this.initTools();
 	
 	/*
 	$('#render-camera-btn').click(function() {
@@ -65,6 +71,12 @@ Sim.UI.prototype.initDebugListener = function() {
 	});
 };
 
+Sim.UI.prototype.initEventListeners = function() {
+	sim.renderer.bind(Sim.Renderer.Event.DRIVE_TO_REQUESTED, function(e) {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).driveTo(e.x, e.y, e.orientation);
+	});
+};
+
 Sim.UI.prototype.initMovementJoystick = function() {
 	this.movementJoystick = new Sim.UI.Joystick('movement-joystick');
 	
@@ -81,6 +93,8 @@ Sim.UI.prototype.initKeyboardControls = function() {
 	var self = this;
 
 	$(window).keydown(function(e) {
+		var ignore = false;
+		
 		switch (e.keyCode) {
 			case 87:
 				self.forwardDown = true;
@@ -105,12 +119,20 @@ Sim.UI.prototype.initKeyboardControls = function() {
 			case 69:
 				self.turnRightDown = true;
 			break;
+			
+			default:
+				ignore = true;
+			break;
 		}
 		
-		self.updateRobotDir();
+		if (!ignore) {
+			self.updateRobotDir();
+		}
 	});
 	
 	$(window).keyup(function(e) {
+		var ignore = false;
+		
 		switch (e.keyCode) {
 			case 87:
 				self.forwardDown = false;
@@ -135,9 +157,15 @@ Sim.UI.prototype.initKeyboardControls = function() {
 			case 69:
 				self.turnRightDown = false;
 			break;
+			
+			default:
+				ignore = true;
+			break;
 		}
 		
-		self.updateRobotDir();
+		if (!ignore) {
+			self.updateRobotDir();
+		}
 	});
 	
 	$(window).blur(function() {
@@ -149,6 +177,12 @@ Sim.UI.prototype.initKeyboardControls = function() {
 		self.turnRightDown = false;
 		
 		self.updateRobotDir();
+	});
+};
+
+Sim.UI.prototype.initTools = function() {
+	$('#drive-to-btn').click(function() {
+		sim.renderer.showDriveTo();
 	});
 };
 
@@ -230,6 +264,10 @@ Sim.UI.Joystick.prototype.init = function() {
 	});
 	
 	$(document.body).mouseup(function(e) {
+		if (!self.dragging) {
+			return;
+		}
+		
 		self.dragging = false;
 		
 		var parentWidth = self.container.width(),

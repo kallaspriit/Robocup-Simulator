@@ -37,6 +37,8 @@ Sim.Renderer = function(game) {
 	this.canvasToWorldRatio = null;
 	this.bg = null;
 	this.c = null;
+	this.driveToActive = false;
+	this.driveToOrientation = 0;
 	
 	// appearance
 	this.bgStyle = {fill: '#0C0', stroke: 'none'};
@@ -52,16 +54,25 @@ Sim.Renderer = function(game) {
 	this.fieldOffsetY = -(sim.conf.world.height - sim.conf.field.height) / 2;
 	
 	// objects
+	this.field = null;
 	this.robot = null;
 	this.robotFrame = null;
 	this.robotDir = null;
 	this.yellowScore = null;
 	this.blueScore = null;
+	this.driveToIndicator = null;
+};
+
+Sim.Renderer.prototype = new Sim.EventTarget();
+
+Sim.Renderer.Event = {
+	DRIVE_TO_REQUESTED: 'drive-to-requested'
 };
 
 Sim.Renderer.prototype.init = function() {
 	this.initCanvas();
 	this.initGameListeners();
+	this.initEventListeners();
 };
 
 Sim.Renderer.prototype.initCanvas = function() {
@@ -118,6 +129,87 @@ Sim.Renderer.prototype.initGameListeners = function() {
 	});
 };
 
+Sim.Renderer.prototype.initEventListeners = function() {
+	/*$('#' + this.containerId).mousemove(function(e) {
+		sim.dbg.console('canvas move', e);
+	});
+	
+	this.field.mousemove(function(e) {
+		sim.dbg.console('move', e);
+	});*/
+	
+	var self = this;
+	
+	$(document.body).mousemove(function(e) {
+		if (self.driveToActive) {
+			var pos = self.translateCoords(e.clientX, event.clientY);
+
+			Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+
+			self.driveToIndicator.attr({
+				transform: 'R ' + Sim.Math.radToDeg(self.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
+			});
+		}
+	});
+	
+	$('#' + this.containerId).click(function(e) {
+		if (self.driveToActive) {
+			var pos = self.translateCoords(e.clientX, e.clientY);
+			
+			if (Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125)) {
+				return;
+			}
+			
+			self.driveToIndicator.hide();
+			
+			var indicator = self.c.circle(pos.x, pos.y, 0.0);
+			
+			indicator.attr({
+				'fill': 'none',
+				'stroke': '#F00',
+				'stroke-width': 5
+			}).animate({
+				r: 0.5,
+				opacity: 0
+			}, 250, null, function() {
+				this.remove();
+			});
+			
+			self.fire({
+				type: Sim.Renderer.Event.DRIVE_TO_REQUESTED,
+				x: pos.x,
+				y: pos.y,
+				orientation: self.driveToOrientation
+			});
+			
+			self.driveToActive = false;
+		}
+	});
+	
+	$(window).mousewheel(function(e, delta, deltaX, deltaY) {
+		self.driveToOrientation = (self.driveToOrientation + delta * Math.PI / 8) % (Math.PI * 2);
+		
+		var pos = self.translateCoords(e.clientX, e.clientY);
+
+		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+
+		self.driveToIndicator.attr({
+			transform: 'R ' + Sim.Math.radToDeg(self.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
+		});
+	});
+};
+
+Sim.Renderer.prototype.translateCoords = function(clientX, clientY) {
+	var svg = this.c.canvas;
+	
+	var svgPoint = svg.createSVGPoint();
+
+	svgPoint.x = clientX;
+	svgPoint.y = clientY;
+
+	return svgPoint.matrixTransform(svg.getScreenCTM().inverse());
+};
+
 Sim.Renderer.prototype.run = function() {
 	/*
 	var self = this;
@@ -133,23 +225,9 @@ Sim.Renderer.prototype.draw = function() {
 	this.drawBackground();
 	this.drawField();
 	this.drawGoals();
+	this.drawLocalization();
+	this.drawDriveTo();
 	//this.drawGrid();
-	
-	this.l1 = this.c.circle(0, 0, 0.15);
-	this.l1c = this.c.circle(0, 0, 0);
-	this.l2 = this.c.circle(0, 0, 0.15);
-	this.l2c = this.c.circle(0, 0, 0);
-	
-	this.a1c = this.c.circle(0, 0, 0);
-	this.a2c = this.c.circle(0, 0, 0);
-	
-	this.l1.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
-	this.l1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
-	this.l2.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
-	this.l2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
-	
-	this.a1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
-	this.a2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
 };
 
 Sim.Renderer.prototype.drawBackground = function() {
@@ -193,7 +271,7 @@ Sim.Renderer.prototype.drawGrid = function() {
 
 Sim.Renderer.prototype.drawField = function() {
 	// main field
-	this.c.rect(0, 0, sim.conf.field.width, sim.conf.field.height).attr(this.fieldStyle);
+	this.field = this.c.rect(0, 0, sim.conf.field.width, sim.conf.field.height).attr(this.fieldStyle);
 	
 	// top and bottom wall
 	this.c.rect(-sim.conf.field.wallWidth, -sim.conf.field.wallWidth, sim.conf.field.width + sim.conf.field.wallWidth * 2, sim.conf.field.wallWidth).attr(this.wallStyle);
@@ -243,6 +321,38 @@ Sim.Renderer.prototype.drawGoals = function() {
 		'S0.4T' + (sim.conf.field.width + 0.12) + ' -0.55',
 		'text': 0
 	});
+};
+
+Sim.Renderer.prototype.drawLocalization = function() {
+	this.l1 = this.c.circle(0, 0, 0.15);
+	this.l1c = this.c.circle(0, 0, 0);
+	this.l2 = this.c.circle(0, 0, 0.15);
+	this.l2c = this.c.circle(0, 0, 0);
+	
+	this.a1c = this.c.circle(0, 0, 0);
+	this.a2c = this.c.circle(0, 0, 0);
+	
+	this.l1.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
+	this.l1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
+	this.l2.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
+	this.l2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
+	
+	this.a1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
+	this.a2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
+};
+
+Sim.Renderer.prototype.drawDriveTo = function() {
+	this.driveToIndicator = this.c.path('M-0.125 -0.125L0.125 0L-0.125 0.125 L-0.125 -0.125');
+	
+	this.driveToIndicator.attr({
+		stroke: 'none',
+		fill: 'rgba(0, 60, 0, 0.5)'
+	}).hide();
+};
+
+Sim.Renderer.prototype.showDriveTo = function() {
+	this.driveToIndicator.show();
+	this.driveToActive = true;
 };
 
 Sim.Renderer.prototype.getFieldOffsetTransformAttr = function() {

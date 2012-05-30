@@ -329,6 +329,17 @@ Sim.Robot.prototype.getTargetOmega = function() {
 	return this.targetOmega;
 };
 
+Sim.Robot.prototype.driveTo = function(x, y, orientation) {
+	var dir = $V2(x - this.x, y - this.y).toUnitVector();
+	
+	//dir = dir.rotate(this.orientation, {x: this.x, y: this.y});
+	dir = Sim.Math.rotatePoint(dir.x(), dir.y(), -this.orientation);
+	
+	sim.dbg.console('drive to', x, y, dir, this.orientation);
+	
+	this.setTargetDir(dir.x, dir.y);
+};
+
 Sim.Robot.prototype.queueCommand = function(command) {
 	this.commands.push(command);
 };

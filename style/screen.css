@@ -23,6 +23,24 @@ BODY {
 	border-radius: 10px;
 }
 
+/* Toolbar */
+#toolbar {
+	position: absolute;
+	left: 10px;
+	bottom: -60px;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+#toolbar > LI {
+	float: left;
+	padding: 0;
+	margin: 0 0 20px;
+}
+#toolbar > LI > BUTTON {
+	padding: 6px 12px;
+}
+
 /* Joystick */
 .joystick {
 	position: absolute;

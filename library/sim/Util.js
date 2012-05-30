@@ -36,19 +36,27 @@ Sim.Util.confine = function(
 	yMax,
 	padding
 ) {
+	var confined = false;
+	
 	padding = padding || 0;
 	
 	if (obj.x < xMin + padding) {
 		obj.x = xMin + padding;
+		confined = true;
 	} else if (obj.x > xMax - padding) {
 		obj.x = xMax - padding;
+		confined = true;
 	}
 	
 	if (obj.y < yMin + padding) {
 		obj.y = yMin + padding;
+		confined = true;
 	} else if (obj.y > yMax - padding) {
 		obj.y = yMax - padding;
+		confined = true;
 	}
+	
+	return confined;
 };
 
 Sim.Util.polygonToPath = function(polygon, centerX, centerY) {
