@@ -120,6 +120,10 @@ Sim.UI.prototype.initKeyboardControls = function() {
 				self.turnRightDown = true;
 			break;
 			
+			case 32:
+				sim.game.robots.yellow.kick();
+			break;
+			
 			default:
 				ignore = true;
 			break;

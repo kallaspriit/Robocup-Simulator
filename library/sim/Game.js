@@ -85,9 +85,7 @@ Sim.Game.prototype.step = function() {
 	var time = Sim.Util.getMicrotime(),
 		fps = this.fpsCounter.getLastFPS(),
 		fpsDiff = sim.conf.simulation.targetFramerate - fps,
-		dt,
-		i,
-		j;
+		dt;
 	
 	sim.dbg.box('FPS', fps, 2);
 	//sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
@@ -101,14 +99,28 @@ Sim.Game.prototype.step = function() {
 	
 	this.fpsCounter.step();
 	
+	this.stepBalls(dt);
+	this.stepRobots(dt);
+	
+	this.lastStepDuration = dt;
+	this.lastStepTime = Sim.Util.getMicrotime();
+	
+	this.fpsAdjustTime += fpsDiff * -0.000001; // add PID
+	
+	if (this.fpsAdjustTime < -this.timeStep) {
+		this.fpsAdjustTime = -this.timeStep;
+	}
+};
+
+Sim.Game.prototype.stepBalls = function(dt) {
 	var removeBalls = [];
 	
-	for (i = 0; i < this.balls.length; i++) {
+	for (var i = 0; i < this.balls.length; i++) {
 		for (var robotName in this.robots) {
 			Sim.Math.collideCircles(this.balls[i], this.robots[robotName]);
 		}
 		
-		for (j = 0; j < this.balls.length; j++) {
+		for (var j = 0; j < this.balls.length; j++) {
 			if (i == j) {
 				continue;
 			}
@@ -136,6 +148,8 @@ Sim.Game.prototype.step = function() {
 	
 	if (removeBalls.length > 0) {
 		for (i = 0; i < removeBalls.length; i++) {
+			this.balls[removeBalls[i]]._goaled = true;
+			
 			this.fire({
 				type: Sim.Game.Event.BALL_REMOVED,
 				ball: this.balls[removeBalls[i]]
@@ -144,7 +158,9 @@ Sim.Game.prototype.step = function() {
 			this.balls.remove(removeBalls[i]);
 		}
 	}
-	
+};
+
+Sim.Game.prototype.stepRobots = function(dt) {
 	for (var name in this.robots) {
 		var robot = this.robots[name];
 		
@@ -164,15 +180,6 @@ Sim.Game.prototype.step = function() {
 			name: name,
 			robot: robot
 		});
-	}
-	
-	this.lastStepDuration = dt;
-	this.lastStepTime = Sim.Util.getMicrotime();
-	
-	this.fpsAdjustTime += fpsDiff * -0.000001; // add PID
-	
-	if (this.fpsAdjustTime < -this.timeStep) {
-		this.fpsAdjustTime = -this.timeStep;
 	}
 };
 

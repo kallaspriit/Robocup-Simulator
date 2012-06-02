@@ -10,6 +10,8 @@ Sim.Robot = function(side, x, y, orientation) {
 	this.wheelOffset = 0.12;
 	this.cameraDistance = 5.0;
 	this.cameraWidth = 8.0;
+	this.dribbleAngle = Sim.Math.degToRad(20.0); // degrees each way
+	this.dribbledBall = null;
 	
 	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
@@ -62,6 +64,7 @@ Sim.Robot.prototype.step = function(dt) {
 	this.y += this.velocityY * dt;
 	
 	this.updateVision();
+	this.handleBalls(dt);
 	this.handleCommands(dt);
 	
 	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmega[0], 2) + ',' + Sim.Math.round(this.wheelOmega[1], 2) + ',' + Sim.Math.round(this.wheelOmega[2], 2));
@@ -366,6 +369,76 @@ Sim.Robot.prototype.updateWheelSpeeds = function() {
 
 Sim.Robot.prototype.turnBy = function(angle, duration) {
 	this.queueCommand(new Sim.Cmd.TurnBy(angle, duration));
+};
+
+Sim.Robot.prototype.handleBalls = function(dt) {
+	var balls = sim.game.balls,
+		ball,
+		distance,
+		maxDistance,
+		holdDistance,
+		ballAngle,
+		i;
+	
+	
+	if (this.dribbledBall != null) {
+		if (typeof(this.dribbledBall._goaled) != 'undefined' && this.dribbledBall._goaled) {
+			this.dribbledBall._dribbled = false;
+			this.dribbledBall = null;
+			
+			return;
+		}
+		
+		distance = Sim.Math.getDistanceBetween(this.dribbledBall, this);
+		maxDistance = this.radius + this.dribbledBall.radius * 2;
+		holdDistance = this.radius + this.dribbledBall.radius * 1.1;
+		
+		if (distance <= maxDistance) {
+			var forwardVec = $V2(Math.cos(this.orientation), Math.sin(this.orientation)).toUnitVector(),
+				pos = forwardVec.multiply(holdDistance);
+			
+			this.dribbledBall.x = this.x + pos.x();
+			this.dribbledBall.y = this.y + pos.y();
+		} else {
+			this.dribbledBall._dribbled = false;
+			
+			this.dribbledBall = null;
+		}
+	} else {
+		for (i = 0; i < balls.length; i++) {
+			ball = balls[i];
+
+			distance = Sim.Math.getDistanceBetween(ball, this);
+			maxDistance = this.radius + ball.radius * 2;
+
+			if (distance <= maxDistance) {
+				ballAngle = Sim.Math.getAngleBetween(ball, this, this.orientation);
+
+				if (Math.abs(ballAngle) <= this.dribbleAngle) {
+					this.grabBall(ball);
+				}
+			}
+		}
+	}
+};
+
+Sim.Robot.prototype.grabBall = function(ball) {
+	ball._dribbled = true;
+	
+	this.dribbledBall = ball;
+};
+
+Sim.Robot.prototype.kick = function() {
+	if (this.dribbledBall == null) {
+		return;
+	}
+	
+	var dir = Sim.Math.dirBetween(this, this.dribbledBall);
+	
+	Sim.Math.addImpulse(this.dribbledBall, dir, -10.0, sim.game.lastStepDuration);
+	
+	this.dribbledBall._dribbled = false;
+	this.dribbledBall = null;
 };
 
 Sim.Robot.prototype.handleCommands = function(dt) {

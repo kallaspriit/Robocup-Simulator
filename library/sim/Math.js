@@ -122,6 +122,19 @@ Sim.Math.getAngleBetween = function(a, b, orientation) {
 	return Math.atan2(ballHeading.y(), ballHeading.x()) - Math.atan2(forwardVec.y(), forwardVec.x());
 };
 
+Sim.Math.dirBetween = function(from, to) {
+	return $V2(from.x - to.x, from.y - to.y).toUnitVector();
+};
+
+Sim.Math.addImpulse = function(body, dir, magnitude, dt) {
+	var acceleration = dir.toUnitVector().multiply(magnitude / body.mass * dt);
+	
+	sim.dbg.console('impulse', body, dir, magnitude, 'ACC', acceleration);
+	
+	body.velocityX += acceleration.x();
+	body.velocityY += acceleration.y();
+};
+
 Sim.Math.Circle = function(x, y, radius) {
 	this.x = x;
 	this.y = y;
