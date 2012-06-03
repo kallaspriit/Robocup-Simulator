@@ -38,6 +38,7 @@ Sim.Renderer = function(game) {
 	this.bg = null;
 	this.c = null;
 	this.driveToActive = false;
+	this.spawnBallActive = false;
 	this.driveToOrientation = 0;
 	
 	// appearance
@@ -61,12 +62,14 @@ Sim.Renderer = function(game) {
 	this.yellowScore = null;
 	this.blueScore = null;
 	this.driveToIndicator = null;
+	this.spawnBallIndicator = null;
 };
 
 Sim.Renderer.prototype = new Sim.EventTarget();
 
 Sim.Renderer.Event = {
-	DRIVE_TO_REQUESTED: 'drive-to-requested'
+	DRIVE_TO_REQUESTED: 'drive-to-requested',
+	SPAWN_BALL_REQUESTED: 'spawn-ball-requested'
 };
 
 Sim.Renderer.prototype.init = function() {
@@ -141,61 +144,108 @@ Sim.Renderer.prototype.initEventListeners = function() {
 	var self = this;
 	
 	$(document.body).mousemove(function(e) {
-		if (self.driveToActive) {
-			var pos = self.translateCoords(e.clientX, event.clientY);
-
-			Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
-
-			self.driveToIndicator.attr({
-				transform: 'R ' + Sim.Math.radToDeg(self.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
-			});
-		}
+		self.onMouseMove(e);
 	});
 	
 	$('#' + this.containerId).click(function(e) {
-		if (self.driveToActive) {
-			var pos = self.translateCoords(e.clientX, e.clientY);
-			
-			if (Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125)) {
-				return;
-			}
-			
-			self.driveToIndicator.hide();
-			
-			var indicator = self.c.circle(pos.x, pos.y, 0.0);
-			
-			indicator.attr({
-				'fill': 'none',
-				'stroke': '#F00',
-				'stroke-width': 5
-			}).animate({
-				r: 0.5,
-				opacity: 0
-			}, 250, null, function() {
-				this.remove();
-			});
-			
-			self.fire({
-				type: Sim.Renderer.Event.DRIVE_TO_REQUESTED,
-				x: pos.x,
-				y: pos.y,
-				orientation: self.driveToOrientation
-			});
-			
-			self.driveToActive = false;
-		}
+		self.onContainerClick(e);
 	});
 	
 	$(window).mousewheel(function(e, delta, deltaX, deltaY) {
-		self.driveToOrientation = (self.driveToOrientation + delta * Math.PI / 8) % (Math.PI * 2);
+		self.onMouseWheel(e, delta, deltaX, deltaY);
+	});
+};
+
+Sim.Renderer.prototype.onMouseMove = function(e) {
+	var pos;
 		
-		var pos = self.translateCoords(e.clientX, e.clientY);
+	if (this.driveToActive) {
+		pos = this.translateCoords(e.clientX, event.clientY);
 
 		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
 
-		self.driveToIndicator.attr({
-			transform: 'R ' + Sim.Math.radToDeg(self.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
+		this.driveToIndicator.attr({
+			transform: 'R ' + Sim.Math.radToDeg(this.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
 		});
+	}
+
+	if (this.spawnBallActive) {
+		pos = this.translateCoords(e.clientX, event.clientY);
+
+		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius);
+
+		this.spawnBallIndicator.attr({
+			cx: pos.x,
+			cy: pos.y
+		});
+	}
+};
+
+Sim.Renderer.prototype.onContainerClick = function(e) {
+	var pos;
+		
+	if (this.driveToActive) {
+		pos = this.translateCoords(e.clientX, e.clientY);
+
+		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+
+		this.driveToIndicator.hide();
+
+		this.showClickAt(pos.x, pos.y);
+
+		this.fire({
+			type: Sim.Renderer.Event.DRIVE_TO_REQUESTED,
+			x: pos.x,
+			y: pos.y,
+			orientation: this.driveToOrientation
+		});
+
+		this.driveToActive = false;
+	}
+	
+	if (this.spawnBallActive) {
+		pos = this.translateCoords(e.clientX, e.clientY);
+
+		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius);
+
+		this.spawnBallIndicator.hide();
+
+		this.showClickAt(pos.x, pos.y);
+
+		this.fire({
+			type: Sim.Renderer.Event.SPAWN_BALL_REQUESTED,
+			x: pos.x,
+			y: pos.y
+		});
+
+		this.spawnBallActive = false;
+	}
+};
+
+Sim.Renderer.prototype.onMouseWheel = function(e, delta, deltaX, deltaY) {
+	this.driveToOrientation = (this.driveToOrientation + delta * Math.PI / 8) % (Math.PI * 2);
+		
+	var pos = this.translateCoords(e.clientX, e.clientY);
+
+	Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+
+	this.driveToIndicator.attr({
+		transform: 'R ' + Sim.Math.radToDeg(this.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
+	});
+};
+
+Sim.Renderer.prototype.showClickAt = function(x, y) {
+	var indicator = this.c.circle(x, y, 0.0);
+
+	indicator.attr({
+		'fill': 'none',
+		'stroke': '#F00',
+		'stroke-width': 5
+	}).animate({
+		r: 0.5,
+		opacity: 0
+	}, 250, null, function() {
+		this.remove();
 	});
 };
 
@@ -227,6 +277,7 @@ Sim.Renderer.prototype.draw = function() {
 	this.drawGoals();
 	this.drawLocalization();
 	this.drawDriveTo();
+	this.drawSpawnBall();
 	//this.drawGrid();
 };
 
@@ -350,9 +401,30 @@ Sim.Renderer.prototype.drawDriveTo = function() {
 	}).hide();
 };
 
+Sim.Renderer.prototype.drawSpawnBall = function() {
+	this.spawnBallIndicator = this.c.circle(0, 0, sim.conf.ball.radius)
+	
+	this.spawnBallIndicator.attr({
+		stroke: 'none',
+		fill: 'rgba(255, 0, 0, 0.5)'
+	}).hide();
+};
+
 Sim.Renderer.prototype.showDriveTo = function() {
 	this.driveToIndicator.show();
 	this.driveToActive = true;
+};
+
+Sim.Renderer.prototype.showSpawnBall = function() {
+	this.spawnBallIndicator.show();
+	this.spawnBallActive = true;
+};
+
+Sim.Renderer.prototype.cancelActions = function() {
+	this.driveToIndicator.hide();
+	this.spawnBallIndicator.hide();
+	this.driveToActive = false;
+	this.spawnBallActive = false;
 };
 
 Sim.Renderer.prototype.getFieldOffsetTransformAttr = function() {

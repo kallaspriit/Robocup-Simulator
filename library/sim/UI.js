@@ -71,6 +71,10 @@ Sim.UI.prototype.initEventListeners = function() {
 	sim.renderer.bind(Sim.Renderer.Event.DRIVE_TO_REQUESTED, function(e) {
 		sim.game.getRobot(Sim.Game.Side.YELLOW).driveTo(e.x, e.y, e.orientation);
 	});
+	
+	sim.renderer.bind(Sim.Renderer.Event.SPAWN_BALL_REQUESTED, function(e) {
+		sim.game.addBall(new Sim.Ball(e.x, e.y));
+	});
 };
 
 Sim.UI.prototype.initMovementJoystick = function() {
@@ -124,6 +128,10 @@ Sim.UI.prototype.onKeyDown = function(key) {
 		sim.game.robots.yellow.kick();
 	} else if (key == 97 ||key == 49) {
 		sim.renderer.showDriveTo();
+	} else if (key == 98 ||key == 50) {
+		sim.renderer.showSpawnBall();
+	} else if (key == 27) {
+		sim.renderer.cancelActions();
 	}
 };
 
@@ -140,6 +148,10 @@ Sim.UI.prototype.isKeyDown = function(key) {
 Sim.UI.prototype.initTools = function() {
 	$('#drive-to-btn').click(function() {
 		sim.renderer.showDriveTo();
+	});
+	
+	$('#spawn-ball-btn').click(function() {
+		sim.renderer.showSpawnBall();
 	});
 };
 
