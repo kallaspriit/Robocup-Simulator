@@ -249,6 +249,21 @@ Sim.Renderer.prototype.showClickAt = function(x, y) {
 	});
 };
 
+Sim.Renderer.prototype.showCollisionAt = function(x, y) {
+	var indicator = this.c.circle(x, y, 0.0);
+
+	indicator.attr({
+		'fill': 'none',
+		'stroke': '#F00',
+		'stroke-width': 3
+	}).animate({
+		r: 0.25,
+		opacity: 0
+	}, 250, null, function() {
+		this.remove();
+	});
+};
+
 Sim.Renderer.prototype.translateCoords = function(clientX, clientY) {
 	var svg = this.c.canvas;
 	

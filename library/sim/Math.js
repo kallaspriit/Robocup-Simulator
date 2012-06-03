@@ -101,13 +101,45 @@ Sim.Math.collideCircles = function(a, b) {
 		combinedMass = a.mass + b.mass,
 		collisionWeightA = 2 * b.mass / combinedMass,
 		collisionWeightB = 2 * a.mass / combinedMass;
-	
+
 	a.velocityX += (collisionWeightA * xCollision);
 	a.velocityY += (collisionWeightA * yCollision);
 	b.velocityX -= (collisionWeightB * xCollision);
 	b.velocityY -= (collisionWeightB * yCollision);
 	
 	return true;
+};
+
+Sim.Math.collideWalls = function(obj, dt) {
+	var bounceMultiplier = obj.elasticity * -1,
+		initialVelocityX = obj.velocityX,
+		initialVelocityY = obj.velocityY;
+	
+	if (obj.x < obj.radius) {
+		obj.x = obj.radius;
+		obj.velocityX *= bounceMultiplier;
+	}
+	
+	if (obj.x > sim.conf.field.width - obj.radius) {
+		obj.x = sim.conf.field.width - obj.radius;
+		obj.velocityX *= bounceMultiplier;
+	}
+	
+	if (obj.y < obj.radius) {
+		obj.y = obj.radius;
+		obj.velocityY *= bounceMultiplier;
+	}
+	
+	if (obj.y > sim.conf.field.height - obj.radius) {
+		obj.y = sim.conf.field.height - obj.radius;
+		obj.velocityY *= bounceMultiplier;
+	}
+	
+	if (obj.velocityX != initialVelocityX || obj.velocityY != initialVelocityY) {
+		return true;
+	} else {
+		return false;
+	}
 };
 
 Sim.Math.getDistanceBetween = function(a, b) {

@@ -120,7 +120,7 @@ Sim.UI.prototype.initKeyboardControls = function() {
 };
 
 Sim.UI.prototype.onKeyDown = function(key) {
-	sim.dbg.console('Key down', key);
+	//sim.dbg.console('Key down', key);
 	
 	this.updateRobotDir();
 	
@@ -136,7 +136,7 @@ Sim.UI.prototype.onKeyDown = function(key) {
 };
 
 Sim.UI.prototype.onKeyUp = function(key) {
-	sim.dbg.console('Key up', key);
+	//sim.dbg.console('Key up', key);
 	
 	this.updateRobotDir();
 };

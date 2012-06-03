@@ -117,7 +117,9 @@ Sim.Game.prototype.stepBalls = function(dt) {
 	
 	for (var i = 0; i < this.balls.length; i++) {
 		for (var robotName in this.robots) {
-			Sim.Math.collideCircles(this.balls[i], this.robots[robotName]);
+			if (Sim.Math.collideCircles(this.balls[i], this.robots[robotName])) {
+				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
+			}
 		}
 		
 		for (var j = 0; j < this.balls.length; j++) {
@@ -125,10 +127,12 @@ Sim.Game.prototype.stepBalls = function(dt) {
 				continue;
 			}
 			
-			Sim.Math.collideCircles(this.balls[i], this.balls[j]);
+			if (Sim.Math.collideCircles(this.balls[i], this.balls[j])) {
+				sim.dbg.console('collided', this.balls[i], this.balls[j]);
+				
+				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
+			}
 		}
-		
-		this.balls[i].step(dt);
 		
 		if (this.isBallInYellowGoal(this.balls[i])) {
 			this.increaseBlueScore();
@@ -138,6 +142,12 @@ Sim.Game.prototype.stepBalls = function(dt) {
 			this.increaseYellowScore();
 			
 			removeBalls.push(i);
+		} else {
+			this.balls[i].step(dt);
+
+			if (Sim.Math.collideWalls(this.balls[i], dt)) {
+				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
+			}
 		}
 		
 		this.fire({

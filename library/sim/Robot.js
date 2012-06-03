@@ -315,7 +315,7 @@ Sim.Robot.prototype.setTargetDir = function(x, y, omega) {
 		this.targetOmega = omega;
 	}
 	
-	sim.dbg.console('set target', this.targetDir, this.targetOmega);
+	//sim.dbg.console('set target', this.targetDir, this.targetOmega);
 	
 	this.updateWheelSpeeds();
 	
