@@ -10,6 +10,7 @@ Sim.Robot = function(side, x, y, orientation) {
 	this.wheelOffset = 0.12;
 	this.cameraDistance = 5.0;
 	this.cameraWidth = 8.0;
+	this.kickerForce = 30.0;
 	this.dribbleAngle = Sim.Math.degToRad(20.0); // degrees each way
 	this.dribbledBall = null;
 	
@@ -52,6 +53,13 @@ Sim.Robot = function(side, x, y, orientation) {
 };
 
 Sim.Robot.prototype.step = function(dt) {
+	/*
+	if ((this.targetDir.x != 0 || this.targetDir.y != 0) && this.targetOmega != 0) {
+		this.targetDir = Sim.Math.rotatePoint(this.targetDir.x, this.targetDir.y, -1.0 * this.targetOmega * dt);
+	
+		this.updateWheelSpeeds();
+	}
+	*/
 	var movement = this.getMovement();
 	
 	this.lastMovement = movement;
@@ -307,6 +315,8 @@ Sim.Robot.prototype.setTargetDir = function(x, y, omega) {
 		this.targetOmega = omega;
 	}
 	
+	sim.dbg.console('set target', this.targetDir, this.targetOmega);
+	
 	this.updateWheelSpeeds();
 	
 	return this;
@@ -333,14 +343,7 @@ Sim.Robot.prototype.getTargetOmega = function() {
 };
 
 Sim.Robot.prototype.driveTo = function(x, y, orientation) {
-	var dir = $V2(x - this.x, y - this.y).toUnitVector();
-	
-	//dir = dir.rotate(this.orientation, {x: this.x, y: this.y});
-	dir = Sim.Math.rotatePoint(dir.x(), dir.y(), -this.orientation);
-	
-	sim.dbg.console('drive to', x, y, dir, this.orientation);
-	
-	this.setTargetDir(dir.x, dir.y);
+	this.queueCommand(new Sim.Cmd.DriveTo(x, y, orientation, 5, 0.01));
 };
 
 Sim.Robot.prototype.queueCommand = function(command) {
@@ -435,7 +438,7 @@ Sim.Robot.prototype.kick = function() {
 	
 	var dir = Sim.Math.dirBetween(this, this.dribbledBall);
 	
-	Sim.Math.addImpulse(this.dribbledBall, dir, -10.0, sim.game.lastStepDuration);
+	Sim.Math.addImpulse(this.dribbledBall, dir, -1 * this.kickerForce, sim.game.lastStepDuration);
 	
 	this.dribbledBall._dribbled = false;
 	this.dribbledBall = null;

@@ -129,8 +129,6 @@ Sim.Math.dirBetween = function(from, to) {
 Sim.Math.addImpulse = function(body, dir, magnitude, dt) {
 	var acceleration = dir.toUnitVector().multiply(magnitude / body.mass * dt);
 	
-	sim.dbg.console('impulse', body, dir, magnitude, 'ACC', acceleration);
-	
 	body.velocityX += acceleration.x();
 	body.velocityY += acceleration.y();
 };

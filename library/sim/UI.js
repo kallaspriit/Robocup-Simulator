@@ -1,11 +1,7 @@
 Sim.UI = function() {
 	this.movementJoystick = null;
 	this.forwardDown = false;
-	this.leftDown = false;
-	this.reverseDown = false;
-	this.rightDown = false;
-	this.turnRightDown = false;
-	this.turnLeftDown = false;
+	this.keystates = {};
 };
 
 Sim.UI.prototype = new Sim.EventTarget();
@@ -93,95 +89,52 @@ Sim.UI.prototype.initKeyboardControls = function() {
 	var self = this;
 
 	$(window).keydown(function(e) {
-		var ignore = false;
-		
-		switch (e.keyCode) {
-			case 87:
-				self.forwardDown = true;
-			break;
+		if (typeof(self.keystates[e.keyCode]) == 'undefined' || self.keystates[e.keyCode] == false) {
+			self.keystates[e.keyCode] = true;
 			
-			case 65:
-				self.leftDown = true;
-			break;
-			
-			case 83:
-				self.reverseDown = true;
-			break;
-			
-			case 68:
-				self.rightDown = true;
-			break;
-			
-			case 81:
-				self.turnLeftDown = true;
-			break;
-			
-			case 69:
-				self.turnRightDown = true;
-			break;
-			
-			case 32:
-				sim.game.robots.yellow.kick();
-			break;
-			
-			default:
-				ignore = true;
-			break;
-		}
-		
-		if (!ignore) {
-			self.updateRobotDir();
+			self.onKeyDown(e.keyCode);
 		}
 	});
 	
 	$(window).keyup(function(e) {
-		var ignore = false;
-		
-		switch (e.keyCode) {
-			case 87:
-				self.forwardDown = false;
-			break;
+		if (typeof(self.keystates[e.keyCode]) == 'undefined' || self.keystates[e.keyCode] == true) {
+			self.keystates[e.keyCode] = false;
 			
-			case 65:
-				self.leftDown = false;
-			break;
-			
-			case 83:
-				self.reverseDown = false;
-			break;
-			
-			case 68:
-				self.rightDown = false;
-			break;
-			
-			case 81:
-				self.turnLeftDown = false;
-			break;
-			
-			case 69:
-				self.turnRightDown = false;
-			break;
-			
-			default:
-				ignore = true;
-			break;
-		}
-		
-		if (!ignore) {
-			self.updateRobotDir();
+			self.onKeyUp(e.keyCode);
 		}
 	});
 	
 	$(window).blur(function() {
-		self.forwardDown = false;
-		self.leftDown = false;
-		self.reverseDown = false;
-		self.rightDown = false;
-		self.turnLeftDown = false;
-		self.turnRightDown = false;
+		for (var key in self.keystates) {
+			if (self.keystates[key] == true) {
+				self.onKeyUp(key);
+			}
+		}
 		
-		self.updateRobotDir();
+		self.keystates = {};
 	});
+};
+
+Sim.UI.prototype.onKeyDown = function(key) {
+	sim.dbg.console('Key down', key);
+	
+	this.updateRobotDir();
+	
+	if (key == 32) {
+		sim.game.robots.yellow.kick();
+	} else if (key == 97 ||key == 49) {
+		sim.renderer.showDriveTo();
+	}
+};
+
+Sim.UI.prototype.onKeyUp = function(key) {
+	sim.dbg.console('Key up', key);
+	
+	this.updateRobotDir();
+};
+
+Sim.UI.prototype.isKeyDown = function(key) {
+	return typeof(this.keystates[key]) != 'undefined' && this.keystates[key] == true;
 };
 
 Sim.UI.prototype.initTools = function() {
@@ -195,27 +148,34 @@ Sim.UI.prototype.initFullscreenToggle = function() {
 };
 
 Sim.UI.prototype.updateRobotDir = function() {
-	var speed = 1,
+	
+	var forwardDown = this.isKeyDown(87),
+		leftDown = this.isKeyDown(65),
+		reverseDown = this.isKeyDown(83),
+		rightDown = this.isKeyDown(68),
+		turnRightDown = this.isKeyDown(69),
+		turnLeftDown = this.isKeyDown(81),
+		speed = 1,
 		turnRate = Math.PI,
 		x = 0,
 		y = 0,
 		omega = 0;
 	
-	if (this.forwardDown) {
+	if (forwardDown) {
 		x = speed;
-	} else if (this.reverseDown) {
+	} else if (reverseDown) {
 		x = -speed;
 	}
 	
-	if (this.rightDown) {
+	if (rightDown) {
 		y = speed;
-	} else if (this.leftDown) {
+	} else if (leftDown) {
 		y = -speed;
 	}
 	
-	if (this.turnRightDown) {
+	if (turnRightDown) {
 		omega = turnRate;
-	} else if (this.turnLeftDown) {
+	} else if (turnLeftDown) {
 		omega = -turnRate;
 	}
 	
