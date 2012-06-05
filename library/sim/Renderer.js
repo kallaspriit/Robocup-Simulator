@@ -27,6 +27,7 @@
 Sim.Renderer = function(game) {
 	this.game = game;
 	this.robots = {};
+	this.ghosts = {};
 	this.balls = {};
 	this.ballCount = 0;
 	this.containerId = 'canvas';
@@ -127,20 +128,20 @@ Sim.Renderer.prototype.initGameListeners = function() {
 		self.updateRobot(e.name, e.robot);
 	});
 	
+	this.game.bind(Sim.Game.Event.GHOST_ADDED, function(e) {
+		self.addGhost(e.name, e.ghost);
+	});
+	
+	this.game.bind(Sim.Game.Event.GHOST_UPDATED, function(e) {
+		self.updateGhost(e.name, e.ghost);
+	});
+	
 	this.game.bind(Sim.Game.Event.SCORE_CHANGED, function(e) {
 		self.updateScore(e.yellowScore, e.blueScore);
 	});
 };
 
 Sim.Renderer.prototype.initEventListeners = function() {
-	/*$('#' + this.containerId).mousemove(function(e) {
-		sim.dbg.console('canvas move', e);
-	});
-	
-	this.field.mousemove(function(e) {
-		sim.dbg.console('move', e);
-	});*/
-	
 	var self = this;
 	
 	$(document.body).mousemove(function(e) {
@@ -179,6 +180,18 @@ Sim.Renderer.prototype.onMouseMove = function(e) {
 			cy: pos.y
 		});
 	}
+};
+
+Sim.Renderer.prototype.onMouseWheel = function(e, delta, deltaX, deltaY) {
+	this.driveToOrientation = (this.driveToOrientation + delta * Math.PI / 8) % (Math.PI * 2);
+		
+	var pos = this.translateCoords(e.clientX, e.clientY);
+
+	Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+
+	this.driveToIndicator.attr({
+		transform: 'R ' + Sim.Math.radToDeg(this.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
+	});
 };
 
 Sim.Renderer.prototype.onContainerClick = function(e) {
@@ -220,18 +233,6 @@ Sim.Renderer.prototype.onContainerClick = function(e) {
 
 		this.spawnBallActive = false;
 	}
-};
-
-Sim.Renderer.prototype.onMouseWheel = function(e, delta, deltaX, deltaY) {
-	this.driveToOrientation = (this.driveToOrientation + delta * Math.PI / 8) % (Math.PI * 2);
-		
-	var pos = this.translateCoords(e.clientX, e.clientY);
-
-	Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
-
-	this.driveToIndicator.attr({
-		transform: 'R ' + Sim.Math.radToDeg(this.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
-	});
 };
 
 Sim.Renderer.prototype.showClickAt = function(x, y) {
@@ -523,18 +524,18 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	this.c.setStart();
 	
 	var dirWidth = 0.03,
-		robotFrame = this.c.circle(0, 0, robot.radius),
-		robotDir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
+		frame = this.c.circle(0, 0, robot.radius),
+		dir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
 		cameraFocus1 = this.c.path(Sim.Util.polygonToPath(robot.cameraPoly1, robot.cameraDistance, 0)),
 		cameraFocus2 = this.c.path(Sim.Util.polygonToPath(robot.cameraPoly2, robot.cameraDistance * -1, 0)),
 		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
 	
-	robotFrame.attr({
+	frame.attr({
 		fill: color,
 		stroke: 'none'
 	});
 	
-	robotDir.attr({
+	dir.attr({
 		fill: '#FFF',
 		stroke: 'none'
 	});
@@ -549,8 +550,8 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		stroke: 'none'
 	});
 	
-	this.robots[name].frame = robotFrame;
-	this.robots[name].dir = robotDir;
+	this.robots[name].frame = frame;
+	this.robots[name].dir = dir;
 	this.robots[name].visual = this.c.setFinish();
 };
 
@@ -564,6 +565,65 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	});
 	
 	this.showCommandsQueue(this.robots[name].robot);
+};
+
+Sim.Renderer.prototype.addGhost = function(name, ghost) {
+	this.ghosts[name] = {
+		ghost: ghost
+	};
+	
+	this.c.setStart();
+	
+	if (
+		ghost.type == Sim.Ghost.Type.YELLOW_ROBOT
+		|| ghost.type == Sim.Ghost.Type.BLUE_ROBOT
+	) {
+		var dirWidth = 0.03,
+			dirLength = 0.125,
+			frameRadius = 0.05,
+			frame = this.c.circle(0, 0, frameRadius),
+			
+			dir = this.c.path('M-' + dirLength + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + dirLength + ' -' + (dirWidth / 2) + 'L' + dirLength + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
+			//cameraFocus1 = this.c.path(Sim.Util.polygonToPath(ghost.cameraPoly1, ghost.cameraDistance, 0)),
+			//cameraFocus2 = this.c.path(Sim.Util.polygonToPath(ghost.cameraPoly2, ghost.cameraDistance * -1, 0)),
+			color = ghost.type == Sim.Ghost.Type.YELLOW_ROBOT ? 'rgb(255, 255, 0)' : 'rgb(0, 0, 255)';
+
+		frame.attr({
+			fill: color,
+			stroke: 'none'
+		});
+
+		dir.attr({
+			fill: color,
+			stroke: 'none'
+		});
+
+		/*cameraFocus1.attr({
+			fill: 'rgba(255, 255, 255, 0.35)',
+			stroke: 'none'
+		});
+
+		cameraFocus2.attr({
+			fill: 'rgba(255, 255, 255, 0.35)',
+			stroke: 'none'
+		});*/
+
+		//this.ghosts[name].frame = frame;
+		//this.ghosts[name].dir = dir;
+		this.ghosts[name].visual = this.c.setFinish();
+	}
+};
+
+Sim.Renderer.prototype.updateGhost = function(name, ghost) {
+	if (typeof(this.ghosts[name]) == 'undefined') {
+		this.addRobot(name, ghost);
+	};
+	
+	this.ghosts[name].visual.attr({
+		transform: 'T' + ghost.x + ' ' + ghost.y + 'R' + Raphael.deg(ghost.orientation)
+	});
+	
+	//this.showCommandsQueue(this.ghosts[name].ghost);
 };
 
 Sim.Renderer.prototype.updateScore = function(yellowScore, blueScore) {

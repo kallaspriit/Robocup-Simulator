@@ -20,5 +20,19 @@ Sim.Config = {
 	},
 	simulation: {
 		targetFramerate: 60
+	},
+	yellowRobot: {
+		startX: 0.125,
+		startY: 0.125,
+		startOrientation: Math.PI / 4,
+		radius: 0.125,
+		mass: 2.5,
+		wheelRadius: 0.025,
+		wheelOffset: 0.12,
+		cameraDistance: 5.0,
+		cameraWidth: 8.0,
+		kickerForce: 30.0,
+		dribblerAngle: Sim.Math.degToRad(20.0),
+		omegaDeviation: 2.5
 	}
 };

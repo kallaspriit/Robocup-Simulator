@@ -28,6 +28,13 @@ Sim.Util.random = function(min, max) {
 	return Math.floor(min + (1 + max - min) * Math.random());
 }
 
+Sim.Util.randomGaussian = function(deviation, mean) {
+	mean = mean || 0;
+	deviation = deviation || 0.5;
+	
+	return ((Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1)) * deviation + mean;
+};
+
 Sim.Util.confine = function(
 	obj,
 	xMin,

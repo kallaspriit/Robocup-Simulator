@@ -1,5 +1,6 @@
 Sim.Game = function() {
 	this.robots = {};
+	this.ghosts = {};
 	this.balls = [];
 	this.fpsCounter = null;
 	this.timeStep = 1.0 / sim.conf.simulation.targetFramerate;
@@ -18,6 +19,8 @@ Sim.Game.Event = {
 	BALL_REMOVED: 'ball-removed',
 	ROBOT_ADDED: 'robot-added',
 	ROBOT_UPDATED: 'robot-updated',
+	GHOST_ADDED: 'ghost-added',
+	GHOST_UPDATED: 'ghost-updated',
 	SCORE_CHANGED: 'score-changed'
 };
 
@@ -42,6 +45,14 @@ Sim.Game.prototype.getRobot = function(name) {
 	}
 };
 
+Sim.Game.prototype.getGhost = function(name) {
+	if (typeof(this.ghosts[name]) == 'object') {
+		return this.ghosts[name];
+	} else {
+		return null;
+	}
+};
+
 Sim.Game.prototype.addBall = function(ball) {
 	this.balls.push(ball);
 
@@ -61,6 +72,16 @@ Sim.Game.prototype.addRobot = function(name, robot) {
 	});
 };
 
+Sim.Game.prototype.addGhost = function(name, ghost) {
+	this.ghosts[name] = ghost;
+	
+	this.fire({
+		type: Sim.Game.Event.GHOST_ADDED,
+		name: name,
+		ghost: ghost
+	});
+};
+
 Sim.Game.prototype.initBalls = function() {
 	for (var i = 0; i < 11; i++) {
 		var x = Sim.Util.random(sim.conf.ball.radius * 1000, (sim.conf.field.width - sim.conf.ball.radius) * 1000) / 1000.0,
@@ -71,14 +92,30 @@ Sim.Game.prototype.initBalls = function() {
 };
 
 Sim.Game.prototype.initRobots = function() {
-	var yellowRobot = new Sim.Robot(
-		Sim.Game.Side.YELLOW,
-		0.125,
-		0.125,
-		Math.PI / 4
-	);
-		
+	var yellowGhost = new Sim.Ghost(
+			Sim.Ghost.Type.YELLOW_ROBOT,
+			sim.conf.yellowRobot.startX,
+			sim.conf.yellowRobot.startY,
+			sim.conf.yellowRobot.startOrientation
+		),
+		yellowRobot = new Sim.Robot(
+			Sim.Game.Side.YELLOW,
+			sim.conf.yellowRobot.startX,
+			sim.conf.yellowRobot.startY,
+			sim.conf.yellowRobot.startOrientation,
+			sim.conf.yellowRobot.radius,
+			sim.conf.yellowRobot.mass,
+			sim.conf.yellowRobot.wheelRadius,
+			sim.conf.yellowRobot.wheelOffset,
+			sim.conf.yellowRobot.cameraDistance,
+			sim.conf.yellowRobot.cameraWidth,
+			sim.conf.yellowRobot.kickerForce,
+			sim.conf.yellowRobot.dribblerAngle,
+			sim.conf.yellowRobot.omegaDeviation
+		);
+	
 	this.addRobot(Sim.Game.Side.YELLOW, yellowRobot);
+	this.addGhost(Sim.Game.Side.YELLOW, yellowGhost);
 };
 
 Sim.Game.prototype.step = function() {
@@ -172,23 +209,31 @@ Sim.Game.prototype.stepBalls = function(dt) {
 
 Sim.Game.prototype.stepRobots = function(dt) {
 	for (var name in this.robots) {
-		var robot = this.robots[name];
+		var robot = this.robots[name],
+			ghost = this.ghosts[name];
 		
 		robot.step(dt);
 		
-		Sim.Util.confine(
-			robot, 
-			0,
-			sim.conf.field.width,
-			0,
-			sim.conf.field.height,
-			robot.radius
-		);
+		if (typeof(ghost) == 'object') {
+			ghost.update(
+				robot.virtualX,
+				robot.virtualY,
+				robot.virtualOrientation,
+				robot.virtualVelocityX,
+				robot.virtualVelocityY
+			);
+		}
 		
 		this.fire({
 			type: Sim.Game.Event.ROBOT_UPDATED,
 			name: name,
 			robot: robot
+		});
+		
+		this.fire({
+			type: Sim.Game.Event.GHOST_UPDATED,
+			name: name,
+			ghost: ghost
 		});
 	}
 };

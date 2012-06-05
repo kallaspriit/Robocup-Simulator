@@ -41,6 +41,25 @@ BODY {
 	padding: 6px 12px;
 }
 
+/* Dialog 
+.dialog {
+	position: absolute;
+	width: 300px;
+	left: 50%;
+	top: 50%;
+	padding: 5px;
+	margin-left: -155px;
+	margin-top: -130px;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+.dialog .dialog-inner {
+	background-color: #FFF;
+	padding: 20px 40px;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}*/
+
 /* Joystick */
 .joystick {
 	position: absolute;

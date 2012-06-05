@@ -120,7 +120,7 @@ Sim.UI.prototype.initKeyboardControls = function() {
 };
 
 Sim.UI.prototype.onKeyDown = function(key) {
-	//sim.dbg.console('Key down', key);
+	sim.dbg.console('Key down', key);
 	
 	this.updateRobotDir();
 	
@@ -130,6 +130,10 @@ Sim.UI.prototype.onKeyDown = function(key) {
 		sim.renderer.showDriveTo();
 	} else if (key == 98 ||key == 50) {
 		sim.renderer.showSpawnBall();
+	} else if (key == 99 ||key == 51) {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).resetDeviation();
+	} else if (key == 100 ||key == 52) {
+		this.showNoiseDialog();
 	} else if (key == 27) {
 		sim.renderer.cancelActions();
 	}
@@ -146,6 +150,8 @@ Sim.UI.prototype.isKeyDown = function(key) {
 };
 
 Sim.UI.prototype.initTools = function() {
+	var self = this;
+	
 	$('#drive-to-btn').click(function() {
 		sim.renderer.showDriveTo();
 	});
@@ -153,10 +159,26 @@ Sim.UI.prototype.initTools = function() {
 	$('#spawn-ball-btn').click(function() {
 		sim.renderer.showSpawnBall();
 	});
+	
+	$('#reset-deviation-btn').click(function() {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).resetDeviation();
+	});
+	
+	$('#set-noise-btn').click(function() {
+		self.showNoiseDialog();
+	});
 };
 
 Sim.UI.prototype.initFullscreenToggle = function() {
 	
+};
+
+Sim.UI.prototype.showNoiseDialog = function() {
+	var robot = sim.game.getRobot(Sim.Game.Side.YELLOW),
+		newLevel = parseFloat(window.prompt('Enter new noise level', robot.omegaDeviation));
+
+	robot.omegaDeviation = newLevel;
+	robot.resetDeviation();
 };
 
 Sim.UI.prototype.updateRobotDir = function() {
@@ -191,7 +213,7 @@ Sim.UI.prototype.updateRobotDir = function() {
 		omega = -turnRate;
 	}
 	
-	sim.game.robots.yellow.setTargetDir(x, y, omega);
+	sim.game.getRobot(Sim.Game.Side.YELLOW).setTargetDir(x, y, omega);
 };
 
 Sim.UI.Joystick = function(
