@@ -27,6 +27,7 @@ Sim.Robot = function(
 	this.dribbleAngle = dribbleAngle;
 	this.omegaDeviation = omegaDeviation;
 	
+	this.vision = new Sim.Vision();
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
@@ -138,70 +139,46 @@ Sim.Robot.prototype.step = function(dt) {
 };
 
 Sim.Robot.prototype.updateVision = function() {
-	var currentCameraPoly1 = this.cameraPoly1.rotate(this.orientation).translate(this.x, this.y),
-		currentCameraPoly2 = this.cameraPoly2.rotate(this.orientation).translate(this.x, this.y),
-		ball,
-		distance,
-		angle,
-		i;
+	var polygons = [
+			this.cameraPoly1,
+			this.cameraPoly2
+		],
+		balls = [],
+		goals = [],
+		i,
+		j;
 	
 	for (i = 0; i < sim.game.balls.length; i++) {
-		ball = sim.game.balls[i];
-
-		if (
-			currentCameraPoly1.containsPoint(ball.x, ball.y)
-			|| currentCameraPoly2.containsPoint(ball.x, ball.y)
-		) {
-			ball._yellowVisible = true;
-			
-			distance = Sim.Math.getDistanceBetween(this, ball) - this.radius;
-			angle = Sim.Math.getAngleBetween(this, ball, this.orientation);
-		
-			//sim.dbg.box('#' + i, Sim.Math.round(distance, 3) + ' / ' +Sim.Math.round(Sim.Math.radToDeg(angle), 1));
-		} else {
-			ball._yellowVisible = false;
-			
-			//sim.dbg.box('#' + i, 'n/a');
-		}
+		sim.game.balls[i]._yellowVisible = false;
 	}
 	
-	this.locateByDistances(currentCameraPoly1, currentCameraPoly2);
-	this.locateByAngles(currentCameraPoly1, currentCameraPoly2);
+	for (i = 0; i < polygons.length; i++) {
+		balls = balls.concat(this.vision.getVisibleBalls(polygons[i], this.x, this.y, this.orientation));
+		goals = goals.concat(this.vision.getVisibleGoals(polygons[i], this.x, this.y, this.orientation));
+	}
+	
+	for (j = 0; j < balls.length; j++) {
+		balls[j].ball._yellowVisible = true;
+	}
+	
+	this.localizeByDistances(goals);
+	this.localizeByAngles(goals);
 };
 
-Sim.Robot.prototype.locateByDistances = function(currentCameraPoly1, currentCameraPoly2) {
-	var yellowGoalPos = {
-			x: 0,
-			y: sim.conf.field.height / 2
-		},
-		blueGoalPos = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2
-		},
-		yellowDistance = null,
-		blueDistance = null;
+Sim.Robot.prototype.localizeByDistances = function(goals) {
+	var yellowDistance = null,
+		blueDistance = null,
+		i,
+		goal;
 	
-	
-	if (
-		currentCameraPoly1.containsPoint(yellowGoalPos.x, yellowGoalPos.y)
-		|| currentCameraPoly2.containsPoint(yellowGoalPos.x, yellowGoalPos.y)
-	) {
-		yellowDistance = Sim.Math.getDistanceBetween(this, yellowGoalPos);
-			
-		//sim.dbg.box('Yellow', yellowDistance, 1);
-	} else {
-		//sim.dbg.box('Yellow', 'n/a');
-	}
-	
-	if (
-		currentCameraPoly1.containsPoint(blueGoalPos.x, blueGoalPos.y)
-		|| currentCameraPoly2.containsPoint(blueGoalPos.x, blueGoalPos.y)
-	) {
-		blueDistance = Sim.Math.getDistanceBetween(this, blueGoalPos);
-			
-		//sim.dbg.box('Blue', blueDistance, 1);
-	} else {
-		//sim.dbg.box('Blue', 'n/a');
+	for (i = 0; i < goals.length; i++) {
+		goal = goals[i];
+		
+		if (goal.side == Sim.Game.Side.YELLOW) {
+			yellowDistance = goal.distance;
+		} else if (goal.side == Sim.Game.Side.BLUE) {
+			blueDistance = goal.distance;
+		}
 	}
 	
 	sim.renderer.l1.hide();
@@ -210,7 +187,15 @@ Sim.Robot.prototype.locateByDistances = function(currentCameraPoly1, currentCame
 	sim.renderer.l2c.hide();
 	
 	if (yellowDistance != null && blueDistance != null) {
-		var yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, yellowDistance),
+		var yellowGoalPos = {
+				x: 0,
+				y: sim.conf.field.height / 2
+			},
+			blueGoalPos = {
+				x: sim.conf.field.width,
+				y: sim.conf.field.height / 2
+			},
+			yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, yellowDistance),
 			blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, blueDistance),
 			intersections = yellowCircle.getIntersections(blueCircle);
 		
@@ -239,73 +224,29 @@ Sim.Robot.prototype.locateByDistances = function(currentCameraPoly1, currentCame
 			cy: blueGoalPos.y,
 			r: blueDistance
 		}).show();
+		
+		return true;
 	}
-}
-
-Sim.Robot.prototype.locateByAngles = function(currentCameraPoly1, currentCameraPoly2) {
-	var yellowGoalPos1 = {
-			x: 0,
-			y: sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
-		},
-		yellowGoalPos2 = {
-			x: 0,
-			y: sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
-		},
-		blueGoalPos1 = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
-		},
-		blueGoalPos2 = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
-		};
 	
+	return false;
+};
+
+Sim.Robot.prototype.localizeByAngles = function(goals) {
 	var yellowGoalAngle = null,
-		blueGoalAngle = null;
+		blueGoalAngle = null,
+		i,
+		goal;
 	
-	if (
-		(
-			currentCameraPoly1.containsPoint(yellowGoalPos1.x, yellowGoalPos1.y)
-			&& currentCameraPoly1.containsPoint(yellowGoalPos2.x, yellowGoalPos2.y)
-		)
-		|| (
-			currentCameraPoly2.containsPoint(yellowGoalPos1.x, yellowGoalPos1.y)
-			&& currentCameraPoly2.containsPoint(yellowGoalPos2.x, yellowGoalPos2.y)
-		)
-	) {
-		var distance1 = Sim.Math.getDistanceBetween(this, yellowGoalPos1) - this.radius,
-			distance2 = Sim.Math.getDistanceBetween(this, yellowGoalPos2) - this.radius,
-			angle1 = Sim.Math.getAngleBetween(this, yellowGoalPos1, this.orientation),
-			angle2 = Sim.Math.getAngleBetween(this, yellowGoalPos2, this.orientation);
+	for (i = 0; i < goals.length; i++) {
+		goal = goals[i];
 		
-		yellowGoalAngle = Math.abs(angle1 - angle2);
-
-		//sim.dbg.box('Yellow', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1));
-	} else {
-		//sim.dbg.box('Yellow', 'n/a');
+		if (goal.side == Sim.Game.Side.YELLOW) {
+			yellowGoalAngle = goal.edgeAngleDiff;
+		} else if (goal.side == Sim.Game.Side.BLUE) {
+			blueGoalAngle = goal.edgeAngleDiff;
+		}
 	}
 	
-	if (
-		(
-			currentCameraPoly1.containsPoint(blueGoalPos1.x, blueGoalPos1.y)
-			&& currentCameraPoly1.containsPoint(blueGoalPos2.x, blueGoalPos2.y)
-		)
-		|| (
-			currentCameraPoly2.containsPoint(blueGoalPos1.x, blueGoalPos1.y)
-			&& currentCameraPoly2.containsPoint(blueGoalPos2.x, blueGoalPos2.y)
-		)
-	) {
-		var distance1 = Sim.Math.getDistanceBetween(this, blueGoalPos1) - this.radius,
-			distance2 = Sim.Math.getDistanceBetween(this, blueGoalPos2) - this.radius,
-			angle1 = Sim.Math.getAngleBetween(this, blueGoalPos1, this.orientation),
-			angle2 = Sim.Math.getAngleBetween(this, blueGoalPos2, this.orientation);
-		
-		blueGoalAngle = Math.abs(angle1 - angle2);
-
-		//sim.dbg.box('Blue', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1));
-	} else {
-		//sim.dbg.box('Blue', 'n/a');
-	}
 	
 	sim.renderer.a1c.hide();
 	sim.renderer.a2c.hide();
@@ -338,7 +279,7 @@ Sim.Robot.prototype.locateByAngles = function(currentCameraPoly1, currentCameraP
 	} else {
 		//sim.dbg.box('Goal angles', 'n/a');
 	}
-}
+};
 
 /*
 Sim.Robot.prototype.getOmega = function() {
