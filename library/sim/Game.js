@@ -111,7 +111,8 @@ Sim.Game.prototype.initRobots = function() {
 			sim.conf.yellowRobot.cameraWidth,
 			sim.conf.yellowRobot.kickerForce,
 			sim.conf.yellowRobot.dribblerAngle,
-			sim.conf.yellowRobot.omegaDeviation
+			sim.conf.yellowRobot.omegaDeviation,
+			sim.conf.yellowRobot.distanceDeviation
 		);
 	
 	this.addRobot(Sim.Game.Side.YELLOW, yellowRobot);

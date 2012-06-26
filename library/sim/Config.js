@@ -33,6 +33,7 @@ Sim.Config = {
 		cameraWidth: 8.0,
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
-		omegaDeviation: 2.5
+		omegaDeviation: 2.5,
+		distanceDeviation: 0.01
 	}
 };

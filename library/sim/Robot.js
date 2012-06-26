@@ -11,7 +11,8 @@ Sim.Robot = function(
 	cameraWidth,
 	kickerForce,
 	dribbleAngle,
-	omegaDeviation
+	omegaDeviation,
+	distanceDeviation
 ) {
 	this.side = side;
 	this.x = x;
@@ -26,6 +27,7 @@ Sim.Robot = function(
 	this.kickerForce = kickerForce;
 	this.dribbleAngle = dribbleAngle;
 	this.omegaDeviation = omegaDeviation;
+	this.distanceDeviation = distanceDeviation;
 	
 	this.vision = new Sim.Vision();
 	this.dribbledBall = null;
@@ -42,9 +44,11 @@ Sim.Robot = function(
 	this.virtualVelocityX = this.velocityX;
 	this.virtualVelocityY = this.velocityY;
 	
+	/*
 	this.wheelOmegas = [
 		0.0, 0.0, 0.0
 	];
+	
 	this.wheelAngles = [
 		Sim.Math.degToRad(-60.0),
 		Sim.Math.degToRad(120),
@@ -56,8 +60,13 @@ Sim.Robot = function(
 		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
 		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset]
 	]);
+	*/
+    
+	this.wheelOmegas = [
+		0.0, 0.0, 0.0, 0.0
+	];
 	
-	/*this.wheelAngles = [
+	this.wheelAngles = [
 		Sim.Math.degToRad(-135.0),
 		Sim.Math.degToRad(-45.0),
 		Sim.Math.degToRad(45.0),
@@ -69,9 +78,33 @@ Sim.Robot = function(
 		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
 		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset],
 		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
-	]);*/
+	]);
+	this.omegaMatrixA = $M([
+		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset]
+	]);
+	this.omegaMatrixB = $M([
+		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
+	]);
+	this.omegaMatrixC = $M([
+		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
+	]);
+	this.omegaMatrixD = $M([
+		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset],
+		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
+	]);
 	
 	this.omegaMatrixInv = this.omegaMatrix.inverse();
+	this.omegaMatrixInvA = this.omegaMatrixA.inverse();
+	this.omegaMatrixInvB = this.omegaMatrixB.inverse();
+	this.omegaMatrixInvC = this.omegaMatrixC.inverse();
+	this.omegaMatrixInvD = this.omegaMatrixD.inverse();
 	
 	this.cameraPoly1 = new Sim.Math.Polygon([
 		{x: 0, y: 0},
@@ -134,7 +167,7 @@ Sim.Robot.prototype.step = function(dt) {
 	this.virtualX += this.virtualVelocityX * dt;
 	this.virtualY += this.virtualVelocityY * dt;
 	
-	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2));
+	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2) + ',' + Sim.Math.round(this.wheelOmegas[3], 2));
 	sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
 };
 
@@ -186,49 +219,56 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	sim.renderer.l2.hide();
 	sim.renderer.l2c.hide();
 	
-	if (yellowDistance != null && blueDistance != null) {
-		var yellowGoalPos = {
-				x: 0,
-				y: sim.conf.field.height / 2
-			},
-			blueGoalPos = {
-				x: sim.conf.field.width,
-				y: sim.conf.field.height / 2
-			},
-			yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, yellowDistance),
-			blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, blueDistance),
-			intersections = yellowCircle.getIntersections(blueCircle);
-		
-		if (intersections === false) {
-			return false;
-		}
-		
-		sim.renderer.l1.attr({
-			cx: intersections.x1,
-			cy: intersections.y1
-		}).show();
-		
-		sim.renderer.l1c.attr({
-			cx: yellowGoalPos.x,
-			cy: yellowGoalPos.y,
-			r: yellowDistance
-		}).show();
-		
-		sim.renderer.l2.attr({
-			cx: intersections.x2,
-			cy: intersections.y2
-		}).show();
-		
-		sim.renderer.l2c.attr({
-			cx: blueGoalPos.x,
-			cy: blueGoalPos.y,
-			r: blueDistance
-		}).show();
-		
-		return true;
+	if (yellowDistance == null || blueDistance == null) {
+		return false;
 	}
+	/*
+	var noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation),
+		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(this.distanceDeviation);
+	*/
 	
-	return false;
+	var noisyYellowDistance = yellowDistance,
+		noisyBlueDistance = blueDistance;
+	
+	var yellowGoalPos = {
+			x: 0,
+			y: sim.conf.field.height / 2
+		},
+		blueGoalPos = {
+			x: sim.conf.field.width,
+			y: sim.conf.field.height / 2
+		},
+		yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, noisyYellowDistance),
+		blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, noisyBlueDistance),
+		intersections = yellowCircle.getIntersections(blueCircle);
+
+	if (intersections === false) {
+		return false;
+	}
+
+	sim.renderer.l1.attr({
+		cx: intersections.x1,
+		cy: intersections.y1
+	}).show();
+
+	sim.renderer.l1c.attr({
+		cx: yellowGoalPos.x,
+		cy: yellowGoalPos.y,
+		r: yellowDistance
+	}).show();
+
+	sim.renderer.l2.attr({
+		cx: intersections.x2,
+		cy: intersections.y2
+	}).show();
+
+	sim.renderer.l2c.attr({
+		cx: blueGoalPos.x,
+		cy: blueGoalPos.y,
+		r: blueDistance
+	}).show();
+
+	return true;
 };
 
 Sim.Robot.prototype.localizeByAngles = function(goals) {
@@ -251,34 +291,34 @@ Sim.Robot.prototype.localizeByAngles = function(goals) {
 	sim.renderer.a1c.hide();
 	sim.renderer.a2c.hide();
 	
-	if (yellowGoalAngle != null && blueGoalAngle != null) {
-		var yellowRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(yellowGoalAngle))),
-			blueRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(blueGoalAngle))),
-			centerY = sim.conf.field.height / 2.0,
-			yellowCenterX = yellowRadius * Math.cos(yellowGoalAngle),
-			blueCenterX = sim.conf.field.width - blueRadius * Math.cos(blueGoalAngle),
-			yellowCircle = new Sim.Math.Circle(yellowCenterX, centerY, yellowRadius),
-			blueCircle = new Sim.Math.Circle(blueCenterX, centerY, blueRadius),
-			intersections = yellowCircle.getIntersections(blueCircle);
-			
-		sim.renderer.a1c.attr({
-			cx: yellowCircle.x,
-			cy: yellowCircle.y,
-			r: yellowCircle.radius
-		}).show();
-
-		sim.renderer.a2c.attr({
-			cx: blueCircle.x,
-			cy: blueCircle.y,
-			r: blueCircle.radius
-		}).show();
-		
-		//sim.dbg.console('intersections', intersections);
-
-		//sim.dbg.box('Goal angles', Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1) + ' (' + Sim.Math.round(yellowRadius, 2) + '); ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1) + '(' + Sim.Math.round(blueRadius, 2) + ')');
-	} else {
-		//sim.dbg.box('Goal angles', 'n/a');
+	if (yellowGoalAngle == null || blueGoalAngle == null) {
+		return false;
 	}
+	
+	var yellowRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(yellowGoalAngle))),
+		blueRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(blueGoalAngle))),
+		centerY = sim.conf.field.height / 2.0,
+		yellowCenterX = yellowRadius * Math.cos(yellowGoalAngle),
+		blueCenterX = sim.conf.field.width - blueRadius * Math.cos(blueGoalAngle),
+		yellowCircle = new Sim.Math.Circle(yellowCenterX, centerY, yellowRadius),
+		blueCircle = new Sim.Math.Circle(blueCenterX, centerY, blueRadius),
+		intersections = yellowCircle.getIntersections(blueCircle);
+
+	sim.renderer.a1c.attr({
+		cx: yellowCircle.x,
+		cy: yellowCircle.y,
+		r: yellowCircle.radius
+	}).show();
+
+	sim.renderer.a2c.attr({
+		cx: blueCircle.x,
+		cy: blueCircle.y,
+		r: blueCircle.radius
+	}).show();
+		
+	//sim.dbg.console('intersections', intersections);
+
+	//sim.dbg.box('Goal angles', Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1) + ' (' + Sim.Math.round(yellowRadius, 2) + '); ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1) + '(' + Sim.Math.round(blueRadius, 2) + ')');
 };
 
 /*
@@ -296,15 +336,30 @@ Sim.Robot.prototype.getMovement = function(noisy) {
 		omegas = [
 			this.wheelOmegas[0] + Sim.Util.randomGaussian(this.omegaDeviation),
 			this.wheelOmegas[1] + Sim.Util.randomGaussian(this.omegaDeviation),
-			this.wheelOmegas[2] + Sim.Util.randomGaussian(this.omegaDeviation)
-			//,this.wheelOmegas[3] + Sim.Util.randomGaussian(0.1),
+			this.wheelOmegas[2] + Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[3] + Sim.Util.randomGaussian(this.omegaDeviation),
 		];
 	}
 	
-	var wheelMatrix = $M([
+	var wheelMatrixA = $M([
 			[omegas[0]],
 			[omegas[1]],
 			[omegas[2]]
+		]),
+		wheelMatrixB = $M([
+			[omegas[0]],
+			[omegas[1]],
+			[omegas[3]]
+		]),
+		wheelMatrixC = $M([
+			[omegas[0]],
+			[omegas[2]],
+			[omegas[3]]
+		]),
+		wheelMatrixD = $M([
+			[omegas[1]],
+			[omegas[2]],
+			[omegas[3]]
 		]),
 		/*wheelMatrix = $M([
 			[omegas[0]],
@@ -312,12 +367,17 @@ Sim.Robot.prototype.getMovement = function(noisy) {
 			[omegas[2]],
 			[omegas[3]]
 		]),*/
-		movement = this.omegaMatrixInv.multiply(wheelMatrix).multiply(this.wheelRadius);
+		movementA = this.omegaMatrixInvA.multiply(wheelMatrixA).multiply(this.wheelRadius),
+		movementB = this.omegaMatrixInvB.multiply(wheelMatrixB).multiply(this.wheelRadius),
+		movementC = this.omegaMatrixInvC.multiply(wheelMatrixC).multiply(this.wheelRadius),
+		movementD = this.omegaMatrixInvD.multiply(wheelMatrixD).multiply(this.wheelRadius);
+	
+	
 	
 	return {
-		velocityX: movement.elements[0][0],
-		velocityY: movement.elements[1][0],
-		omega: movement.elements[2][0]
+		velocityX: (movementA.elements[0][0] + movementB.elements[0][0] + movementC.elements[0][0] + movementD.elements[0][0]) / 4.0,
+		velocityY: (movementA.elements[1][0] + movementB.elements[1][0] + movementC.elements[1][0] + movementD.elements[1][0]) / 4.0,
+		omega: (movementA.elements[2][0] + movementB.elements[2][0] + movementC.elements[2][0] + movementD.elements[2][0]) / 4.0
 	};
 };
 
@@ -384,6 +444,7 @@ Sim.Robot.prototype.updateWheelSpeeds = function() {
 	this.wheelOmegas[0] = wheelOmegas[0][0];
 	this.wheelOmegas[1] = wheelOmegas[1][0];
 	this.wheelOmegas[2] = wheelOmegas[2][0];
+	this.wheelOmegas[3] = wheelOmegas[3][0];
 };
 
 Sim.Robot.prototype.turnBy = function(angle, duration) {
