@@ -71,8 +71,8 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 		goals = [];
 	
 	if (globalPolygon.containsPoint(yellowCenterPos.x, yellowCenterPos.y)) {
-		yellowDistance = Sim.Math.getDistanceBetween(pos, yellowCenterPos);
-		yellowAngle = Sim.Math.getAngleBetween(pos, yellowCenterPos, orientation);
+		yellowDistance = Sim.Math.getDistanceBetween(yellowCenterPos, pos);
+		yellowAngle = Sim.Math.getAngleBetween(yellowCenterPos, pos, orientation);
 		
 		leftEdgeDistance = null;
 		rightEdgeDistance = null;
@@ -84,10 +84,10 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 			globalPolygon.containsPoint(yellowLeftPos.x, yellowLeftPos.y)
 			&& globalPolygon.containsPoint(yellowRightPos.x, yellowRightPos.y)
 		) {
-			leftEdgeDistance = Sim.Math.getDistanceBetween(pos, yellowLeftPos);
-			rightEdgeDistance = Sim.Math.getDistanceBetween(pos, yellowRightPos);
-			leftEdgeAngle = Sim.Math.getAngleBetween(pos, yellowLeftPos, orientation);
-			rightEdgeAngle = Sim.Math.getAngleBetween(pos, yellowRightPos, orientation);
+			leftEdgeDistance = Sim.Math.getDistanceBetween(yellowLeftPos, pos);
+			rightEdgeDistance = Sim.Math.getDistanceBetween(yellowRightPos, pos);
+			leftEdgeAngle = Sim.Math.getAngleBetween(yellowLeftPos, pos, orientation);
+			rightEdgeAngle = Sim.Math.getAngleBetween(yellowRightPos, pos, orientation);
 			edgeAngleDiff = Math.abs(leftEdgeAngle - rightEdgeAngle);
 
 			//sim.dbg.box('Yellow', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1));
@@ -108,8 +108,8 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 	}
 	
 	if (globalPolygon.containsPoint(blueCenterPos.x, blueCenterPos.y)) {
-		blueDistance = Sim.Math.getDistanceBetween(pos, blueCenterPos);
-		blueAngle = Sim.Math.getAngleBetween(pos, blueCenterPos, orientation);
+		blueDistance = Sim.Math.getDistanceBetween(blueCenterPos, pos);
+		blueAngle = Sim.Math.getAngleBetween(blueCenterPos, pos, orientation);
 		
 		leftEdgeDistance = null;
 		rightEdgeDistance = null;
@@ -121,10 +121,10 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 			globalPolygon.containsPoint(blueLeftPos.x, blueLeftPos.y)
 			&& globalPolygon.containsPoint(blueRightPos.x, blueRightPos.y)
 		) {
-			leftEdgeDistance = Sim.Math.getDistanceBetween(pos, blueLeftPos);
-			rightEdgeDistance = Sim.Math.getDistanceBetween(pos, blueRightPos);
-			leftEdgeAngle = Sim.Math.getAngleBetween(pos, blueLeftPos, orientation);
-			rightEdgeAngle = Sim.Math.getAngleBetween(pos, blueRightPos, orientation);
+			leftEdgeDistance = Sim.Math.getDistanceBetween(blueLeftPos, pos);
+			rightEdgeDistance = Sim.Math.getDistanceBetween(blueRightPos, pos);
+			leftEdgeAngle = Sim.Math.getAngleBetween(blueLeftPos, pos, orientation);
+			rightEdgeAngle = Sim.Math.getAngleBetween(blueRightPos, pos, orientation);
 			edgeAngleDiff = Math.abs(leftEdgeAngle - rightEdgeAngle);
 
 			//sim.dbg.box('blue', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1));

@@ -24,7 +24,8 @@ Sim.Config = {
 	yellowRobot: {
 		startX: 0.125,
 		startY: 0.125,
-		startOrientation: Math.PI / 4,
+		//startOrientation: Math.PI / 4,
+		startOrientation: 0,
 		radius: 0.125,
 		mass: 2.5,
 		wheelRadius: 0.025,
@@ -35,5 +36,8 @@ Sim.Config = {
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
 		distanceDeviation: 0.01
+	},
+	localizer: {
+		particleCount: 50
 	}
 };

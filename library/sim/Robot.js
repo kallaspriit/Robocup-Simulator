@@ -30,6 +30,7 @@ Sim.Robot = function(
 	this.distanceDeviation = distanceDeviation;
 	
 	this.vision = new Sim.Vision();
+	this.localizer = new Sim.Localizer(sim.conf.localizer.particleCount);
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
@@ -119,6 +120,8 @@ Sim.Robot = function(
 		{x: -this.cameraDistance, y: this.cameraWidth / 2},
 		{x: 0, y: 0}
 	]);
+	
+	this.localizer.init();
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
@@ -167,6 +170,13 @@ Sim.Robot.prototype.step = function(dt) {
 	this.virtualX += this.virtualVelocityX * dt;
 	this.virtualY += this.virtualVelocityY * dt;
 	
+	this.localizer.move(
+		noisyMovement.velocityX,
+		noisyMovement.velocityY,
+		noisyMovement.omega,
+		dt
+	);
+	
 	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2) + ',' + Sim.Math.round(this.wheelOmegas[3], 2));
 	sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
 };
@@ -178,11 +188,14 @@ Sim.Robot.prototype.updateVision = function() {
 		],
 		balls = [],
 		goals = [],
-		i,
-		j;
+		i;
 	
 	for (i = 0; i < sim.game.balls.length; i++) {
-		sim.game.balls[i]._yellowVisible = false;
+		if (this.side == Sim.Game.Side.YELLOW) {
+			sim.game.balls[i]._yellowVisible = false;
+		} else {
+			sim.game.balls[i]._blueVisible = false;
+		}
 	}
 	
 	for (i = 0; i < polygons.length; i++) {
@@ -190,8 +203,12 @@ Sim.Robot.prototype.updateVision = function() {
 		goals = goals.concat(this.vision.getVisibleGoals(polygons[i], this.x, this.y, this.orientation));
 	}
 	
-	for (j = 0; j < balls.length; j++) {
-		balls[j].ball._yellowVisible = true;
+	for (i = 0; i < balls.length; i++) {
+		if (this.side == Sim.Game.Side.YELLOW) {
+			balls[i].ball._yellowVisible = true;
+		} else {
+			balls[i].ball._blueVisible = true;
+		}
 	}
 	
 	this.localizeByDistances(goals);
@@ -201,6 +218,8 @@ Sim.Robot.prototype.updateVision = function() {
 Sim.Robot.prototype.localizeByDistances = function(goals) {
 	var yellowDistance = null,
 		blueDistance = null,
+		yellowAngle = null,
+		blueAngle = null,
 		i,
 		goal;
 	
@@ -209,8 +228,10 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		
 		if (goal.side == Sim.Game.Side.YELLOW) {
 			yellowDistance = goal.distance;
+			yellowAngle = goal.angle;
 		} else if (goal.side == Sim.Game.Side.BLUE) {
 			blueDistance = goal.distance;
+			blueAngle = goal.angle;
 		}
 	}
 	
@@ -222,6 +243,13 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	if (yellowDistance == null || blueDistance == null) {
 		return false;
 	}
+	
+	var angleSum = yellowAngle + blueAngle;
+	
+	sim.dbg.box('yellow angle', Sim.Math.radToDeg(yellowAngle));
+	sim.dbg.box('blue angle', Sim.Math.radToDeg(blueAngle));
+	sim.dbg.box('angle sum', Sim.Math.radToDeg(angleSum % Math.PI * 2));
+	
 	/*
 	var noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation),
 		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(this.distanceDeviation);
@@ -361,18 +389,10 @@ Sim.Robot.prototype.getMovement = function(noisy) {
 			[omegas[2]],
 			[omegas[3]]
 		]),
-		/*wheelMatrix = $M([
-			[omegas[0]],
-			[omegas[1]],
-			[omegas[2]],
-			[omegas[3]]
-		]),*/
 		movementA = this.omegaMatrixInvA.multiply(wheelMatrixA).multiply(this.wheelRadius),
 		movementB = this.omegaMatrixInvB.multiply(wheelMatrixB).multiply(this.wheelRadius),
 		movementC = this.omegaMatrixInvC.multiply(wheelMatrixC).multiply(this.wheelRadius),
 		movementD = this.omegaMatrixInvD.multiply(wheelMatrixD).multiply(this.wheelRadius);
-	
-	
 	
 	return {
 		velocityX: (movementA.elements[0][0] + movementB.elements[0][0] + movementC.elements[0][0] + movementD.elements[0][0]) / 4.0,

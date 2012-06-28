@@ -35,6 +35,13 @@ Sim.Util.randomGaussian = function(deviation, mean) {
 	return ((Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1)) * deviation + mean;
 };
 
+/**
+ * Calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
+ */
+Sim.Util.gaussian = function(mu, sigma, x) {
+	return Math.exp(-Math.pow(mu - x,  2) / Math.pow(sigma, 2) / 2.0) / Math.sqrt(2.0 * Math.PI * Math.pow(sigma, 2));
+};
+
 Sim.Util.confine = function(
 	obj,
 	xMin,

@@ -521,6 +521,39 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		robot: robot
 	};
 	
+	this.robots[name].particles = [];
+	
+	for (var i = 0; i < robot.localizer.particles.length; i++) {
+		var particle = robot.localizer.particles[i],
+			particleSize = 0.02,
+			particleDirWidth = 0.02,
+			particleDirLength = 0.05,
+			particleBody = this.c.circle(0, 0, particleSize),
+			//particleDir = this.c.rect(0, 0, particleSize, particleSize * 3);
+			particleDir = this.c.path('M-' + particleDirLength + ' -' + (particleDirWidth / 2) + 'M0 -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' ' + (particleDirWidth / 2) + 'L0 ' + (particleDirWidth / 2) + 'L0 -' + (particleDirWidth / 2));
+		
+		particleBody.attr({
+			fill: 'rgba(255, 0, 0, 1)',
+			//fill: 'rgb(0, 245, 0)',
+			stroke: 'none',
+			transform: 'T' + particle.x + ' ' + particle.y
+		});
+		
+		particleDir.attr({
+			fill: 'rgba(255, 0, 0, 1)',
+			//fill: 'rgb(0, 245, 0)',
+			stroke: 'none',
+			transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
+		});
+		
+		//sim.dbg.console('particle', i, particle);
+		
+		this.robots[name].particles[i] = {
+			body: particleBody,
+			dir: particleDir
+		};
+	}
+	
 	this.c.setStart();
 	
 	var dirWidth = 0.03,
@@ -563,6 +596,20 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	this.robots[name].visual.attr({
 		transform: 'T' + robot.x + ' ' + robot.y + 'R' + Raphael.deg(robot.orientation)
 	});
+	
+	for (var i = 0; i < robot.localizer.particles.length; i++) {
+		var particle = robot.localizer.particles[i],
+			particleBody = this.robots[name].particles[i].body,
+			particleDir = this.robots[name].particles[i].dir;
+		
+		particleBody.attr({
+			transform: 'T' + particle.x + ' ' + particle.y
+		});
+		
+		particleDir.attr({
+			transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
+		});
+	}
 	
 	this.showCommandsQueue(this.robots[name].robot);
 };
