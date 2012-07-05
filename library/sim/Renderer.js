@@ -30,17 +30,14 @@ Sim.Renderer = function(game) {
 	this.ghosts = {};
 	this.balls = {};
 	this.ballCount = 0;
-	this.svgContainerId = 'svg-canvas';
-	this.htmlContainerId = 'html-canvas';
+	this.svgContainerId = 'canvas';
 	this.wrap = null;
 	this.canvasWidth = null;
 	this.canvasHeight = null;
 	this.widthToHeightRatio = null;
 	this.canvasToWorldRatio = null;
-	this.htmlCanvas = null;
 	this.bg = null;
 	this.c = null;
-	this.p = null;
 	this.driveToActive = false;
 	this.spawnBallActive = false;
 	this.showParticles = false;
@@ -78,13 +75,12 @@ Sim.Renderer.Event = {
 };
 
 Sim.Renderer.prototype.init = function() {
-	this.initSvgCanvas();
-	this.initHtmlCanvas();
+	this.initCanvas();
 	this.initGameListeners();
 	this.initEventListeners();
 };
 
-Sim.Renderer.prototype.initSvgCanvas = function() {
+Sim.Renderer.prototype.initCanvas = function() {
 	this.widthToHeightRatio = sim.conf.world.width / sim.conf.world.height;
 	this.wrap = $('#' + this.svgContainerId);
 	this.canvasWidth = this.wrap.width();
@@ -108,25 +104,6 @@ Sim.Renderer.prototype.initSvgCanvas = function() {
 
 		self.c.setSize(self.canvasWidth, self.canvasHeight);
 	});
-};
-
-Sim.Renderer.prototype.initHtmlCanvas = function() {
-	this.htmlCanvas = document.getElementById(this.htmlContainerId);
-    this.p = this.htmlCanvas.getContext('2d');
-	
-	this.htmlCanvas.width = $(this.htmlCanvas).width();
-	this.htmlCanvas.height = $(this.htmlCanvas).height();
-	
-	this.p.scale(
-		this.canvasWidth / sim.conf.world.width,
-		this.canvasHeight / sim.conf.world.height
-	);
-	this.p.translate(-this.fieldOffsetX, -this.fieldOffsetY);
-	/*
-	this.p.fillStyle = 'rgba(255, 0, 0, 0.5)'
-	this.p.rect(0, 0, sim.conf.field.width, sim.conf.field.height);
-	this.p.fill();
-	*/
 };
 
 Sim.Renderer.prototype.initGameListeners = function() {

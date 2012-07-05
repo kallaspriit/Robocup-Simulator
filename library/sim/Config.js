@@ -39,8 +39,8 @@ Sim.Config = {
 	},
 	localizer: {
 		particleCount: 1000,
-		forwardNoise: 0.5,
-		turnNoise: 1.0,
+		forwardNoise: 0.8,
+		turnNoise: 0.3,
 		senseNoise: 0.5
 	}
 };
