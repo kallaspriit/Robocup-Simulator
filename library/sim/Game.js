@@ -157,6 +157,8 @@ Sim.Game.prototype.stepBalls = function(dt) {
 		for (var robotName in this.robots) {
 			if (Sim.Math.collideCircles(this.balls[i], this.robots[robotName])) {
 				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
+				
+				sim.dbg.console('collide', this.balls[i], this.robots[robotName]);
 			}
 		}
 		

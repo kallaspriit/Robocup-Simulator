@@ -146,3 +146,26 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 	
 	return goals;
 };
+
+Sim.Vision.prototype.getMeasurements = function(polygon, x, y, orientation) {
+	var goals = this.getVisibleGoals(polygon, x, y, orientation),
+		goal,
+		measurements = {},
+		i;
+	
+	for (i = 0; i < goals.length; i++) {
+		goal = goals[i];
+		
+		if (goal.side == Sim.Game.Side.YELLOW) {
+			measurements['yellow-goal-center'] = goal.distance;
+			//measurements['yellow-goal-left'] = goal.leftEdgeDistance;
+			//measurements['yellow-goal-right'] = goal.rightEdgeDistance;
+		} else if (goal.side == Sim.Game.Side.BLUE) {
+			measurements['blue-goal-center'] = goal.distance;
+			//measurements['blue-goal-left'] = goal.leftEdgeDistance;
+			//measurements['blue-goal-right'] = goal.rightEdgeDistance;
+		}
+	}
+	
+	return measurements;
+};

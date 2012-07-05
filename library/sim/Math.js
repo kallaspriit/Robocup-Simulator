@@ -201,3 +201,10 @@ Sim.Math.Circle.prototype.getIntersections = function(other) {
 		y2: solutionY2
 	};
 };
+
+/**
+ * Calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
+ */
+Sim.Math.getGaussian = function(mu, sigma, x) {
+	return Math.exp(-Math.pow(mu - x,  2) / Math.pow(sigma, 2) / 2.0) / Math.sqrt(2.0 * Math.PI * Math.pow(sigma, 2));
+};

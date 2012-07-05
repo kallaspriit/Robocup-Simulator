@@ -22,8 +22,8 @@ Sim.Config = {
 		targetFramerate: 60
 	},
 	yellowRobot: {
-		startX: 0.125,
-		startY: 0.125,
+		startX: 2.25,
+		startY: 1.5,
 		//startOrientation: Math.PI / 4,
 		startOrientation: 0,
 		radius: 0.125,
@@ -38,6 +38,9 @@ Sim.Config = {
 		distanceDeviation: 0.01
 	},
 	localizer: {
-		particleCount: 50
+		particleCount: 1000,
+		forwardNoise: 0.5,
+		turnNoise: 1.0,
+		senseNoise: 0.5
 	}
 };

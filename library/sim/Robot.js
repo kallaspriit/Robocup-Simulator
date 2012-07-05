@@ -29,8 +29,6 @@ Sim.Robot = function(
 	this.omegaDeviation = omegaDeviation;
 	this.distanceDeviation = distanceDeviation;
 	
-	this.vision = new Sim.Vision();
-	this.localizer = new Sim.Localizer(sim.conf.localizer.particleCount);
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
@@ -44,6 +42,48 @@ Sim.Robot = function(
 	this.virtualOrientation = orientation;
 	this.virtualVelocityX = this.velocityX;
 	this.virtualVelocityY = this.velocityY;
+	
+	this.vision = new Sim.Vision();
+	this.localizer = new Sim.Localizer(
+		sim.conf.localizer.particleCount,
+		sim.conf.localizer.forwardNoise,
+		sim.conf.localizer.turnNoise,
+		sim.conf.localizer.senseNoise
+	);
+	
+	// yellow goal
+	this.localizer.addLandmark(
+		'yellow-goal-center',
+		0,
+		sim.conf.field.height / 2.0
+	);
+	this.localizer.addLandmark(
+		'yellow-goal-left',
+		0,
+		sim.conf.field.height / 2.0 - sim.conf.field.goalWidth / 2.0
+	);
+	this.localizer.addLandmark(
+		'yellow-goal-right',
+		0,
+		sim.conf.field.height / 2.0 + sim.conf.field.goalWidth / 2.0
+	);
+	
+	// blue goal
+	this.localizer.addLandmark(
+		'blue-goal-center',
+		sim.conf.field.width,
+		sim.conf.field.height / 2.0
+	);
+	this.localizer.addLandmark(
+		'blue-goal-left',
+		sim.conf.field.width,
+		sim.conf.field.height / 2.0 - sim.conf.field.goalWidth / 2.0
+	);
+	this.localizer.addLandmark(
+		'blue-goal-right',
+		sim.conf.field.width,
+		sim.conf.field.height / 2.0 + sim.conf.field.goalWidth / 2.0
+	);
 	
 	/*
 	this.wheelOmegas = [
@@ -133,6 +173,58 @@ Sim.Robot.prototype.resetDeviation = function() {
 };
 
 Sim.Robot.prototype.step = function(dt) {
+	this.updateVision(dt);
+	this.updateMovement(dt);
+	this.handleBalls(dt);
+	this.handleCommands(dt);
+};
+
+Sim.Robot.prototype.updateVision = function(dt) {
+	var cameras = [
+			this.cameraPoly1,
+			this.cameraPoly2
+		],
+		balls = [],
+		goals = [],
+		cameraMeasurements,
+		measurementName,
+		measurements = {},
+		i;
+	
+	for (i = 0; i < sim.game.balls.length; i++) {
+		if (this.side == Sim.Game.Side.YELLOW) {
+			sim.game.balls[i]._yellowVisible = false;
+		} else {
+			sim.game.balls[i]._blueVisible = false;
+		}
+	}
+	
+	for (i = 0; i < cameras.length; i++) {
+		balls = balls.concat(this.vision.getVisibleBalls(cameras[i], this.x, this.y, this.orientation));
+		goals = goals.concat(this.vision.getVisibleGoals(cameras[i], this.x, this.y, this.orientation));
+		
+		cameraMeasurements = this.vision.getMeasurements(cameras[i], this.x, this.y, this.orientation);
+		
+		for (measurementName in cameraMeasurements) {
+			measurements[measurementName] = cameraMeasurements[measurementName];
+		}
+	}
+	
+	for (i = 0; i < balls.length; i++) {
+		if (this.side == Sim.Game.Side.YELLOW) {
+			balls[i].ball._yellowVisible = true;
+		} else {
+			balls[i].ball._blueVisible = true;
+		}
+	}
+	
+	this.localizer.update(this, measurements);
+	
+	this.localizeByDistances(goals);
+	this.localizeByAngles(goals);
+};
+
+Sim.Robot.prototype.updateMovement = function(dt) {
 	/*
 	if ((this.targetDir.x != 0 || this.targetDir.y != 0) && this.targetOmega != 0) {
 		this.targetDir = Sim.Math.rotatePoint(this.targetDir.x, this.targetDir.y, -1.0 * this.targetOmega * dt);
@@ -159,17 +251,7 @@ Sim.Robot.prototype.step = function(dt) {
 		sim.conf.field.height,
 		this.radius
 	);
-	
-	this.updateVision();
-	this.handleBalls(dt);
-	this.handleCommands(dt);
-	
-	this.virtualOrientation = (this.virtualOrientation + noisyMovement.omega * dt) % (Math.PI * 2.0);
-	this.virtualVelocityX = noisyMovement.velocityX * Math.cos(this.virtualOrientation) - noisyMovement.velocityY * Math.sin(this.virtualOrientation),
-	this.virtualVelocityY = noisyMovement.velocityX * Math.sin(this.virtualOrientation) + noisyMovement.velocityY * Math.cos(this.virtualOrientation);
-	this.virtualX += this.virtualVelocityX * dt;
-	this.virtualY += this.virtualVelocityY * dt;
-	
+		
 	this.localizer.move(
 		noisyMovement.velocityX,
 		noisyMovement.velocityY,
@@ -177,42 +259,24 @@ Sim.Robot.prototype.step = function(dt) {
 		dt
 	);
 	
+	var position = this.localizer.getPosition(this);
+	
+	this.virtualX = position.x;
+	this.virtualY = position.y;
+	this.virtualOrientation = position.orientation;
+	
+	sim.dbg.box('Evaluation', position.evaluation, 2);
+		
+	/*
+	this.virtualOrientation = (this.virtualOrientation + noisyMovement.omega) % (Math.PI * 2.0);
+	this.virtualVelocityX = noisyMovement.velocityX * Math.cos(this.virtualOrientation) - noisyMovement.velocityY * Math.sin(this.virtualOrientation),
+	this.virtualVelocityY = noisyMovement.velocityX * Math.sin(this.virtualOrientation) + noisyMovement.velocityY * Math.cos(this.virtualOrientation);
+	this.virtualX += this.virtualVelocityX;
+	this.virtualY += this.virtualVelocityY;
+	*/
+   
 	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2) + ',' + Sim.Math.round(this.wheelOmegas[3], 2));
 	sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
-};
-
-Sim.Robot.prototype.updateVision = function() {
-	var polygons = [
-			this.cameraPoly1,
-			this.cameraPoly2
-		],
-		balls = [],
-		goals = [],
-		i;
-	
-	for (i = 0; i < sim.game.balls.length; i++) {
-		if (this.side == Sim.Game.Side.YELLOW) {
-			sim.game.balls[i]._yellowVisible = false;
-		} else {
-			sim.game.balls[i]._blueVisible = false;
-		}
-	}
-	
-	for (i = 0; i < polygons.length; i++) {
-		balls = balls.concat(this.vision.getVisibleBalls(polygons[i], this.x, this.y, this.orientation));
-		goals = goals.concat(this.vision.getVisibleGoals(polygons[i], this.x, this.y, this.orientation));
-	}
-	
-	for (i = 0; i < balls.length; i++) {
-		if (this.side == Sim.Game.Side.YELLOW) {
-			balls[i].ball._yellowVisible = true;
-		} else {
-			balls[i].ball._blueVisible = true;
-		}
-	}
-	
-	this.localizeByDistances(goals);
-	this.localizeByAngles(goals);
 };
 
 Sim.Robot.prototype.localizeByDistances = function(goals) {

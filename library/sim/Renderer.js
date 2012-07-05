@@ -30,16 +30,20 @@ Sim.Renderer = function(game) {
 	this.ghosts = {};
 	this.balls = {};
 	this.ballCount = 0;
-	this.containerId = 'canvas';
+	this.svgContainerId = 'svg-canvas';
+	this.htmlContainerId = 'html-canvas';
 	this.wrap = null;
 	this.canvasWidth = null;
 	this.canvasHeight = null;
 	this.widthToHeightRatio = null;
 	this.canvasToWorldRatio = null;
+	this.htmlCanvas = null;
 	this.bg = null;
 	this.c = null;
+	this.p = null;
 	this.driveToActive = false;
 	this.spawnBallActive = false;
+	this.showParticles = false;
 	this.driveToOrientation = 0;
 	
 	// appearance
@@ -74,20 +78,21 @@ Sim.Renderer.Event = {
 };
 
 Sim.Renderer.prototype.init = function() {
-	this.initCanvas();
+	this.initSvgCanvas();
+	this.initHtmlCanvas();
 	this.initGameListeners();
 	this.initEventListeners();
 };
 
-Sim.Renderer.prototype.initCanvas = function() {
+Sim.Renderer.prototype.initSvgCanvas = function() {
 	this.widthToHeightRatio = sim.conf.world.width / sim.conf.world.height;
-	this.wrap = $('#' + this.containerId);
+	this.wrap = $('#' + this.svgContainerId);
 	this.canvasWidth = this.wrap.width();
 	this.canvasHeight = this.canvasWidth / this.widthToHeightRatio;
 	this.canvasToWorldRatio = this.canvasWidth / sim.conf.world.width;
 	this.wrap.height(this.canvasHeight);
 	
-	this.c = Raphael(this.containerId, this.canvasWidth, this.canvasHeight);
+	this.c = Raphael(this.svgContainerId, this.canvasWidth, this.canvasHeight);
 	this.c.setViewBox(this.fieldOffsetX, this.fieldOffsetY, sim.conf.world.width, sim.conf.world.height);
 	
 	this.draw();
@@ -103,6 +108,25 @@ Sim.Renderer.prototype.initCanvas = function() {
 
 		self.c.setSize(self.canvasWidth, self.canvasHeight);
 	});
+};
+
+Sim.Renderer.prototype.initHtmlCanvas = function() {
+	this.htmlCanvas = document.getElementById(this.htmlContainerId);
+    this.p = this.htmlCanvas.getContext('2d');
+	
+	this.htmlCanvas.width = $(this.htmlCanvas).width();
+	this.htmlCanvas.height = $(this.htmlCanvas).height();
+	
+	this.p.scale(
+		this.canvasWidth / sim.conf.world.width,
+		this.canvasHeight / sim.conf.world.height
+	);
+	this.p.translate(-this.fieldOffsetX, -this.fieldOffsetY);
+	/*
+	this.p.fillStyle = 'rgba(255, 0, 0, 0.5)'
+	this.p.rect(0, 0, sim.conf.field.width, sim.conf.field.height);
+	this.p.fill();
+	*/
 };
 
 Sim.Renderer.prototype.initGameListeners = function() {
@@ -148,7 +172,7 @@ Sim.Renderer.prototype.initEventListeners = function() {
 		self.onMouseMove(e);
 	});
 	
-	$('#' + this.containerId).click(function(e) {
+	$('#' + this.svgContainerId).click(function(e) {
 		self.onContainerClick(e);
 	});
 	
@@ -232,6 +256,20 @@ Sim.Renderer.prototype.onContainerClick = function(e) {
 		});
 
 		this.spawnBallActive = false;
+	}
+};
+
+Sim.Renderer.prototype.toggleParticles = function() {
+	this.showParticles = !this.showParticles;
+	
+	for (var name in this.robots) {
+		for (var i = 0; i < this.robots[name].particles.length; i++) {
+			if (!this.showParticles) {
+				this.robots[name].particles[i].dir.hide();
+			} else {
+				this.robots[name].particles[i].dir.show();
+			}
+		}
 	}
 };
 
@@ -521,39 +559,6 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		robot: robot
 	};
 	
-	this.robots[name].particles = [];
-	
-	for (var i = 0; i < robot.localizer.particles.length; i++) {
-		var particle = robot.localizer.particles[i],
-			particleSize = 0.02,
-			particleDirWidth = 0.02,
-			particleDirLength = 0.05,
-			particleBody = this.c.circle(0, 0, particleSize),
-			//particleDir = this.c.rect(0, 0, particleSize, particleSize * 3);
-			particleDir = this.c.path('M-' + particleDirLength + ' -' + (particleDirWidth / 2) + 'M0 -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' ' + (particleDirWidth / 2) + 'L0 ' + (particleDirWidth / 2) + 'L0 -' + (particleDirWidth / 2));
-		
-		particleBody.attr({
-			fill: 'rgba(255, 0, 0, 1)',
-			//fill: 'rgb(0, 245, 0)',
-			stroke: 'none',
-			transform: 'T' + particle.x + ' ' + particle.y
-		});
-		
-		particleDir.attr({
-			fill: 'rgba(255, 0, 0, 1)',
-			//fill: 'rgb(0, 245, 0)',
-			stroke: 'none',
-			transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
-		});
-		
-		//sim.dbg.console('particle', i, particle);
-		
-		this.robots[name].particles[i] = {
-			body: particleBody,
-			dir: particleDir
-		};
-	}
-	
 	this.c.setStart();
 	
 	var dirWidth = 0.03,
@@ -586,6 +591,38 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	this.robots[name].frame = frame;
 	this.robots[name].dir = dir;
 	this.robots[name].visual = this.c.setFinish();
+	
+	this.robots[name].particles = [];
+	
+	for (var i = 0; i < robot.localizer.particles.length; i++) {
+		var particle = robot.localizer.particles[i],
+			particleSize = 0.02,
+			particleDirWidth = 0.02,
+			particleDirLength = 0.05,
+			//particleBody = this.c.circle(0, 0, particleSize),
+			//particleDir = this.c.rect(0, 0, particleSize, particleSize * 3);
+			particleDir = this.c.path('M-' + particleDirLength + ' -' + (particleDirWidth / 2) + 'M0 -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' ' + (particleDirWidth / 2) + 'L0 ' + (particleDirWidth / 2) + 'L0 -' + (particleDirWidth / 2));
+		
+		//particleBody.attr({
+		//	fill: 'rgba(255, 0, 0, 1)',
+		//	stroke: 'none',
+		//	transform: 'T' + particle.x + ' ' + particle.y
+		//});
+		
+		particleDir.attr({
+			fill: 'rgba(255, 0, 0, 1)',
+			//fill: 'rgb(0, 245, 0)',
+			stroke: 'none',
+			transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
+		}).hide();
+		
+		//sim.dbg.console('particle', i, particle);
+		
+		this.robots[name].particles[i] = {
+			//body: particleBody,
+			dir: particleDir
+		};
+	}
 };
 
 Sim.Renderer.prototype.updateRobot = function(name, robot) {
@@ -597,18 +634,65 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		transform: 'T' + robot.x + ' ' + robot.y + 'R' + Raphael.deg(robot.orientation)
 	});
 	
-	for (var i = 0; i < robot.localizer.particles.length; i++) {
-		var particle = robot.localizer.particles[i],
-			particleBody = this.robots[name].particles[i].body,
-			particleDir = this.robots[name].particles[i].dir;
+	/*
+	var maxProbability = null,
+		minProbability = null,
+		totalProbability = 0,
+		avgProbability,
+		i;
+	
+	for (i = 0; i < robot.localizer.particles.length; i++) {
+		if (maxProbability == null || robot.localizer.particles[i].probability > maxProbability) {
+			maxProbability = robot.localizer.particles[i].probability;
+		}
 		
-		particleBody.attr({
-			transform: 'T' + particle.x + ' ' + particle.y
-		});
+		if (minProbability == null || robot.localizer.particles[i].probability < minProbability) {
+			minProbability = robot.localizer.particles[i].probability;
+		}
 		
-		particleDir.attr({
-			transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
-		});
+		totalProbability += robot.localizer.particles[i].probability;
+	}
+	
+	avgProbability = totalProbability / robot.localizer.particles.length;
+	
+	sim.dbg.console('max', maxProbability, 'avg', avgProbability);
+	*/
+    
+	/*
+	robot.localizer.particles.sort(function(a, b) {
+		if (a > b) {
+			return -1;
+		} else if (b > a) {
+			return 1;
+		} else {
+			return 0;
+		}
+	});
+	*/
+	
+	if (this.showParticles) {
+		for (var i = 0; i < robot.localizer.particles.length; i++) {
+			var particle = robot.localizer.particles[i],
+				//particleBody = this.robots[name].particles[i].body,
+				particleDir = this.robots[name].particles[i].dir;
+
+			//particleBody.attr({
+			//	transform: 'T' + particle.x + ' ' + particle.y
+			//});
+
+			//if (i < 50) {
+				particleDir.show().attr({
+					transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation),
+					fill: 'rgba(255, 0, 0, ' + Math.max(Math.min(particle.probability, 1.0), 0.1) + ')'
+				});
+			//} else {
+			//	particleDir.hide();
+			//}
+
+			/*this.p.fillStyle = 'rgba(255, 0, 0, 0.5)';
+			this.p.rect(particle.x, particle.y, 0.1, 0.1);
+			this.p.fill();*/
+		}
 	}
 	
 	this.showCommandsQueue(this.robots[name].robot);

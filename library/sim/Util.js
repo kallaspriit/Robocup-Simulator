@@ -26,20 +26,25 @@ Sim.Util.formatTime = function(date, includeSeconds) {
 
 Sim.Util.random = function(min, max) {
 	return Math.floor(min + (1 + max - min) * Math.random());
-}
-
-Sim.Util.randomGaussian = function(deviation, mean) {
-	mean = mean || 0;
-	deviation = deviation || 0.5;
-	
-	return ((Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1)) * deviation + mean;
 };
 
-/**
- * Calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
- */
-Sim.Util.gaussian = function(mu, sigma, x) {
-	return Math.exp(-Math.pow(mu - x,  2) / Math.pow(sigma, 2) / 2.0) / Math.sqrt(2.0 * Math.PI * Math.pow(sigma, 2));
+Sim.Util.getMax = function(values) {
+	var max = null;
+	
+	for (var i = 0; i < values.length; i++) {
+		if (max === null || values[i] > max) {
+			max = values[i];
+		}
+	}
+	
+	return max;
+};
+
+Sim.Util.randomGaussian = function(deviation, mean) {
+	deviation = typeof(deviation) != 'undefined' ? deviation : 0.5;
+	mean = typeof(mean) != 'undefined' ? mean : 0;
+	
+	return ((Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1)) * deviation + mean;
 };
 
 Sim.Util.confine = function(
@@ -90,6 +95,14 @@ Sim.Util.polygonToPath = function(polygon, centerX, centerY) {
 	}
 	
 	return path;
+};
+
+Sim.Util.clone = function(object) {
+	return jQuery.extend(true, {}, object);
+};
+
+Sim.Util.mapRange = function(value, max, minrange, maxrange) {
+    return Math.round(((max-value)/(max))*(maxrange-minrange))+minrange;
 };
 
 Array.prototype.remove = function(from, to) {

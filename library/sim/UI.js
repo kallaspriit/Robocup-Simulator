@@ -136,6 +136,8 @@ Sim.UI.prototype.onKeyDown = function(key) {
 		this.showNoiseDialog();
 	} else if (key == 27) {
 		sim.renderer.cancelActions();
+	} else if (key == 53) {
+		sim.renderer.toggleParticles();
 	}
 };
 
@@ -166,6 +168,10 @@ Sim.UI.prototype.initTools = function() {
 	
 	$('#set-noise-btn').click(function() {
 		self.showNoiseDialog();
+	});
+	
+	$('#toggle-particles-btn').click(function() {
+		sim.renderer.toggleParticles();
 	});
 };
 
