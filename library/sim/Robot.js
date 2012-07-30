@@ -44,7 +44,7 @@ Sim.Robot = function(
 	this.virtualVelocityY = this.velocityY;
 	
 	this.vision = new Sim.Vision();
-	this.localizer = new Sim.Localizer(
+	this.localizer = new Sim.RobotLocalizer(
 		sim.conf.localizer.particleCount,
 		sim.conf.localizer.forwardNoise,
 		sim.conf.localizer.turnNoise,
