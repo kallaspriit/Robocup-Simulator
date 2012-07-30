@@ -62,7 +62,7 @@ Sim.Game.prototype.addRobot = function(name, robot) {
 };
 
 Sim.Game.prototype.initBalls = function() {
-	for (var i = 0; i < 11; i++) {
+	for (var i = 0; i < sim.conf.game.balls; i++) {
 		var x = Sim.Util.random(sim.conf.ball.radius * 1000, (sim.conf.field.width - sim.conf.ball.radius) * 1000) / 1000.0,
 			y = Sim.Util.random(sim.conf.ball.radius * 1000, (sim.conf.field.height - sim.conf.ball.radius) * 1000) / 1000.0;
 		

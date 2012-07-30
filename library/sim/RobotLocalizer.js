@@ -85,7 +85,7 @@ Sim.RobotLocalizer.prototype.getMeasurementProbability = function(
 	return probability;
 };
 
-Sim.RobotLocalizer.prototype.update = function(robot, measurements) {
+Sim.RobotLocalizer.prototype.update = function(measurements) {
 	var particle,
 		probabilities = [],
 		maxProbability = null,

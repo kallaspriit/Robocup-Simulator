@@ -12,6 +12,9 @@ Sim.Config = {
 		goalDepth: 0.25,
 		goalWidth: 0.7
 	},
+	game: {
+		balls: 11
+	},
 	ball: {
 		radius: 0.021335,
 		mass: 0.04593,
@@ -37,7 +40,7 @@ Sim.Config = {
 		omegaDeviation: 2.5,
 		distanceDeviation: 0.01
 	},
-	localizer: {
+	robotLocalizer: {
 		particleCount: 1000,
 		forwardNoise: 0.8,
 		turnNoise: 0.3,

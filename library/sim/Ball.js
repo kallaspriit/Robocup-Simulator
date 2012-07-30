@@ -1,4 +1,7 @@
+Sim.BallId = 0;
+
 Sim.Ball = function(x, y, radius, mass, elasticity) {
+	this.id = Sim.BallId++;
 	this.x = x;
 	this.y = y;
 	this.radius = radius || sim.conf.ball.radius;

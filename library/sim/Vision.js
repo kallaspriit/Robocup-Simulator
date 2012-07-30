@@ -4,6 +4,7 @@ Sim.Vision = function() {
 
 Sim.Vision.prototype.getVisibleBalls = function(polygon, x, y, orientation) {
 	var globalPolygon = polygon.rotate(orientation).translate(x, y),
+		pos = {x: x, y: y},
 		balls = [],
 		ball,
 		distance,
@@ -16,8 +17,8 @@ Sim.Vision.prototype.getVisibleBalls = function(polygon, x, y, orientation) {
 		if (
 			globalPolygon.containsPoint(ball.x, ball.y)
 		) {
-			distance = Sim.Math.getDistanceBetween(this, ball) - this.radius;
-			angle = Sim.Math.getAngleBetween(this, ball, this.orientation);
+			distance = Sim.Math.getDistanceBetween(pos, ball);
+			angle = Sim.Math.getAngleBetween(pos, ball, orientation);
 			
 			balls.push({
 				ball: ball,

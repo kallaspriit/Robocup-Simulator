@@ -37,6 +37,10 @@ Sim.Robot = function(
 	this.velocityY = 0;
 	this.commands = [];
 	
+	this.goals = [];
+	this.balls = [];
+	this.measurements = {};
+	
 	this.virtualX = x;
 	this.virtualY = y;
 	this.virtualOrientation = orientation;
@@ -44,42 +48,45 @@ Sim.Robot = function(
 	this.virtualVelocityY = this.velocityY;
 	
 	this.vision = new Sim.Vision();
-	this.localizer = new Sim.RobotLocalizer(
-		sim.conf.localizer.particleCount,
-		sim.conf.localizer.forwardNoise,
-		sim.conf.localizer.turnNoise,
-		sim.conf.localizer.senseNoise
+	this.robotLocalizer = new Sim.RobotLocalizer(
+		sim.conf.robotLocalizer.particleCount,
+		sim.conf.robotLocalizer.forwardNoise,
+		sim.conf.robotLocalizer.turnNoise,
+		sim.conf.robotLocalizer.senseNoise
+	);
+	this.ballLocalizer = new Sim.BallLocalizer(
+		sim.conf.game.balls
 	);
 	
 	// yellow goal
-	this.localizer.addLandmark(
+	this.robotLocalizer.addLandmark(
 		'yellow-goal-center',
 		0,
 		sim.conf.field.height / 2.0
 	);
-	this.localizer.addLandmark(
+	this.robotLocalizer.addLandmark(
 		'yellow-goal-left',
 		0,
 		sim.conf.field.height / 2.0 - sim.conf.field.goalWidth / 2.0
 	);
-	this.localizer.addLandmark(
+	this.robotLocalizer.addLandmark(
 		'yellow-goal-right',
 		0,
 		sim.conf.field.height / 2.0 + sim.conf.field.goalWidth / 2.0
 	);
 	
 	// blue goal
-	this.localizer.addLandmark(
+	this.robotLocalizer.addLandmark(
 		'blue-goal-center',
 		sim.conf.field.width,
 		sim.conf.field.height / 2.0
 	);
-	this.localizer.addLandmark(
+	this.robotLocalizer.addLandmark(
 		'blue-goal-left',
 		sim.conf.field.width,
 		sim.conf.field.height / 2.0 - sim.conf.field.goalWidth / 2.0
 	);
-	this.localizer.addLandmark(
+	this.robotLocalizer.addLandmark(
 		'blue-goal-right',
 		sim.conf.field.width,
 		sim.conf.field.height / 2.0 + sim.conf.field.goalWidth / 2.0
@@ -161,7 +168,7 @@ Sim.Robot = function(
 		{x: 0, y: 0}
 	]);
 	
-	this.localizer.init();
+	this.robotLocalizer.init();
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
@@ -174,7 +181,10 @@ Sim.Robot.prototype.resetDeviation = function() {
 
 Sim.Robot.prototype.step = function(dt) {
 	this.updateVision(dt);
+	this.updateRobotLocalizer(dt);
+	this.updateBallLocalizer(dt);
 	this.updateMovement(dt);
+	
 	this.handleBalls(dt);
 	this.handleCommands(dt);
 };
@@ -184,12 +194,12 @@ Sim.Robot.prototype.updateVision = function(dt) {
 			this.cameraPoly1,
 			this.cameraPoly2
 		],
-		balls = [],
-		goals = [],
 		cameraMeasurements,
 		measurementName,
-		measurements = {},
 		i;
+		
+	this.balls = [];
+	this.goals = [];
 	
 	for (i = 0; i < sim.game.balls.length; i++) {
 		if (this.side == Sim.Game.Side.YELLOW) {
@@ -200,28 +210,39 @@ Sim.Robot.prototype.updateVision = function(dt) {
 	}
 	
 	for (i = 0; i < cameras.length; i++) {
-		balls = balls.concat(this.vision.getVisibleBalls(cameras[i], this.x, this.y, this.orientation));
-		goals = goals.concat(this.vision.getVisibleGoals(cameras[i], this.x, this.y, this.orientation));
+		this.balls = this.balls.concat(this.vision.getVisibleBalls(cameras[i], this.x, this.y, this.orientation + Math.PI));
+		this.goals = this.goals.concat(this.vision.getVisibleGoals(cameras[i], this.x, this.y, this.orientation));
 		
 		cameraMeasurements = this.vision.getMeasurements(cameras[i], this.x, this.y, this.orientation);
 		
 		for (measurementName in cameraMeasurements) {
-			measurements[measurementName] = cameraMeasurements[measurementName];
+			this.measurements[measurementName] = cameraMeasurements[measurementName];
 		}
 	}
 	
-	for (i = 0; i < balls.length; i++) {
+	for (i = 0; i < this.balls.length; i++) {
 		if (this.side == Sim.Game.Side.YELLOW) {
-			balls[i].ball._yellowVisible = true;
+			this.balls[i].ball._yellowVisible = true;
 		} else {
-			balls[i].ball._blueVisible = true;
+			this.balls[i].ball._blueVisible = true;
 		}
 	}
+};
+
+Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
+	this.robotLocalizer.update(this.measurements);
 	
-	this.localizer.update(this, measurements);
-	
-	this.localizeByDistances(goals);
-	this.localizeByAngles(goals);
+	this.localizeByDistances(this.goals);
+	this.localizeByAngles(this.goals);
+};
+
+Sim.Robot.prototype.updateBallLocalizer = function(dt) {
+	this.ballLocalizer.update(
+		this.virtualX,
+		this.virtualY,
+		this.virtualOrientation,
+		this.balls
+	);
 };
 
 Sim.Robot.prototype.updateMovement = function(dt) {
@@ -252,14 +273,14 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 		this.radius
 	);
 		
-	this.localizer.move(
+	this.robotLocalizer.move(
 		noisyMovement.velocityX,
 		noisyMovement.velocityY,
 		noisyMovement.omega,
 		dt
 	);
 	
-	var position = this.localizer.getPosition(this);
+	var position = this.robotLocalizer.getPosition(this);
 	
 	this.virtualX = position.x;
 	this.virtualY = position.y;

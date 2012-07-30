@@ -567,7 +567,8 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		ghostFrameRadius = 0.05,
 		ghostFrame = this.c.circle(0, 0, ghostFrameRadius),
 		ghostDir = this.c.path('M-' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'M0 -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' ' + (ghostDirWidth / 2) + 'L0 ' + (ghostDirWidth / 2) + 'L0 -' + (ghostDirWidth / 2)),
-		ghostColor = robot.side == Sim.Game.Side.YELLOW ? 'rgb(255, 255, 0)' : 'rgb(0, 0, 255)';
+		ghostColor = robot.side == Sim.Game.Side.YELLOW ? 'rgb(255, 255, 0)' : 'rgb(0, 0, 255)',
+		i;
 
 	ghostFrame.attr({
 		fill: ghostColor,
@@ -580,11 +581,10 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	});
 
 	this.robots[name].ghost = this.c.setFinish();
-	
 	this.robots[name].particles = [];
 	
-	for (var i = 0; i < robot.localizer.particles.length; i++) {
-		var particle = robot.localizer.particles[i],
+	for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
+		var particle = robot.robotLocalizer.particles[i],
 			particleSize = 0.02,
 			particleDirWidth = 0.02,
 			particleDirLength = 0.05,
@@ -612,6 +612,25 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 			dir: particleDir
 		};
 	}
+	
+	this.robots[name].balls = [];
+	
+	var ballStyle = {
+		fill: '#F00',
+		stroke: 'none',
+		cx: -100,
+		cy: -100
+	};
+	
+	for (i = 0; i < sim.conf.game.balls; i++) {
+		var ballVisual = this.c.circle(0, 0, sim.conf.ball.radius);
+	
+		ballVisual.attr(ballStyle);
+		
+		this.robots[name].balls[i] = {
+			visual: ballVisual
+		}
+	}
 };
 
 Sim.Renderer.prototype.updateRobot = function(name, robot) {
@@ -634,25 +653,25 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		avgProbability,
 		i;
 	
-	for (i = 0; i < robot.localizer.particles.length; i++) {
-		if (maxProbability == null || robot.localizer.particles[i].probability > maxProbability) {
-			maxProbability = robot.localizer.particles[i].probability;
+	for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
+		if (maxProbability == null || robot.robotLocalizer.particles[i].probability > maxProbability) {
+			maxProbability = robot.robotLocalizer.particles[i].probability;
 		}
 		
-		if (minProbability == null || robot.localizer.particles[i].probability < minProbability) {
-			minProbability = robot.localizer.particles[i].probability;
+		if (minProbability == null || robot.robotLocalizer.particles[i].probability < minProbability) {
+			minProbability = robot.robotLocalizer.particles[i].probability;
 		}
 		
-		totalProbability += robot.localizer.particles[i].probability;
+		totalProbability += robot.robotLocalizer.particles[i].probability;
 	}
 	
-	avgProbability = totalProbability / robot.localizer.particles.length;
+	avgProbability = totalProbability / robot.robotLocalizer.particles.length;
 	
 	sim.dbg.console('max', maxProbability, 'avg', avgProbability);
 	*/
     
 	/*
-	robot.localizer.particles.sort(function(a, b) {
+	robot.robotLocalizer.particles.sort(function(a, b) {
 		if (a > b) {
 			return -1;
 		} else if (b > a) {
@@ -662,10 +681,13 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		}
 	});
 	*/
+   
+	var i,
+		ball;
 	
 	if (this.showParticles) {
-		for (var i = 0; i < robot.localizer.particles.length; i++) {
-			var particle = robot.localizer.particles[i],
+		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
+			var particle = robot.robotLocalizer.particles[i],
 				//particleBody = this.robots[name].particles[i].body,
 				particleDir = this.robots[name].particles[i].dir;
 
@@ -685,6 +707,22 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 			/*this.p.fillStyle = 'rgba(255, 0, 0, 0.5)';
 			this.p.rect(particle.x, particle.y, 0.1, 0.1);
 			this.p.fill();*/
+		}
+	}
+	
+	for (i = 0; i < sim.conf.game.balls; i++) {
+		if (typeof(robot.ballLocalizer.balls[i]) == 'object') {
+			ball =  robot.ballLocalizer.balls[i];
+
+			this.robots[name].balls[i].visual.attr({
+				cx: ball.x,
+				cy: ball.y
+			});
+		} else {
+			this.robots[name].balls[i].visual.attr({
+				cx: -100,
+				cy: -100
+			});
 		}
 	}
 	
