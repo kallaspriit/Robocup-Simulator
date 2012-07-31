@@ -45,5 +45,10 @@ Sim.Config = {
 		forwardNoise: 0.8,
 		turnNoise: 0.3,
 		senseNoise: 0.5
+	},
+	ballLocalizer: {
+		maxBallIdentityDistance: 0.2,
+		ballPositionAverages: 10,
+		ballPurgeLifetime: 1
 	}
 };

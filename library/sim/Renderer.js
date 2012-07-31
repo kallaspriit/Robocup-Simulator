@@ -613,8 +613,9 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		};
 	}
 	
-	this.robots[name].balls = [];
+	this.robots[name].balls = {};
 	
+	/*
 	var ballStyle = {
 		fill: '#F00',
 		stroke: 'none',
@@ -631,6 +632,7 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 			visual: ballVisual
 		}
 	}
+	*/
 };
 
 Sim.Renderer.prototype.updateRobot = function(name, robot) {
@@ -682,8 +684,7 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	});
 	*/
    
-	var i,
-		ball;
+	var i;
 	
 	if (this.showParticles) {
 		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
@@ -710,6 +711,43 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		}
 	}
 	
+	var ball,
+		ballId,
+		updatedBalls = [];
+	
+	for (i = 0; i < robot.ballLocalizer.balls.length; i++) {
+		ball = robot.ballLocalizer.balls[i];
+		
+		if (typeof(this.robots[name].balls[ball.id]) == 'undefined') {
+			this.robots[name].balls[ball.id] = this.c.circle(0, 0, sim.conf.ball.radius);
+			this.robots[name].balls[ball.id].attr({
+				fill: '#F00',
+				stroke: 'none',
+				cx: ball.x,
+				cy: ball.y
+			});
+		} else {
+			this.robots[name].balls[ball.id].attr({
+				cx: ball.x,
+				cy: ball.y
+			});
+		}
+		
+		updatedBalls.push(ball.id);
+	}
+	
+	for (ballId in this.robots[name].balls) {
+		if (updatedBalls.indexOf(parseInt(ballId)) == -1) {
+			this.robots[name].balls[ballId].remove();
+			
+			delete this.robots[name].balls[ballId];
+		}
+	}
+	
+	/*
+	var ball,
+		ballPosition;
+	
 	for (i = 0; i < sim.conf.game.balls; i++) {
 		if (typeof(robot.ballLocalizer.balls[i]) == 'object') {
 			ball =  robot.ballLocalizer.balls[i];
@@ -725,7 +763,8 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 			});
 		}
 	}
-	
+	*/
+   
 	this.showCommandsQueue(this.robots[name].robot);
 };
 
