@@ -532,8 +532,7 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	var dirWidth = 0.03,
 		frame = this.c.circle(0, 0, robot.radius),
 		dir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
-		cameraFocus1 = this.c.path(Sim.Util.polygonToPath(robot.cameraPoly1, robot.cameraDistance, 0)),
-		cameraFocus2 = this.c.path(Sim.Util.polygonToPath(robot.cameraPoly2, robot.cameraDistance * -1, 0)),
+		cameraFocus = this.c.path(Sim.Util.polygonToPath(robot.cameraFOV, robot.cameraDistance, 0)),
 		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
 	
 	frame.attr({
@@ -546,12 +545,7 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		stroke: 'none'
 	});
 	
-	cameraFocus1.attr({
-		fill: 'rgba(255, 255, 255, 0.35)',
-		stroke: 'none'
-	});
-	
-	cameraFocus2.attr({
+	cameraFocus.attr({
 		fill: 'rgba(255, 255, 255, 0.35)',
 		stroke: 'none'
 	});

@@ -57,6 +57,17 @@ Sim.Math.Polygon.prototype.translate = function(x, y) {
     return translatedPolygon;
 };
 
+Sim.Math.Polygon.prototype.scale = function(x, y) {
+    var translatedPolygon = new Sim.Math.Polygon(),
+		i;
+	
+    for(i = 0; i < this.points.length; i++) {
+        translatedPolygon.addPoint(this.points[i].x * x, this.points[i].y * y);
+	}
+	
+    return translatedPolygon;
+};
+
 Sim.Math.Polygon.prototype.rotate = function(angle) {
     var translatedPolygon = new Sim.Math.Polygon(),
 		rotatedPoint,

@@ -155,14 +155,10 @@ Sim.Robot = function(
 	this.omegaMatrixInvC = this.omegaMatrixC.inverse();
 	this.omegaMatrixInvD = this.omegaMatrixD.inverse();
 	
-	this.cameraPoly1 = new Sim.Math.Polygon([
+	this.cameraFOV = new Sim.Math.Polygon([
 		{x: 0, y: 0},
 		{x: this.cameraDistance, y: -this.cameraWidth / 2},
 		{x: this.cameraDistance, y: this.cameraWidth / 2},
-		{x: 0, y: 0}
-	]);
-	
-	this.cameraPoly2 = new Sim.Math.Polygon([
 		{x: 0, y: 0},
 		{x: -this.cameraDistance, y: -this.cameraWidth / 2},
 		{x: -this.cameraDistance, y: this.cameraWidth / 2},
@@ -200,17 +196,8 @@ Sim.Robot.prototype.isPerfectLocalization = function() {
 };
 
 Sim.Robot.prototype.updateVision = function(dt) {
-	var cameras = [
-			this.cameraPoly1,
-			this.cameraPoly2
-		],
-		cameraMeasurements,
-		measurementName,
-		i;
-		
-	this.balls = [];
-	this.goals = [];
-	
+	var i;
+
 	for (i = 0; i < sim.game.balls.length; i++) {
 		if (this.side == Sim.Game.Side.YELLOW) {
 			sim.game.balls[i]._yellowVisible = false;
@@ -219,16 +206,9 @@ Sim.Robot.prototype.updateVision = function(dt) {
 		}
 	}
 	
-	for (i = 0; i < cameras.length; i++) {
-		this.balls = this.balls.concat(this.vision.getVisibleBalls(cameras[i], this.x, this.y, this.orientation + Math.PI));
-		this.goals = this.goals.concat(this.vision.getVisibleGoals(cameras[i], this.x, this.y, this.orientation));
-		
-		cameraMeasurements = this.vision.getMeasurements(cameras[i], this.x, this.y, this.orientation);
-		
-		for (measurementName in cameraMeasurements) {
-			this.measurements[measurementName] = cameraMeasurements[measurementName];
-		}
-	}
+	this.balls = this.vision.getVisibleBalls(this.cameraFOV, this.x, this.y, this.orientation + Math.PI);
+	this.goals = this.vision.getVisibleGoals(this.cameraFOV, this.x, this.y, this.orientation);
+	this.measurements = this.vision.getMeasurements(this.cameraFOV, this.x, this.y, this.orientation);
 	
 	for (i = 0; i < this.balls.length; i++) {
 		if (this.side == Sim.Game.Side.YELLOW) {
@@ -252,6 +232,7 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 		this.virtualY,
 		this.virtualOrientation,
 		this.balls,
+		this.getVirtualFOV(),
 		dt
 	);
 };
@@ -461,8 +442,10 @@ Sim.Robot.prototype.getOmega = function() {
 };
 */
 
-Sim.Robot.prototype.getViewPolygon = function() {
-	return r.cameraPoly1.rotate(r.orientation).translate(r.x, r.y);
+Sim.Robot.prototype.getVirtualFOV = function() {
+	return this.cameraFOV
+		.rotate(this.orientation)
+		.translate(this.virtualX, this.virtualY);
 };
 
 Sim.Robot.prototype.getMovement = function(noisy) {

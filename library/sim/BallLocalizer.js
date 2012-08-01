@@ -16,6 +16,7 @@ Sim.BallLocalizer.Ball = function(x, y) {
 	this.radius = sim.conf.ball.radius;
 	this.velocityX = 0;
 	this.velocityY = 0;
+	this.removeTime = null;
 	
 	this.addMeasurement(x, y);
 };
@@ -36,6 +37,7 @@ Sim.BallLocalizer.Ball.prototype.addMeasurement = function(x, y, dt) {
 	
 	this.x = position.x;
 	this.y = position.y;
+	this.removeTime = null;
 };
 
 Sim.BallLocalizer.Ball.prototype.getPosition = function() {
@@ -83,35 +85,48 @@ Sim.BallLocalizer.Ball.prototype.interpolate = function(dt) {
 	Sim.Math.collideWalls(this);
 };
 
+Sim.BallLocalizer.Ball.prototype.markForRemoval = function(seconds) {
+	if (this.removeTime != null) {
+		return;
+	}
+	
+	this.removeTime = Sim.Util.getMicrotime() + seconds;
+};
+
+Sim.BallLocalizer.Ball.prototype.shouldBeRemoved = function() {
+	return this.removeTime != null && this.removeTime < Sim.Util.getMicrotime();
+};
+
 Sim.BallLocalizer.prototype.update = function(
 	robotX,
 	robotY,
 	robotOrientation,
-	balls,
+	visibleBalls,
+	cameraFOV,
 	dt
 ) {
-	var ballX,
-		ballY,
-		newBall,
+	var newBall,
 		angle,
 		closestBall,
 		handledBalls = [],
 		i;
 	
-	for (i = 0; i < balls.length; i++) {
-		angle = robotOrientation + balls[i].angle;
+	for (i = 0; i < visibleBalls.length; i++) {
+		angle = robotOrientation + visibleBalls[i].angle;
+
+		visibleBalls[i].x = robotX + Math.cos(angle) * visibleBalls[i].distance;
+		visibleBalls[i].y = robotY + Math.sin(angle) * visibleBalls[i].distance;
 		
-		ballX = robotX + Math.cos(angle) * balls[i].distance;
-		ballY = robotY + Math.sin(angle) * balls[i].distance;
+		Sim.Util.confine(visibleBalls[i], 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius);
 		
-		closestBall = this.getBallAround(ballX, ballY);
+		closestBall = this.getBallAround(visibleBalls[i].x, visibleBalls[i].y);
 		
 		if (closestBall != null) {
-			closestBall.addMeasurement(ballX, ballY, dt);
+			closestBall.addMeasurement(visibleBalls[i].x, visibleBalls[i].y, dt);
 			
 			handledBalls.push(closestBall.id);
 		} else {
-			newBall = new Sim.BallLocalizer.Ball(ballX, ballY);
+			newBall = new Sim.BallLocalizer.Ball(visibleBalls[i].x, visibleBalls[i].y);
 			
 			this.balls.push(newBall);
 			
@@ -127,7 +142,7 @@ Sim.BallLocalizer.prototype.update = function(
 		this.balls[i].interpolate(dt);
 	}
 	
-	this.purge(balls);
+	this.purge(visibleBalls, cameraFOV);
 };
 
 Sim.BallLocalizer.prototype.getBallAround = function(x, y) {
@@ -160,22 +175,26 @@ Sim.BallLocalizer.prototype.getBallAround = function(x, y) {
 	return closestBall;
 };
 
-Sim.BallLocalizer.prototype.purge = function(visibleBalls) {
+Sim.BallLocalizer.prototype.purge = function(visibleBalls, cameraFOV) {
 	var remainingBalls = [],
 		i;
 		
 	for (i = 0; i < this.balls.length; i++) {
-		if (this.isValid(this.balls[i], visibleBalls)) {
+		if (!this.balls[i].shouldBeRemoved()) {
 			remainingBalls.push(this.balls[i]);
+		}
+		
+		if (!this.isValid(this.balls[i], visibleBalls, cameraFOV)) {
+			this.balls[i].markForRemoval(sim.conf.ballLocalizer.ballRemoveTime);
 		}
 	}
 	
 	this.balls = remainingBalls;
 };
 
-Sim.BallLocalizer.prototype.isValid = function(ball, visibleBalls) {
+Sim.BallLocalizer.prototype.isValid = function(ball, visibleBalls, cameraFOV) {
 	if (Sim.Util.confine(ball, 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius)) {
-		return false;
+		//return false;
 	}
 	
 	var currentTime = Sim.Util.getMicrotime();
@@ -187,13 +206,36 @@ Sim.BallLocalizer.prototype.isValid = function(ball, visibleBalls) {
 	var velocityMagnitude = Sim.Math.getVectorLength(ball.velocityX, ball.velocityY);
 	
 	if (velocityMagnitude > sim.conf.ballLocalizer.ballMaxVelocity) {
-		sim.dbg.console('too fast', velocityMagnitude, sim.conf.ballLocalizer.ballMaxVelocity);
-		
 		return false;
 	}
 	
 	if (sim.game.isBallInYellowGoal(this) || sim.game.isBallInBlueGoal(this)) {
 		return false;
+	}
+	
+	if (cameraFOV.containsPoint(ball.x, ball.y)) {
+		var ballNear = false,
+			distance,
+			nearestDistance = null,
+			i;
+		
+		for (i = 0; i < visibleBalls.length; i++) {
+			distance = Sim.Math.getDistanceBetween(ball, visibleBalls[i]);
+			
+			if (distance <= sim.conf.ballLocalizer.maxFovRemoveDistance) {
+				ballNear = true;
+				
+				break;
+			}
+			
+			if (nearestDistance == null || distance < nearestDistance) {
+				nearestDistance = distance;
+			}
+		}
+		
+		if (!ballNear) {
+			return false;
+		}
 	}
 	
 	return true;

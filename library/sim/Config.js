@@ -13,7 +13,7 @@ Sim.Config = {
 		goalWidth: 0.7
 	},
 	game: {
-		balls: 11
+		balls: 1
 	},
 	ball: {
 		radius: 0.021335,
@@ -47,11 +47,13 @@ Sim.Config = {
 		senseNoise: 0.5
 	},
 	ballLocalizer: {
-		maxBallIdentityDistance: 0.2,
+		maxBallIdentityDistance: 0.25,
+		maxFovRemoveDistance: 0.5,
 		ballPositionAverages: 10,
 		ballPurgeLifetime: 10.0,
 		ballDrag: 0.2,
 		ballElasticity: 0.3,
-		ballMaxVelocity: 2.0
+		ballMaxVelocity: 8.0,
+		ballRemoveTime: 1.0
 	}
 };
