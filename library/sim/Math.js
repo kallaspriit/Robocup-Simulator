@@ -110,11 +110,11 @@ Sim.Math.collideCircles = function(a, b) {
 	return true;
 };
 
-Sim.Math.collideWalls = function(obj, dt) {
+Sim.Math.collideWalls = function(obj) {
 	var bounceMultiplier = obj.elasticity * -1,
 		initialVelocityX = obj.velocityX,
 		initialVelocityY = obj.velocityY;
-	
+
 	if (obj.x < obj.radius) {
 		obj.x = obj.radius;
 		obj.velocityX *= bounceMultiplier;
@@ -146,6 +146,9 @@ Sim.Math.getDistanceBetween = function(a, b) {
 	return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 };
 
+Sim.Math.getVectorLength = function(x, y) {
+	return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+};
 
 Sim.Math.getAngleBetween = function(a, b, orientation) {
 	var forwardVec = $V2(Math.cos(orientation), Math.sin(orientation)).toUnitVector(),

@@ -16,8 +16,7 @@ Sim.UI.prototype.init = function() {
 	this.initKeyboardControls();
 	this.initTools();
 	
-	/*
-	$('#render-camera-btn').click(function() {
+	/*$('#render-camera-btn').click(function() {
 		var r = sim.game.robots.yellow,
 			currentCameraPoly = r.cameraPoly1.rotate(r.orientation).translate(r.x, r.y);
 		
@@ -27,8 +26,7 @@ Sim.UI.prototype.init = function() {
 			fill: 'rgba(255, 0, 0, 0.5)',
 			stroke: 'none'
 		});
-	});
-	*/
+	});*/
 };
 
 Sim.UI.prototype.initDebugListener = function() {
@@ -138,6 +136,8 @@ Sim.UI.prototype.onKeyDown = function(key) {
 		sim.renderer.cancelActions();
 	} else if (key == 53) {
 		sim.renderer.toggleParticles();
+	} else if (key == 54) {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).togglePerfectLocalization();
 	}
 };
 
@@ -172,6 +172,10 @@ Sim.UI.prototype.initTools = function() {
 	
 	$('#toggle-particles-btn').click(function() {
 		sim.renderer.toggleParticles();
+	});
+	
+	$('#toggle-perfect-localization-btn').click(function() {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).togglePerfectLocalization();
 	});
 };
 

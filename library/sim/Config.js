@@ -49,6 +49,9 @@ Sim.Config = {
 	ballLocalizer: {
 		maxBallIdentityDistance: 0.2,
 		ballPositionAverages: 10,
-		ballPurgeLifetime: 1
+		ballPurgeLifetime: 10.0,
+		ballDrag: 0.2,
+		ballElasticity: 0.3,
+		ballMaxVelocity: 2.0
 	}
 };

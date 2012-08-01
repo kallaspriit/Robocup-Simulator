@@ -719,17 +719,14 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		ball = robot.ballLocalizer.balls[i];
 		
 		if (typeof(this.robots[name].balls[ball.id]) == 'undefined') {
-			this.robots[name].balls[ball.id] = this.c.circle(0, 0, sim.conf.ball.radius);
-			this.robots[name].balls[ball.id].attr({
-				fill: '#F00',
-				stroke: 'none',
+			this.robots[name].balls[ball.id] = this.createGuessedBall(ball);
+		} else {
+			this.robots[name].balls[ball.id].body.attr({
 				cx: ball.x,
 				cy: ball.y
 			});
-		} else {
-			this.robots[name].balls[ball.id].attr({
-				cx: ball.x,
-				cy: ball.y
+			this.robots[name].balls[ball.id].id.attr({
+				'transform': this.getGuessedBallTransform(ball)
 			});
 		}
 		
@@ -738,7 +735,8 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	
 	for (ballId in this.robots[name].balls) {
 		if (updatedBalls.indexOf(parseInt(ballId)) == -1) {
-			this.robots[name].balls[ballId].remove();
+			this.robots[name].balls[ballId].body.remove();
+			this.robots[name].balls[ballId].id.remove();
 			
 			delete this.robots[name].balls[ballId];
 		}
@@ -766,6 +764,33 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	*/
    
 	this.showCommandsQueue(this.robots[name].robot);
+};
+
+Sim.Renderer.prototype.createGuessedBall = function(ball) {
+	var body = this.c.circle(ball.x, ball.y, sim.conf.ball.radius * 2),
+		id = this.c.text(0, 0);
+	
+	body.attr({
+		'fill': 'none',
+		'stroke': '#F00',
+		'stroke-width': '1'
+	});
+	
+	id.attr({
+		fill: '#F00',
+		'font-size': 1,
+		'transform': this.getGuessedBallTransform(ball),
+		'text': ball.id
+	});
+	
+	return {
+		body: body,
+		id: id
+	};
+};
+
+Sim.Renderer.prototype.getGuessedBallTransform = function(ball) {
+	return 'T' + ball.x + ' ' + (ball.y - 0.8) + 'S0.15';
 };
 
 Sim.Renderer.prototype.updateScore = function(yellowScore, blueScore) {

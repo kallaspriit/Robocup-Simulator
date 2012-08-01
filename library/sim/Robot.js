@@ -36,6 +36,7 @@ Sim.Robot = function(
 	this.velocityX = 0;
 	this.velocityY = 0;
 	this.commands = [];
+	this.perfectLocalization = false;
 	
 	this.goals = [];
 	this.balls = [];
@@ -172,11 +173,12 @@ Sim.Robot = function(
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
-	this.virtualX = this.x;
-	this.virtualY = this.y;
-	this.virtualOrientation = this.orientation;
-	this.virtualVelocityX = this.velocityX;
-	this.virtualVelocityY = this.velocityY;
+	for (var i = 0; i < this.robotLocalizer.particles.length; i++) {
+		this.robotLocalizer.particles[i].x = this.x;
+		this.robotLocalizer.particles[i].y = this.y;
+		this.robotLocalizer.particles[i].orientation = this.orientation;
+		this.robotLocalizer.particles[i].probability = 1;
+	}
 };
 
 Sim.Robot.prototype.step = function(dt) {
@@ -187,6 +189,14 @@ Sim.Robot.prototype.step = function(dt) {
 	
 	this.handleBalls(dt);
 	this.handleCommands(dt);
+};
+
+Sim.Robot.prototype.togglePerfectLocalization = function() {
+	this.perfectLocalization = !this.perfectLocalization;
+};
+
+Sim.Robot.prototype.isPerfectLocalization = function() {
+	return this.perfectLocalization;
 };
 
 Sim.Robot.prototype.updateVision = function(dt) {
@@ -241,7 +251,8 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 		this.virtualX,
 		this.virtualY,
 		this.virtualOrientation,
-		this.balls
+		this.balls,
+		dt
 	);
 };
 
@@ -280,14 +291,22 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 		dt
 	);
 	
-	var position = this.robotLocalizer.getPosition(this);
-	
-	this.virtualX = position.x;
-	this.virtualY = position.y;
-	this.virtualOrientation = position.orientation;
-	
-	sim.dbg.box('Evaluation', position.evaluation, 2);
+	if (this.perfectLocalization) {
+		this.virtualX = this.x;
+		this.virtualY = this.y;
+		this.virtualOrientation = this.orientation;
 		
+		sim.dbg.box('Evaluation', 'n/a');
+	} else {
+		var position = this.robotLocalizer.getPosition(this);
+	
+		this.virtualX = position.x;
+		this.virtualY = position.y;
+		this.virtualOrientation = position.orientation;
+		
+		sim.dbg.box('Evaluation', position.evaluation, 2);
+	}
+	
 	/*
 	this.virtualOrientation = (this.virtualOrientation + noisyMovement.omega) % (Math.PI * 2.0);
 	this.virtualVelocityX = noisyMovement.velocityX * Math.cos(this.virtualOrientation) - noisyMovement.velocityY * Math.sin(this.virtualOrientation),
@@ -441,6 +460,10 @@ Sim.Robot.prototype.getOmega = function() {
 	return avgOmega * this.wheelRadius / this.wheelOffset;
 };
 */
+
+Sim.Robot.prototype.getViewPolygon = function() {
+	return r.cameraPoly1.rotate(r.orientation).translate(r.x, r.y);
+};
 
 Sim.Robot.prototype.getMovement = function(noisy) {
 	var omegas = this.wheelOmegas;

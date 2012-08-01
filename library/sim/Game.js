@@ -157,7 +157,7 @@ Sim.Game.prototype.stepBalls = function(dt) {
 		} else {
 			this.balls[i].step(dt);
 
-			if (Sim.Math.collideWalls(this.balls[i], dt)) {
+			if (Sim.Math.collideWalls(this.balls[i])) {
 				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
 			}
 		}
