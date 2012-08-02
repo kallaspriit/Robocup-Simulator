@@ -7,7 +7,9 @@ Sim.BallLocalizer.BallId = 0;
 Sim.BallLocalizer.Ball = function(x, y) {
 	this.id = Sim.BallLocalizer.BallId++;
 	this.positions = [];
+	this.velocities = [];
 	this.positionCounter = 0;
+	this.velocityCounter = 0;
 	this.created = Sim.Util.getMicrotime();
 	this.updated = this.created;
 	this.x = null;
@@ -22,17 +24,26 @@ Sim.BallLocalizer.Ball = function(x, y) {
 };
 
 Sim.BallLocalizer.Ball.prototype.addMeasurement = function(x, y, dt) {
+	var currentTime = Sim.Util.getMicrotime(),
+		sinceLastUpdate = currentTime - this.updated;
+		
 	this.positions[this.positionCounter] = {x: x, y: y};
 	this.positionCounter = (this.positionCounter + 1) % sim.conf.ballLocalizer.ballPositionAverages;
-	this.updated = Sim.Util.getMicrotime();
+	this.updated = currentTime;
 	
 	var position = this.getPosition();
 	
-	if (this.x != null && this.y != null) {
-		this.velocityX = (position.x - this.x) / dt;
-		this.velocityY = (position.y - this.y) / dt;
+	if (this.x != null && this.y != null && sinceLastUpdate <= sim.conf.ballLocalizer.velocityUpdateMaxTime) {
+		var velocityX = (position.x - this.x) / dt,
+			velocityY = (position.y - this.y) / dt;
 		
-		//sim.dbg.box('#' + this.id, this.velocityX + ',' + this.velocityY);
+		this.velocities[this.velocityCounter] = {x: velocityX, y: velocityY};
+		this.velocityCounter = (this.velocityCounter + 1) % sim.conf.ballLocalizer.ballVelocityAverages;
+		
+		var velocity = this.getVelocity();
+		
+		this.velocityX = velocity.x;
+		this.velocityY = velocity.y;
 	}
 	
 	this.x = position.x;
@@ -52,6 +63,28 @@ Sim.BallLocalizer.Ball.prototype.getPosition = function() {
 		
 		xSum += this.positions[i].x;
 		ySum += this.positions[i].y;
+		
+		samples++;
+	}
+	
+	return {
+		x: xSum / samples,
+		y: ySum / samples
+	};
+};
+
+Sim.BallLocalizer.Ball.prototype.getVelocity = function() {
+	var xSum = 0,
+		ySum = 0,
+		samples = 0;
+	
+	for (var i = 0; i < sim.conf.ballLocalizer.ballVelocityAverages; i++) {
+		if (typeof(this.velocities[i]) != 'object') {
+			continue;
+		}
+		
+		xSum += this.velocities[i].x;
+		ySum += this.velocities[i].y;
 		
 		samples++;
 	}
@@ -134,6 +167,7 @@ Sim.BallLocalizer.prototype.update = function(
 		}
 	}
 	
+	/*
 	for (i = 0; i < this.balls.length; i++) {
 		if (handledBalls.indexOf(parseInt(this.balls[i].id)) != -1) {
 			continue;
@@ -141,7 +175,8 @@ Sim.BallLocalizer.prototype.update = function(
 		
 		this.balls[i].interpolate(dt);
 	}
-	
+	*/
+    
 	this.purge(visibleBalls, cameraFOV);
 };
 

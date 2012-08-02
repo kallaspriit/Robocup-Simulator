@@ -13,7 +13,7 @@ Sim.Config = {
 		goalWidth: 0.7
 	},
 	game: {
-		balls: 1
+		balls: 11
 	},
 	ball: {
 		radius: 0.021335,
@@ -35,7 +35,7 @@ Sim.Config = {
 		wheelOffset: 0.12,
 		cameraDistance: 5.0,
 		cameraWidth: 8.0,
-		kickerForce: 30.0,
+		kickerForce: 3000.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
 		distanceDeviation: 0.01
@@ -49,11 +49,13 @@ Sim.Config = {
 	ballLocalizer: {
 		maxBallIdentityDistance: 0.25,
 		maxFovRemoveDistance: 0.5,
-		ballPositionAverages: 10,
+		ballPositionAverages: 2,
+		ballVelocityAverages: 5,
 		ballPurgeLifetime: 10.0,
 		ballDrag: 0.2,
 		ballElasticity: 0.3,
 		ballMaxVelocity: 8.0,
-		ballRemoveTime: 1.0
+		ballRemoveTime: 0.3,
+		velocityUpdateMaxTime: 0.3
 	}
 };

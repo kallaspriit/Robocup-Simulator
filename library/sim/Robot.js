@@ -35,6 +35,7 @@ Sim.Robot = function(
 	this.lastMovement = null;
 	this.velocityX = 0;
 	this.velocityY = 0;
+	this.dt = 1000 / 60;
 	this.commands = [];
 	this.perfectLocalization = false;
 	
@@ -178,6 +179,8 @@ Sim.Robot.prototype.resetDeviation = function() {
 };
 
 Sim.Robot.prototype.step = function(dt) {
+	this.dt = dt;
+	
 	this.updateVision(dt);
 	this.updateRobotLocalizer(dt);
 	this.updateBallLocalizer(dt);
@@ -626,7 +629,7 @@ Sim.Robot.prototype.kick = function() {
 	
 	var dir = Sim.Math.dirBetween(this, this.dribbledBall);
 	
-	Sim.Math.addImpulse(this.dribbledBall, dir, -1 * this.kickerForce, sim.game.lastStepDuration);
+	Sim.Math.addImpulse(this.dribbledBall, dir, -1 * this.kickerForce * this.dt, sim.game.lastStepDuration);
 	
 	this.dribbledBall._dribbled = false;
 	this.dribbledBall = null;
