@@ -111,6 +111,7 @@ Sim.Game.prototype.step = function() {
 	
 	this.stepBalls(dt);
 	this.stepRobots(dt);
+	this.stepUI(dt);
 	
 	this.lastStepDuration = dt;
 	this.lastStepTime = Sim.Util.getMicrotime();
@@ -194,6 +195,10 @@ Sim.Game.prototype.stepRobots = function(dt) {
 			robot: robot
 		});
 	}
+};
+
+Sim.Game.prototype.stepUI = function(dt) {
+	sim.dbg.step(dt);
 };
 
 Sim.Game.prototype.isBallInYellowGoal = function(ball) {

@@ -126,6 +126,8 @@ Sim.UI.prototype.onKeyDown = function(key) {
 		sim.renderer.toggleParticles();
 	} else if (key == 54) {
 		sim.game.getRobot(Sim.Game.Side.YELLOW).togglePerfectLocalization();
+	} else if (key == 55) {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).toggleAI();
 	}
 };
 
@@ -164,6 +166,10 @@ Sim.UI.prototype.initTools = function() {
 	
 	$('#toggle-perfect-localization-btn').click(function() {
 		sim.game.getRobot(Sim.Game.Side.YELLOW).togglePerfectLocalization();
+	});
+	
+	$('#toggle-ai-btn').click(function() {
+		sim.game.getRobot(Sim.Game.Side.YELLOW).toggleAI();
 	});
 };
 

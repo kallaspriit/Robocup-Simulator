@@ -37,7 +37,8 @@ Sim.Robot = function(
 	this.velocityY = 0;
 	this.dt = 1000 / 60;
 	this.commands = [];
-	this.perfectLocalization = false;
+	this.perfectLocalization = true;
+	this.useAI = true;
 	
 	this.goals = [];
 	this.balls = [];
@@ -49,6 +50,7 @@ Sim.Robot = function(
 	this.virtualVelocityX = this.velocityX;
 	this.virtualVelocityY = this.velocityY;
 	
+	this.ai = new Sim.AI(this);
 	this.vision = new Sim.Vision();
 	this.robotLocalizer = new Sim.RobotLocalizer(
 		sim.conf.robotLocalizer.particleCount,
@@ -167,6 +169,8 @@ Sim.Robot = function(
 	]);
 	
 	this.robotLocalizer.init();
+	
+	this.resetDeviation();
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
@@ -184,6 +188,7 @@ Sim.Robot.prototype.step = function(dt) {
 	this.updateVision(dt);
 	this.updateRobotLocalizer(dt);
 	this.updateBallLocalizer(dt);
+	this.updateAI(dt);
 	this.updateMovement(dt);
 	
 	this.handleBalls(dt);
@@ -194,8 +199,16 @@ Sim.Robot.prototype.togglePerfectLocalization = function() {
 	this.perfectLocalization = !this.perfectLocalization;
 };
 
+Sim.Robot.prototype.toggleAI = function() {
+	this.useAI = !this.useAI;
+};
+
 Sim.Robot.prototype.isPerfectLocalization = function() {
 	return this.perfectLocalization;
+};
+
+Sim.Robot.prototype.hasBall = function() {
+	return this.dribbledBall != null;
 };
 
 Sim.Robot.prototype.updateVision = function(dt) {
@@ -240,6 +253,12 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 	);
 };
 
+Sim.Robot.prototype.updateAI = function(dt) {
+	if (this.useAI) {
+		this.ai.step(dt);
+	}
+};
+
 Sim.Robot.prototype.updateMovement = function(dt) {
 	/*
 	if ((this.targetDir.x != 0 || this.targetDir.y != 0) && this.targetOmega != 0) {
@@ -280,7 +299,7 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 		this.virtualY = this.y;
 		this.virtualOrientation = this.orientation;
 		
-		sim.dbg.box('Evaluation', 'n/a');
+		//sim.dbg.box('Evaluation', 'n/a');
 	} else {
 		var position = this.robotLocalizer.getPosition(this);
 	
@@ -288,7 +307,7 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 		this.virtualY = position.y;
 		this.virtualOrientation = position.orientation;
 		
-		sim.dbg.box('Evaluation', position.evaluation, 2);
+		//sim.dbg.box('Evaluation', position.evaluation, 2);
 	}
 	
 	/*
@@ -299,8 +318,8 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 	this.virtualY += this.virtualVelocityY;
 	*/
    
-	sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2) + ',' + Sim.Math.round(this.wheelOmegas[3], 2));
-	sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
+	//sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2) + ',' + Sim.Math.round(this.wheelOmegas[3], 2));
+	//sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
 };
 
 Sim.Robot.prototype.localizeByDistances = function(goals) {
@@ -334,9 +353,9 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	
 	var angleSum = yellowAngle + blueAngle;
 	
-	sim.dbg.box('yellow angle', Sim.Math.radToDeg(yellowAngle));
-	sim.dbg.box('blue angle', Sim.Math.radToDeg(blueAngle));
-	sim.dbg.box('angle sum', Sim.Math.radToDeg(angleSum % Math.PI * 2));
+	//sim.dbg.box('yellow angle', Sim.Math.radToDeg(yellowAngle));
+	//sim.dbg.box('blue angle', Sim.Math.radToDeg(blueAngle));
+	//sim.dbg.box('angle sum', Sim.Math.radToDeg(angleSum % Math.PI * 2));
 	
 	/*
 	var noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation),
@@ -610,6 +629,8 @@ Sim.Robot.prototype.handleBalls = function(dt) {
 
 				if (Math.abs(ballAngle) <= this.dribbleAngle) {
 					this.grabBall(ball);
+					
+					break;
 				}
 			}
 		}

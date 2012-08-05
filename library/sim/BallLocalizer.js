@@ -4,7 +4,7 @@ Sim.BallLocalizer = function() {
 
 Sim.BallLocalizer.BallId = 0;
 
-Sim.BallLocalizer.Ball = function(x, y) {
+Sim.BallLocalizer.Ball = function(x, y, distance, angle) {
 	this.id = Sim.BallLocalizer.BallId++;
 	this.positions = [];
 	this.velocities = [];
@@ -14,16 +14,18 @@ Sim.BallLocalizer.Ball = function(x, y) {
 	this.updated = this.created;
 	this.x = null;
 	this.y = null;
+	this.distance = null;
+	this.angle = null;
 	this.elasticity = sim.conf.ballLocalizer.ballElasticity;
 	this.radius = sim.conf.ball.radius;
 	this.velocityX = 0;
 	this.velocityY = 0;
 	this.removeTime = null;
 	
-	this.addMeasurement(x, y);
+	this.addMeasurement(x, y, distance, angle);
 };
 
-Sim.BallLocalizer.Ball.prototype.addMeasurement = function(x, y, dt) {
+Sim.BallLocalizer.Ball.prototype.addMeasurement = function(x, y, distance, angle, dt) {
 	var currentTime = Sim.Util.getMicrotime(),
 		sinceLastUpdate = currentTime - this.updated;
 		
@@ -48,7 +50,10 @@ Sim.BallLocalizer.Ball.prototype.addMeasurement = function(x, y, dt) {
 	
 	this.x = position.x;
 	this.y = position.y;
+	this.distance = distance;
+	this.angle = angle;
 	this.removeTime = null;
+	this.visible = true;
 };
 
 Sim.BallLocalizer.Ball.prototype.getPosition = function() {
@@ -95,7 +100,8 @@ Sim.BallLocalizer.Ball.prototype.getVelocity = function() {
 	};
 };
 
-Sim.BallLocalizer.Ball.prototype.interpolate = function(dt) {
+Sim.BallLocalizer.Ball.prototype.stepNotVisible = function(dt) {
+	/*
 	this.x += this.velocityX * dt;
 	this.y += this.velocityY * dt;
 	
@@ -116,6 +122,11 @@ Sim.BallLocalizer.Ball.prototype.interpolate = function(dt) {
 	}
 
 	Sim.Math.collideWalls(this);
+	*/
+    
+	this.distance = null;
+	this.angle = null;
+	this.visible = false;
 };
 
 Sim.BallLocalizer.Ball.prototype.markForRemoval = function(seconds) {
@@ -155,11 +166,11 @@ Sim.BallLocalizer.prototype.update = function(
 		closestBall = this.getBallAround(visibleBalls[i].x, visibleBalls[i].y);
 		
 		if (closestBall != null) {
-			closestBall.addMeasurement(visibleBalls[i].x, visibleBalls[i].y, dt);
+			closestBall.addMeasurement(visibleBalls[i].x, visibleBalls[i].y, visibleBalls[i].distance, visibleBalls[i].angle, dt);
 			
 			handledBalls.push(closestBall.id);
 		} else {
-			newBall = new Sim.BallLocalizer.Ball(visibleBalls[i].x, visibleBalls[i].y);
+			newBall = new Sim.BallLocalizer.Ball(visibleBalls[i].x, visibleBalls[i].y, visibleBalls[i].distance, visibleBalls[i].angle);
 			
 			this.balls.push(newBall);
 			
@@ -167,17 +178,25 @@ Sim.BallLocalizer.prototype.update = function(
 		}
 	}
 	
-	/*
 	for (i = 0; i < this.balls.length; i++) {
 		if (handledBalls.indexOf(parseInt(this.balls[i].id)) != -1) {
 			continue;
 		}
 		
-		this.balls[i].interpolate(dt);
+		this.balls[i].stepNotVisible(dt);
 	}
-	*/
     
 	this.purge(visibleBalls, cameraFOV);
+};
+
+Sim.BallLocalizer.prototype.getBallInfo = function(id) {
+	for (var i = 0; i < this.balls.length; i++) {
+		if (this.balls[i].id == id) {
+			return this.balls[i];
+		}
+	}
+	
+	return null;
 };
 
 Sim.BallLocalizer.prototype.getBallAround = function(x, y) {

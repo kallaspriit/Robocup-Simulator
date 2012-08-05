@@ -27,7 +27,7 @@ BODY {
 #toolbar {
 	position: absolute;
 	left: 10px;
-	bottom: -60px;
+	top: 560px;
 	padding: 0;
 	margin: 0;
 	list-style: none;
@@ -35,7 +35,7 @@ BODY {
 #toolbar > LI {
 	float: left;
 	padding: 0;
-	margin: 0 0 20px;
+	margin: 0;
 }
 #toolbar > LI > BUTTON {
 	padding: 6px 12px;
@@ -85,13 +85,22 @@ BODY {
 }
 
 /* Debugging */
-.debug-value {
+#debug-wrap {
 	position: absolute;
+	left: 20px;
+	top: 20px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+#debug-wrap > LI {
+	float: left;
+	clear: both;
 	background-color: rgba(0, 0, 0, 0.5);
 	border-radius: 3px;
 	padding: 5px 10px;
+	margin: 0 0 10px;
 	color: #FFF;
-	left: 20px;
 }
 #commands {
 	position: absolute;

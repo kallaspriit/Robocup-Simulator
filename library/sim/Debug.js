@@ -54,22 +54,31 @@ Sim.Debug.prototype.console = function() {
 
 Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 	if (this.boxes[name] == null) {
+		var container = $('#debug-wrap');
+		
+		if (container.length == 0) {
+			$(document.body).append($('<ul/>', {
+				'id': 'debug-wrap'
+			}));
+			
+			container = $('#debug-wrap')
+		}
+		
 		var boxId = 'debug-box-' + this.boxCount;
 		
-		$(document.body).append($('<div/>', {
+		container.append($('<li/>', {
 			'id': boxId,
 			'class': 'debug-value'
 		}));
 		
 		var boxElement = $('#' + boxId);
 		
-		boxElement.css('top', ((this.boxCount * 34) + 20) + 'px');
-		
 		this.boxes[name] = {
 			id: boxId,
 			element: boxElement,
 			firstValue: value,
-			lastValue: value
+			lastValue: value,
+			lastUpdated: Sim.Util.getMicrotime()
 		};
 		
 		this.boxCount++;
@@ -79,6 +88,8 @@ Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 		element = box.element,
 		displayValue = value;
 	
+	box.lastUpdated = Sim.Util.getMicrotime();
+	
 	if (typeof(value) == 'number' && typeof(numberDecimals) == 'number') {
 		displayValue = Sim.Math.round(value, numberDecimals);
 	}
@@ -86,4 +97,16 @@ Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 	element.html('<strong>' + name + '</strong>: <span>' + displayValue + '</span>');
 	
 	box.lastValue = value;
+};
+
+Sim.Debug.prototype.step = function(dt) {
+	for (var name in this.boxes) {
+		if (Sim.Util.getMicrotime() - this.boxes[name].lastUpdated > 1.0) {
+			sim.dbg.console('remove', name);
+			
+			$(this.boxes[name].element).remove();
+			
+			delete this.boxes[name];
+		}
+	}
 };
