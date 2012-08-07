@@ -13,38 +13,12 @@ Sim.AI = function(robot) {
 	this.blindApproachSpeed = 1.0;
 	this.minApproachSpeed = 0.5;
 	this.maxApproachSpeed = 1.5;
-	
-	this.initEventListeners();
-};
-
-Sim.AI.prototype = new Sim.EventTarget();
-
-Sim.AI.Event = {
-	GAME_OVER: 'game-over'
 };
 
 Sim.AI.State = {
 	FIND_BALL: 'find-ball',
 	FETCH_BALL: 'fetch-ball',
 	FIND_GOAL: 'find-goal'
-};
-
-Sim.AI.prototype.initEventListeners = function() {
-	var self = this;
-	
-	sim.game.bind(Sim.Game.Event.SCORE_CHANGED, function(e) {
-		var totalScore = e.yellowScore + e.blueScore;
-		
-		if (totalScore == sim.conf.game.balls) {
-			self.stop();
-			self.fire({
-				type: Sim.AI.Event.GAME_OVER,
-				yellowScore: e.yellowScore,
-				blueScore: e.blueScore,
-				duration: self.totalDuration
-			})
-		}
-	});
 };
 
 Sim.AI.prototype.start = function() {
@@ -174,18 +148,20 @@ Sim.AI.prototype.stepFindGoal = function(dt) {
 	}
 	
 	if (!goalVisible) {
+		// TODO: If the guessed orientation is wrong, might be unable to turn to the actual goal
+		
 		var goalPos = this.getOppositeGoalPos(),
 			robotPos = this.robot.getVirtualPos();
 		
 		goalAngle = Sim.Math.getAngleBetween(goalPos, robotPos, robotPos.orientation);
 	}
 	
-	if (Math.abs(goalAngle) < Sim.Math.degToRad(this.goalKickThresholdAngle)) {
+	var targetOmega = goalAngle * this.rotationSpeed;
+
+	this.robot.setTargetDir(0, 0, targetOmega);
+	
+	if (goalVisible && Math.abs(goalAngle) < Sim.Math.degToRad(this.goalKickThresholdAngle)) {
 		this.robot.kick();
-	} else {
-		var targetOmega = goalAngle * this.rotationSpeed;
-		
-		this.robot.setTargetDir(0, 0, targetOmega);
 	}
 };
 

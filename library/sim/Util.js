@@ -117,6 +117,14 @@ Sim.Util.limitRange = function(value, min, max) {
     return Math.max(Math.min(value, max), min);
 };
 
+Sim.Util.combine = function(base, extender) {
+	if (typeof(extender) != 'object') {
+		return base;
+	}
+	
+    return $.extend({}, base, extender);
+};
+
 Array.prototype.remove = function(from, to) {
 	var rest = this.slice((to || from) + 1 || this.length);
 	

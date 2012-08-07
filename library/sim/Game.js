@@ -8,6 +8,7 @@ Sim.Game = function() {
 	this.fpsAdjustTime = 0;
 	this.yellowScore = 0;
 	this.blueScore = 0;
+	this.duration = 0;
 	this.stepTimeout = null;
 };
 
@@ -20,7 +21,8 @@ Sim.Game.Event = {
 	ROBOT_ADDED: 'robot-added',
 	ROBOT_UPDATED: 'robot-updated',
 	SCORE_CHANGED: 'score-changed',
-	RESTARTED: 'restarted'
+	RESTARTED: 'restarted',
+	GAME_OVER: 'game-over'
 };
 
 Sim.Game.Side = {
@@ -64,6 +66,7 @@ Sim.Game.prototype.restart = function() {
 	this.yellowScore = 0;
 	this.blueScore = 0;
 	this.stepTimeout = null;
+	this.duration = 0;
 	
 	this.fire({
 		type: Sim.Game.Event.RESTARTED
@@ -115,17 +118,19 @@ Sim.Game.prototype.initRobots = function() {
 			Sim.Game.Side.YELLOW,
 			sim.conf.yellowRobot.startX,
 			sim.conf.yellowRobot.startY,
-			sim.conf.yellowRobot.startOrientation,
-			sim.conf.yellowRobot.radius,
-			sim.conf.yellowRobot.mass,
-			sim.conf.yellowRobot.wheelRadius,
-			sim.conf.yellowRobot.wheelOffset,
-			sim.conf.yellowRobot.cameraDistance,
-			sim.conf.yellowRobot.cameraWidth,
-			sim.conf.yellowRobot.kickerForce,
-			sim.conf.yellowRobot.dribblerAngle,
-			sim.conf.yellowRobot.omegaDeviation,
-			sim.conf.yellowRobot.distanceDeviation
+			{
+				orientation: sim.conf.yellowRobot.startOrientation,
+				radius: sim.conf.yellowRobot.radius,
+				mass: sim.conf.yellowRobot.mass,
+				wheelRadius: sim.conf.yellowRobot.wheelRadius,
+				wheelOffset: sim.conf.yellowRobot.wheelOffset,
+				cameraDistance: sim.conf.yellowRobot.cameraDistance,
+				cameraWidth: sim.conf.yellowRobot.cameraWidth,
+				kickerForce: sim.conf.yellowRobot.kickerForce,
+				dribblerAngle: sim.conf.yellowRobot.dribblerAngle,
+				omegaDeviation: sim.conf.yellowRobot.omegaDeviation,
+				distanceDeviation: sim.conf.yellowRobot.distanceDeviation
+			}
 		);
 	
 	this.addRobot(Sim.Game.Side.YELLOW, yellowRobot);
@@ -146,6 +151,8 @@ Sim.Game.prototype.step = function() {
 	} else {
 		dt = time - this.lastStepTime;
 	}
+	
+	this.duration += dt;
 	
 	this.fpsCounter.step();
 	
@@ -170,8 +177,6 @@ Sim.Game.prototype.stepBalls = function(dt) {
 		for (var robotName in this.robots) {
 			if (Sim.Math.collideCircles(this.balls[i], this.robots[robotName])) {
 				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
-				
-				sim.dbg.console('collide', this.balls[i], this.robots[robotName]);
 			}
 		}
 		
@@ -273,6 +278,8 @@ Sim.Game.prototype.increaseYellowScore = function() {
 		yellowScore: this.yellowScore,
 		blueScore: this.blueScore
 	});
+	
+	this.checkScore();
 };
 
 Sim.Game.prototype.increaseBlueScore = function() {
@@ -283,4 +290,20 @@ Sim.Game.prototype.increaseBlueScore = function() {
 		yellowScore: this.yellowScore,
 		blueScore: this.blueScore
 	});
+	
+	this.checkScore();
+};
+
+Sim.Game.prototype.checkScore = function() {
+	var totalScore = this.yellowScore + this.blueScore;
+
+	if (totalScore == sim.conf.game.balls) {
+		this.stop();
+		this.fire({
+			type: Sim.Game.Event.GAME_OVER,
+			yellowScore: this.yellowScore,
+			blueScore: this.blueScore,
+			duration: this.duration
+		})
+	}
 };

@@ -153,7 +153,7 @@ Sim.Renderer.prototype.initEventListeners = function() {
 	});
 	
 	for (var name in sim.game.robots) {
-		sim.game.robots[name].ai.bind(Sim.AI.Event.GAME_OVER, function(e) {
+		sim.game.bind(Sim.Game.Event.GAME_OVER, function(e) {
 			self.showGameOver(e.yellowScore, e.blueScore, e.duration);
 		});
 	}

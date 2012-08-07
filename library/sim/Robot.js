@@ -2,32 +2,38 @@ Sim.Robot = function(
 	side,
 	x,
 	y,
-	orientation,
-	radius,
-	mass,
-	wheelRadius,
-	wheelOffset,
-	cameraDistance,
-	cameraWidth,
-	kickerForce,
-	dribbleAngle,
-	omegaDeviation,
-	distanceDeviation
+	options
 ) {
+	this.defaults = {
+		orientation: 0,
+		radius: 0.125,
+		mass: 2.5,
+		wheelRadius: 0.025,
+		wheelOffset: 0.12,
+		cameraDistance: 5.0,
+		cameraWidth: 8.0,
+		kickerForce: 30,
+		dribbleAngle: Sim.Math.degToRad(20.0),
+		omegaDeviation: 2.5,
+		distanceDeviation: 0.01
+	};
+	
+	this.options = Sim.Util.combine(this.defaults, options);
+	
 	this.side = side;
 	this.x = x;
 	this.y = y;
-	this.orientation = orientation;
-	this.radius = radius;
-	this.mass = mass;
-	this.wheelRadius = wheelRadius;
-	this.wheelOffset = wheelOffset;
-	this.cameraDistance = cameraDistance;
-	this.cameraWidth = cameraWidth;
-	this.kickerForce = kickerForce;
-	this.dribbleAngle = dribbleAngle;
-	this.omegaDeviation = omegaDeviation;
-	this.distanceDeviation = distanceDeviation;
+	this.orientation = this.options.orientation;
+	this.radius = this.options.radius;
+	this.mass = this.options.mass;
+	this.wheelRadius = this.options.wheelRadius;
+	this.wheelOffset = this.options.wheelOffset;
+	this.cameraDistance = this.options.cameraDistance;
+	this.cameraWidth = this.options.cameraWidth;
+	this.kickerForce = this.options.kickerForce;
+	this.dribbleAngle = this.options.dribbleAngle;
+	this.omegaDeviation = this.options.omegaDeviation;
+	this.distanceDeviation = this.options.distanceDeviation;
 	
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
@@ -38,7 +44,7 @@ Sim.Robot = function(
 	this.dt = 1000 / 60;
 	this.commands = [];
 	this.perfectLocalization = false;
-	this.useAI = true;
+	this.useController = true;
 	
 	this.goals = [];
 	this.balls = [];
@@ -46,11 +52,11 @@ Sim.Robot = function(
 	
 	this.virtualX = x;
 	this.virtualY = y;
-	this.virtualOrientation = orientation;
+	this.virtualOrientation = this.orientation;
 	this.virtualVelocityX = this.velocityX;
 	this.virtualVelocityY = this.velocityY;
 	
-	this.ai = new Sim.AI(this);
+	this.controller = new Sim.AI(this);
 	this.vision = new Sim.Vision();
 	this.robotLocalizer = new Sim.RobotLocalizer(
 		sim.conf.robotLocalizer.particleCount,
@@ -171,7 +177,7 @@ Sim.Robot = function(
 	this.robotLocalizer.init();
 	
 	this.resetDeviation();
-	this.ai.start();
+	this.controller.start();
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
@@ -189,7 +195,7 @@ Sim.Robot.prototype.step = function(dt) {
 	this.updateVision(dt);
 	this.updateRobotLocalizer(dt);
 	this.updateBallLocalizer(dt);
-	this.updateAI(dt);
+	this.updateController(dt);
 	this.updateMovement(dt);
 	
 	this.handleBalls(dt);
@@ -200,8 +206,8 @@ Sim.Robot.prototype.togglePerfectLocalization = function() {
 	this.perfectLocalization = !this.perfectLocalization;
 };
 
-Sim.Robot.prototype.toggleAI = function() {
-	this.useAI = !this.useAI;
+Sim.Robot.prototype.toggleController = function() {
+	this.useController = !this.useController;
 };
 
 Sim.Robot.prototype.isPerfectLocalization = function() {
@@ -255,8 +261,8 @@ Sim.Robot.prototype.updateVision = function(dt) {
 Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
 	this.robotLocalizer.update(this.measurements);
 	
-	this.localizeByDistances(this.goals);
-	this.localizeByAngles(this.goals);
+	//this.localizeByDistances(this.goals);
+	//this.localizeByAngles(this.goals);
 };
 
 Sim.Robot.prototype.updateBallLocalizer = function(dt) {
@@ -270,9 +276,9 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 	);
 };
 
-Sim.Robot.prototype.updateAI = function(dt) {
-	if (this.useAI) {
-		this.ai.step(dt);
+Sim.Robot.prototype.updateController = function(dt) {
+	if (this.useController) {
+		this.controller.step(dt);
 	}
 };
 
