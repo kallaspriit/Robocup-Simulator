@@ -1,6 +1,10 @@
 Sim.Math = {};
 
 Sim.Math.round = function(number, decimals) {
+	if (typeof(number) != 'number') {
+		return number;
+	}
+	
 	return number.toFixed(decimals);
 };
 
@@ -161,24 +165,74 @@ Sim.Math.getVectorLength = function(x, y) {
 	return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 };
 
-Sim.Math.getAngleBetween = function(a, b, orientation) {
-	var forwardVec = $V2(Math.cos(orientation), Math.sin(orientation)).toUnitVector(),
-		ballHeading = $V2(a.x - b.x, a.y - b.y).toUnitVector();
-
-	return Math.atan2(ballHeading.y(), ballHeading.x()) - Math.atan2(forwardVec.y(), forwardVec.x());
+Sim.Math.createNormalizedVector = function(vec) {
+	var length = Sim.Math.getVectorLength(vec);
+	
+	return {
+		x: vec.x / length,
+		y: vec.y / length
+	};
 };
 
-Sim.Math.dirBetween = function(from, to) {
-	return $V2(from.x - to.x, from.y - to.y).toUnitVector();
+Sim.Math.createDirVector = function(from, to) {
+	return Sim.Math.createNormalizedVector({
+		x: from.x - to.x,
+		y: from.y - to.y
+	});
+	
+	//return $V2(from.x - to.x, from.y - to.y).toUnitVector();
+};
+
+Sim.Math.createForwardVector = function(orientation) {
+	return Sim.Math.createNormalizedVector({
+		x: Math.cos(orientation),
+		y: Math.sin(orientation)
+	});
+};
+
+Sim.Math.getVectorLength = function(vec) {
+	return Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.y, 2));
+};
+
+Sim.Math.getVectorDotProduct = function(a, b) {
+	return a.x * b.x + a.y * b.y;
+};
+
+Sim.Math.getAngleBetween = function(pointA, pointB, orientationA) {
+	var forwardVec = Sim.Math.createForwardVector(orientationA),
+		dirVec = Sim.Math.createDirVector(pointA, pointB),
+		angle = Math.atan2(dirVec.y, dirVec.x) - Math.atan2(forwardVec.y, forwardVec.x);
+	
+	if (angle < -Math.PI) {
+		angle += Math.PI * 2;
+	} else if (angle > Math.PI) {
+		angle -= Math.PI * 2;
+	}
+	
+	return angle;
 };
 
 Sim.Math.addImpulse = function(body, dir, magnitude, dt) {
-	var acceleration = dir.toUnitVector().multiply(magnitude / body.mass * dt);
+	var accelerationMagniture = magnitude / body.mass * dt,
+		acceleration = {
+			x: dir.x * accelerationMagniture,
+			y: dir.y * accelerationMagniture
+		};
 	
-	body.velocityX += acceleration.x();
-	body.velocityY += acceleration.y();
+	body.velocityX += acceleration.x;
+	body.velocityY += acceleration.y;
 };
 
+/**
+ * Calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
+ */
+Sim.Math.getGaussian = function(mu, sigma, x) {
+	return Math.exp(-Math.pow(mu - x,  2) / Math.pow(sigma, 2) / 2.0) / Math.sqrt(2.0 * Math.PI * Math.pow(sigma, 2));
+};
+
+/**
+ * Simple Circle class.
+ */
 Sim.Math.Circle = function(x, y, radius) {
 	this.x = x;
 	this.y = y;
@@ -214,11 +268,4 @@ Sim.Math.Circle.prototype.getIntersections = function(other) {
 		x2: solutionX2,
 		y2: solutionY2
 	};
-};
-
-/**
- * Calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
- */
-Sim.Math.getGaussian = function(mu, sigma, x) {
-	return Math.exp(-Math.pow(mu - x,  2) / Math.pow(sigma, 2) / 2.0) / Math.sqrt(2.0 * Math.PI * Math.pow(sigma, 2));
 };

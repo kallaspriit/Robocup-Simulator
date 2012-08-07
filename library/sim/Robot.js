@@ -37,7 +37,7 @@ Sim.Robot = function(
 	this.velocityY = 0;
 	this.dt = 1000 / 60;
 	this.commands = [];
-	this.perfectLocalization = true;
+	this.perfectLocalization = false;
 	this.useAI = true;
 	
 	this.goals = [];
@@ -171,6 +171,7 @@ Sim.Robot = function(
 	this.robotLocalizer.init();
 	
 	this.resetDeviation();
+	this.ai.start();
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
@@ -209,6 +210,22 @@ Sim.Robot.prototype.isPerfectLocalization = function() {
 
 Sim.Robot.prototype.hasBall = function() {
 	return this.dribbledBall != null;
+};
+
+Sim.Robot.prototype.getSide = function() {
+	return this.side;
+};
+
+Sim.Robot.prototype.getOppositeSide = function() {
+	return this.side == Sim.Game.Side.YELLOW ? Sim.Game.Side.BLUE : Sim.Game.Side.YELLOW;
+};
+
+Sim.Robot.prototype.getVisibleGoals = function() {
+	return this.goals;
+};
+
+Sim.Robot.prototype.getVisibleBalls = function() {
+	return this.balls;
 };
 
 Sim.Robot.prototype.updateVision = function(dt) {
@@ -464,6 +481,14 @@ Sim.Robot.prototype.getOmega = function() {
 };
 */
 
+Sim.Robot.prototype.getVirtualPos = function() {
+	return {
+		x: this.virtualX,
+		y: this.virtualY,
+		orientation: this.virtualOrientation
+	};
+};
+
 Sim.Robot.prototype.getVirtualFOV = function() {
 	return this.cameraFOV
 		.rotate(this.orientation)
@@ -531,6 +556,12 @@ Sim.Robot.prototype.setTargetDir = function(x, y, omega) {
 	return this;
 };
 
+Sim.Robot.prototype.stop = function() {
+	this.setTargetDir(0, 0, 0);
+	
+	return this;
+};
+
 Sim.Robot.prototype.getTargetDir = function() {
 	return {
 		x: this.targetDir.x,
@@ -540,7 +571,7 @@ Sim.Robot.prototype.getTargetDir = function() {
 };
 
 Sim.Robot.prototype.setTargetOmega = function(omega) {
-	this.targetOmega = omega;
+	this.targetOmega = Sim.Util.limitValue(omega, Math.PI * 2);
 	
 	this.updateWheelSpeeds();
 	
@@ -648,9 +679,9 @@ Sim.Robot.prototype.kick = function() {
 		return;
 	}
 	
-	var dir = Sim.Math.dirBetween(this, this.dribbledBall);
+	var dir = Sim.Math.createDirVector(this, this.dribbledBall);
 	
-	Sim.Math.addImpulse(this.dribbledBall, dir, -1 * this.kickerForce * this.dt, sim.game.lastStepDuration);
+	Sim.Math.addImpulse(this.dribbledBall, dir, -1 * this.kickerForce, sim.game.lastStepDuration);
 	
 	this.dribbledBall._dribbled = false;
 	this.dribbledBall = null;

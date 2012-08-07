@@ -144,6 +144,12 @@ Sim.UI.prototype.isKeyDown = function(key) {
 Sim.UI.prototype.initTools = function() {
 	var self = this;
 	
+	$('#restart-btn').click(function() {
+		$('#game-over').fadeOut(300);
+		
+		sim.game.restart();
+	});
+	
 	$('#drive-to-btn').click(function() {
 		sim.renderer.showDriveTo();
 	});

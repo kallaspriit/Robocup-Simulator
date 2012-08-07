@@ -131,6 +131,10 @@ Sim.Renderer.prototype.initGameListeners = function() {
 	this.game.bind(Sim.Game.Event.SCORE_CHANGED, function(e) {
 		self.updateScore(e.yellowScore, e.blueScore);
 	});
+	
+	this.game.bind(Sim.Game.Event.RESTARTED, function(e) {
+		self.clear();
+	});
 };
 
 Sim.Renderer.prototype.initEventListeners = function() {
@@ -147,6 +151,12 @@ Sim.Renderer.prototype.initEventListeners = function() {
 	$(window).mousewheel(function(e, delta, deltaX, deltaY) {
 		self.onMouseWheel(e, delta, deltaX, deltaY);
 	});
+	
+	for (var name in sim.game.robots) {
+		sim.game.robots[name].ai.bind(Sim.AI.Event.GAME_OVER, function(e) {
+			self.showGameOver(e.yellowScore, e.blueScore, e.duration);
+		});
+	}
 };
 
 Sim.Renderer.prototype.onMouseMove = function(e) {
@@ -282,15 +292,22 @@ Sim.Renderer.prototype.translateCoords = function(clientX, clientY) {
 	return svgPoint.matrixTransform(svg.getScreenCTM().inverse());
 };
 
-Sim.Renderer.prototype.run = function() {
-	/*
-	var self = this;
+Sim.Renderer.prototype.showGameOver = function(yellowScore, blueScore, duration)  {
+	var scoreText;
 	
-	window.requestAnimationFrame(function(time){
-		self.draw();
-		self.run();
-	});
-	*/
+	if (yellowScore > blueScore) {
+		scoreText = 'Yellow wins!';
+	} else if (blueScore > yellowScore) {
+		scoreText = 'Blue wins!';
+	} else {
+		scoreText = 'It\'s a draw!';
+	}
+	
+	$('#yellow-score').html(yellowScore);
+	$('#blue-score').html(blueScore);
+	$('#match-duration').html('The match took ' + Sim.Math.round(duration, 1) + ' seconds');
+	$('#game-over > H1').html(scoreText)
+	$('#game-over').fadeIn(150);
 };
 
 Sim.Renderer.prototype.draw = function() {
@@ -760,6 +777,40 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	this.showCommandsQueue(this.robots[name].robot);
 };
 
+Sim.Renderer.prototype.removeRobot = function(name) {
+	this.robots[name].frame.remove();
+	this.robots[name].dir.remove();
+	this.robots[name].visual.remove();
+	this.robots[name].ghost.remove();
+	
+	var newRobots = {},
+		robotName,
+		i;
+	
+	for (i = 0; i < this.robots[name].particles.length; i++) {
+		this.robots[name].particles[i].dir.remove();
+	}
+	
+	for (i = 0; i < this.robots[name].balls.length; i++) {
+		if (
+			typeof(this.robots[name].balls[i]) != 'object'
+			|| typeof(this.robots[name].balls[i].remove) != 'function'
+		) {
+			continue;
+		}
+		
+		this.robots[name].balls[i].remove();
+	}
+	
+	for (robotName in this.robots) {
+		if (robotName != name) {
+			newRobots[robotName] = this.robots[robotName];
+		}
+	}
+	
+	this.robots = newRobots;
+};
+
 Sim.Renderer.prototype.createGuessedBall = function(ball) {
 	var body = this.c.circle(ball.x, ball.y, sim.conf.ball.radius * 2),
 		id = this.c.text(0, 0);
@@ -790,6 +841,16 @@ Sim.Renderer.prototype.getGuessedBallTransform = function(ball) {
 Sim.Renderer.prototype.updateScore = function(yellowScore, blueScore) {
 	this.blueScore.attr('text', blueScore);
 	this.yellowScore.attr('text', yellowScore);
+};
+
+Sim.Renderer.prototype.clear = function() {
+	for (var ballId in this.balls) {
+		this.removeBall(this.balls[ballId]);
+	}
+	
+	for (var robotName in this.robots) {
+		this.removeRobot(robotName);
+	}
 };
 
 Sim.Renderer.prototype.showCommandsQueue = function(robot) {

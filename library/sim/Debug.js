@@ -94,7 +94,7 @@ Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 		displayValue = Sim.Math.round(value, numberDecimals);
 	}
 	
-	element.html('<strong>' + name + '</strong>: <span>' + displayValue + '</span>');
+	element.html('<strong>' + name + '</strong>' + (typeof(displayValue) != 'undefined' ? ': <span>' + displayValue + '</span>' : ''));
 	
 	box.lastValue = value;
 };
@@ -102,8 +102,6 @@ Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 Sim.Debug.prototype.step = function(dt) {
 	for (var name in this.boxes) {
 		if (Sim.Util.getMicrotime() - this.boxes[name].lastUpdated > 1.0) {
-			sim.dbg.console('remove', name);
-			
 			$(this.boxes[name].element).remove();
 			
 			delete this.boxes[name];

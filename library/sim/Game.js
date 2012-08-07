@@ -8,6 +8,7 @@ Sim.Game = function() {
 	this.fpsAdjustTime = 0;
 	this.yellowScore = 0;
 	this.blueScore = 0;
+	this.stepTimeout = null;
 };
 
 Sim.Game.prototype = new Sim.EventTarget();
@@ -18,7 +19,8 @@ Sim.Game.Event = {
 	BALL_REMOVED: 'ball-removed',
 	ROBOT_ADDED: 'robot-added',
 	ROBOT_UPDATED: 'robot-updated',
-	SCORE_CHANGED: 'score-changed'
+	SCORE_CHANGED: 'score-changed',
+	RESTARTED: 'restarted'
 };
 
 Sim.Game.Side = {
@@ -32,6 +34,44 @@ Sim.Game.prototype.init = function() {
 	
 	this.initBalls();
 	this.initRobots();
+};
+
+Sim.Game.prototype.start = function() {
+	var self = this;
+	
+	this.step();
+	
+	this.stepTimeout = window.setTimeout(function() {
+		self.start();
+	}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
+};
+
+Sim.Game.prototype.stop = function() {
+	if (this.stepTimeout != null) {
+		window.clearTimeout(this.stepTimeout);
+		
+		this.stepTimeout = null;
+	}
+};
+
+Sim.Game.prototype.restart = function() {
+	this.stop();
+	
+	this.robots = {};
+	this.balls = [];
+	this.lastStepTime = null;
+	this.fpsAdjustTime = 0;
+	this.yellowScore = 0;
+	this.blueScore = 0;
+	this.stepTimeout = null;
+	
+	this.fire({
+		type: Sim.Game.Event.RESTARTED
+	});
+	
+	this.init();
+	
+	this.start();
 };
 
 Sim.Game.prototype.getRobot = function(name) {
@@ -243,18 +283,4 @@ Sim.Game.prototype.increaseBlueScore = function() {
 		yellowScore: this.yellowScore,
 		blueScore: this.blueScore
 	});
-};
-
-Sim.Game.prototype.run = function() {
-	var self = this;
-	
-	this.step();
-	
-	window.setTimeout(function() {
-		self.run();
-	}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
-	
-	/*window.requestAnimationFrame(function(time){
-		self.run();
-	});*/
 };

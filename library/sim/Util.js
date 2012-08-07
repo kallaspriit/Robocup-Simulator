@@ -105,6 +105,18 @@ Sim.Util.mapRange = function(value, max, minrange, maxrange) {
     return Math.round(((max - value) / max) * (maxrange - minrange)) + minrange;
 };
 
+Sim.Util.limitValue = function(value, max) {
+    if (value < 0) {
+		return Math.max(value, -max);
+	} else {
+		return Math.min(value, max);
+	}
+};
+
+Sim.Util.limitRange = function(value, min, max) {
+    return Math.max(Math.min(value, max), min);
+};
+
 Array.prototype.remove = function(from, to) {
 	var rest = this.slice((to || from) + 1 || this.length);
 	

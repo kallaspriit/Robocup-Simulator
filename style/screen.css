@@ -84,6 +84,69 @@ BODY {
 	border-radius: 20px;
 }
 
+/* Game-over */
+#game-over {
+	position: absolute;
+	width: 400px;
+	height: 300px;
+	left: 50%;
+	top: 50%;
+	margin: -150px 0 0 -200px;
+	background-color: #FFF;
+	border-radius: 10px;
+	box-shadow: 0 0 80px #666;
+	display: none;
+}
+#game-over > H1 {
+	display: block;
+	margin: 0;
+	padding: 0;
+	height: 60px;
+	line-height: 60px;
+	font-family: serif;
+	font-size: 40px;
+	color: #333;
+	text-shadow: 2px 2px 2px #CCC;
+	text-align: center;
+	background-color: #F8F8F8;
+	border-bottom: 1px solid #CCC;
+	border-radius: 10px 10px 0 0;
+}
+#yellow-score,
+#blue-score {
+	position: absolute;
+	top: 80px;
+	width: 120px;
+	height: 100px;
+	line-height: 100px;
+	text-align: center;
+	font-size: 80px;
+	color: #FFF;
+	border-radius: 3px;
+}
+#yellow-score {
+	left: 70px;
+	background-color: #DD0;
+}
+#blue-score {
+	right: 70px;
+	background-color: #00D;
+}
+#match-duration {
+	position: absolute;
+	left: 70px;
+	top: 200px;
+	font-size: 22px;
+}
+#restart-btn {
+	position: absolute;
+	left: 70px;
+	right: 70px;
+	top: 240px;
+	text-align: center;
+	line-height: 30px;
+}
+
 /* Debugging */
 #debug-wrap {
 	position: absolute;

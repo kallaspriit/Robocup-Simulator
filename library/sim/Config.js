@@ -35,7 +35,7 @@ Sim.Config = {
 		wheelOffset: 0.12,
 		cameraDistance: 5.0,
 		cameraWidth: 8.0,
-		kickerForce: 3000.0,
+		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
 		distanceDeviation: 0.01
