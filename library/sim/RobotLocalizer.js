@@ -24,8 +24,8 @@ Sim.RobotLocalizer.prototype.addLandmark = function(name, x, y) {
 Sim.RobotLocalizer.prototype.init = function() {
 	for (var i = 0; i < this.particleCount; i++) {
 		this.particles.push(new Sim.RobotLocalizer.Particle(
-			Sim.Util.random(0, sim.conf.field.width * 1000) / 1000.0,
-			Sim.Util.random(0, sim.conf.field.height * 1000) / 1000.0,
+			Sim.Util.random(0, sim.config.field.width * 1000) / 1000.0,
+			Sim.Util.random(0, sim.config.field.height * 1000) / 1000.0,
 			Sim.Util.random(0, Math.PI * 2 * 1000) / 1000.0,
 			1
 		));
@@ -148,7 +148,7 @@ Sim.RobotLocalizer.prototype.getPosition = function(robot) {
 		i;
 	
 	for (i = 0; i < this.particles.length; i++) {
-		Sim.Util.confine(this.particles[i], 0, sim.conf.field.width, 0, sim.conf.field.height, robot.radius);
+		Sim.Util.confine(this.particles[i], 0, sim.config.field.width, 0, sim.config.field.height, robot.radius);
 		
 		xSum += this.particles[i].x;
 		ySum += this.particles[i].y;

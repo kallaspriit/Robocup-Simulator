@@ -1,10 +1,10 @@
-Sim.AI = function(robot) {
+Sim.SimpleAI = function(robot) {
 	this.robot = robot;
-	this.state = Sim.AI.State.FIND_BALL;
+	this.state = Sim.SimpleAI.State.FIND_BALL;
 	this.stateDuration = 0;
 	this.totalDuration = 0;
 	this.targetBallId = null;
-	this.running = false;
+	this.running = true;
 	
 	// configuration parameters
 	this.rotationSpeed = 8.0;
@@ -15,41 +15,41 @@ Sim.AI = function(robot) {
 	this.maxApproachSpeed = 1.5;
 };
 
-Sim.AI.State = {
+Sim.SimpleAI.State = {
 	FIND_BALL: 'find-ball',
 	FETCH_BALL: 'fetch-ball',
 	FIND_GOAL: 'find-goal'
 };
 
-Sim.AI.prototype.start = function() {
+Sim.SimpleAI.prototype.start = function() {
 	this.running = true;
 };
 
-Sim.AI.prototype.stop = function() {
+Sim.SimpleAI.prototype.stop = function() {
 	this.running = false;
-	this.robot.driveTo(sim.conf.field.width / 2, sim.conf.field.height / 2, 0);
+	this.robot.driveTo(sim.config.field.width / 2, sim.config.field.height / 2, 0);
 };
 
-Sim.AI.prototype.setState = function(state) {
+Sim.SimpleAI.prototype.setState = function(state) {
 	this.state = state;
 	this.stateDuration = 0;
 };
 
-Sim.AI.prototype.step = function(dt) {
+Sim.SimpleAI.prototype.step = function(dt) {
 	if (!this.running) {
 		return;
 	}
 	
 	switch (this.state) {
-		case Sim.AI.State.FIND_BALL:
+		case Sim.SimpleAI.State.FIND_BALL:
 			this.stepFindBall(dt);
 		break;
 		
-		case Sim.AI.State.FETCH_BALL:
+		case Sim.SimpleAI.State.FETCH_BALL:
 			this.stepFetchBall(dt);
 		break;
 		
-		case Sim.AI.State.FIND_GOAL:
+		case Sim.SimpleAI.State.FIND_GOAL:
 			this.stepFindGoal(dt);
 		break;
 	}
@@ -60,12 +60,12 @@ Sim.AI.prototype.step = function(dt) {
 	this.showDebugInfo();
 };
 
-Sim.AI.prototype.showDebugInfo = function() {
+Sim.SimpleAI.prototype.showDebugInfo = function() {
 	sim.dbg.box('State', this.state + ' - ' + Sim.Math.round(this.stateDuration, 1) + ' seconds');
 	sim.dbg.box('Match duration', Sim.Math.round(this.totalDuration, 1) + ' seconds');
 };
 
-Sim.AI.prototype.stepFindBall = function(dt) {
+Sim.SimpleAI.prototype.stepFindBall = function(dt) {
 	var ballId = this.pickBall();
 	
 	this.targetBallId = null;
@@ -73,7 +73,7 @@ Sim.AI.prototype.stepFindBall = function(dt) {
 	if (ballId != null) {
 		this.targetBallId = ballId;
 		
-		this.setState(Sim.AI.State.FETCH_BALL);
+		this.setState(Sim.SimpleAI.State.FETCH_BALL);
 		
 		return;
 	}
@@ -81,9 +81,9 @@ Sim.AI.prototype.stepFindBall = function(dt) {
 	this.robot.setTargetDir(0, 0, Math.PI);
 };
 
-Sim.AI.prototype.stepFetchBall = function(dt) {
+Sim.SimpleAI.prototype.stepFetchBall = function(dt) {
 	if (this.robot.hasBall()) {
-		this.setState(Sim.AI.State.FIND_GOAL);
+		this.setState(Sim.SimpleAI.State.FIND_GOAL);
 		
 		return;
 	}
@@ -91,7 +91,7 @@ Sim.AI.prototype.stepFetchBall = function(dt) {
 	var newBallId = this.pickBall();
 	
 	if (newBallId == null) {
-		this.setState(Sim.AI.State.FIND_BALL);
+		this.setState(Sim.SimpleAI.State.FIND_BALL);
 		
 		return;
 	}
@@ -103,7 +103,7 @@ Sim.AI.prototype.stepFetchBall = function(dt) {
 	var ball = this.robot.ballLocalizer.getBallInfo(this.targetBallId);
 	
 	if (ball == null) {
-		this.setState(Sim.AI.State.FIND_BALL);
+		this.setState(Sim.SimpleAI.State.FIND_BALL);
 		
 		return;
 	}
@@ -124,11 +124,11 @@ Sim.AI.prototype.stepFetchBall = function(dt) {
 	this.robot.setTargetDir(targetSpeed, 0, targetOmega);
 };
 
-Sim.AI.prototype.stepFindGoal = function(dt) {
+Sim.SimpleAI.prototype.stepFindGoal = function(dt) {
 	this.targetBallId = null;
 	
 	if (!this.robot.hasBall()) {
-		this.setState(Sim.AI.State.FIND_BALL);
+		this.setState(Sim.SimpleAI.State.FIND_BALL);
 		
 		return;
 	}
@@ -165,7 +165,7 @@ Sim.AI.prototype.stepFindGoal = function(dt) {
 	}
 };
 
-Sim.AI.prototype.pickBall = function() {
+Sim.SimpleAI.prototype.pickBall = function() {
 	var balls = this.robot.ballLocalizer.balls,
 		robotPos = this.robot.getVirtualPos(),
 		closestDistance = null,
@@ -189,16 +189,16 @@ Sim.AI.prototype.pickBall = function() {
 	return closestBall.id;
 };
 
-Sim.AI.prototype.getOppositeGoalPos = function() {
+Sim.SimpleAI.prototype.getOppositeGoalPos = function() {
 	if (this.robot.side == Sim.Game.Side.YELLOW) {
 		return {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2
+			x: sim.config.field.width,
+			y: sim.config.field.height / 2
 		};
 	} else {
 		return {
 			x: 0,
-			y: sim.conf.field.height / 2
+			y: sim.config.field.height / 2
 		};
 	}
 };

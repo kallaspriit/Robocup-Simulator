@@ -1,15 +1,18 @@
 Sim.Game = function() {
 	this.robots = {};
 	this.balls = [];
+	this.controllers = [];
 	this.fpsCounter = null;
-	this.timeStep = 1.0 / sim.conf.simulation.targetFramerate;
+	this.timeStep = 1.0 / sim.config.simulation.targetFramerate;
 	this.lastStepTime = null;
 	this.lastStepDuration = this.timeStep;
 	this.fpsAdjustTime = 0;
 	this.yellowScore = 0;
 	this.blueScore = 0;
 	this.duration = 0;
+	this.ballCount = 0;
 	this.stepTimeout = null;
+	this.running = false;
 };
 
 Sim.Game.prototype = new Sim.EventTarget();
@@ -36,16 +39,13 @@ Sim.Game.prototype.init = function() {
 	
 	this.initBalls();
 	this.initRobots();
+	this.initControllers();
 };
 
 Sim.Game.prototype.start = function() {
-	var self = this;
+	this.running = true;
 	
 	this.step();
-	
-	this.stepTimeout = window.setTimeout(function() {
-		self.start();
-	}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
 };
 
 Sim.Game.prototype.stop = function() {
@@ -73,7 +73,6 @@ Sim.Game.prototype.restart = function() {
 	});
 	
 	this.init();
-	
 	this.start();
 };
 
@@ -87,6 +86,7 @@ Sim.Game.prototype.getRobot = function(name) {
 
 Sim.Game.prototype.addBall = function(ball) {
 	this.balls.push(ball);
+	this.ballCount++;
 
 	this.fire({
 		type: Sim.Game.Event.BALL_ADDED,
@@ -105,9 +105,9 @@ Sim.Game.prototype.addRobot = function(name, robot) {
 };
 
 Sim.Game.prototype.initBalls = function() {
-	for (var i = 0; i < sim.conf.game.balls; i++) {
-		var x = Sim.Util.random(sim.conf.ball.radius * 1000, (sim.conf.field.width - sim.conf.ball.radius) * 1000) / 1000.0,
-			y = Sim.Util.random(sim.conf.ball.radius * 1000, (sim.conf.field.height - sim.conf.ball.radius) * 1000) / 1000.0;
+	for (var i = 0; i < sim.config.game.balls; i++) {
+		var x = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.width - sim.config.ball.radius) * 1000) / 1000.0,
+			y = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.height - sim.config.ball.radius) * 1000) / 1000.0;
 		
 		this.addBall(new Sim.Ball(x, y));
 	}
@@ -116,30 +116,37 @@ Sim.Game.prototype.initBalls = function() {
 Sim.Game.prototype.initRobots = function() {
 	var yellowRobot = new Sim.Robot(
 			Sim.Game.Side.YELLOW,
-			sim.conf.yellowRobot.startX,
-			sim.conf.yellowRobot.startY,
-			{
-				orientation: sim.conf.yellowRobot.startOrientation,
-				radius: sim.conf.yellowRobot.radius,
-				mass: sim.conf.yellowRobot.mass,
-				wheelRadius: sim.conf.yellowRobot.wheelRadius,
-				wheelOffset: sim.conf.yellowRobot.wheelOffset,
-				cameraDistance: sim.conf.yellowRobot.cameraDistance,
-				cameraWidth: sim.conf.yellowRobot.cameraWidth,
-				kickerForce: sim.conf.yellowRobot.kickerForce,
-				dribblerAngle: sim.conf.yellowRobot.dribblerAngle,
-				omegaDeviation: sim.conf.yellowRobot.omegaDeviation,
-				distanceDeviation: sim.conf.yellowRobot.distanceDeviation
-			}
+			sim.config.yellowRobot.startX,
+			sim.config.yellowRobot.startY,
+			sim.config.yellowRobot.startOrientation,
+			sim.config.yellowRobot
+		), blueRobot = new Sim.Robot(
+			Sim.Game.Side.BLUE,
+			sim.config.blueRobot.startX,
+			sim.config.blueRobot.startY,
+			sim.config.blueRobot.startOrientation,
+			sim.config.blueRobot
 		);
 	
-	this.addRobot(Sim.Game.Side.YELLOW, yellowRobot);
+	this.addRobot('yellow', yellowRobot);
+	this.addRobot('blue', blueRobot);
+};
+
+Sim.Game.prototype.initControllers = function() {
+	var yellowController = new Sim.SimpleAI(this.getRobot('yellow')),
+		blueController1 = new Sim.KeyboardController(this.getRobot('blue')),
+		blueController2 = new Sim.JoystickController(this.getRobot('blue'));
+	
+	this.controllers.push(yellowController);
+	this.controllers.push(blueController1);
+	this.controllers.push(blueController2);
 };
 
 Sim.Game.prototype.step = function() {
-	var time = Sim.Util.getMicrotime(),
+	var self = this,
+		time = Sim.Util.getMicrotime(),
 		fps = this.fpsCounter.getLastFPS(),
-		fpsDiff = sim.conf.simulation.targetFramerate - fps,
+		fpsDiff = sim.config.simulation.targetFramerate - fps,
 		dt;
 	
 	sim.dbg.box('FPS', fps, 2);
@@ -158,6 +165,7 @@ Sim.Game.prototype.step = function() {
 	
 	this.stepBalls(dt);
 	this.stepRobots(dt);
+	this.stepControllers(dt);
 	this.stepUI(dt);
 	
 	this.lastStepDuration = dt;
@@ -167,6 +175,12 @@ Sim.Game.prototype.step = function() {
 	
 	if (this.fpsAdjustTime < -this.timeStep) {
 		this.fpsAdjustTime = -this.timeStep;
+	}
+	
+	if (this.running) {
+		this.stepTimeout = window.setTimeout(function() {
+			self.start();
+		}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
 	}
 };
 
@@ -242,6 +256,12 @@ Sim.Game.prototype.stepRobots = function(dt) {
 	}
 };
 
+Sim.Game.prototype.stepControllers = function(dt) {
+	for (var i = 0; i < this.controllers.length; i++) {
+		this.controllers[i].step(dt);
+	}
+};
+
 Sim.Game.prototype.stepUI = function(dt) {
 	sim.dbg.step(dt);
 };
@@ -249,8 +269,8 @@ Sim.Game.prototype.stepUI = function(dt) {
 Sim.Game.prototype.isBallInYellowGoal = function(ball) {
 	if (
 		ball.x <= ball.radius
-		&& ball.y >= sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
-		&& ball.y <= sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
+		&& ball.y >= sim.config.field.height / 2 - sim.config.field.goalWidth / 2
+		&& ball.y <= sim.config.field.height / 2 + sim.config.field.goalWidth / 2
 	) {
 		return true;
 	} else {
@@ -260,9 +280,9 @@ Sim.Game.prototype.isBallInYellowGoal = function(ball) {
 
 Sim.Game.prototype.isBallInBlueGoal = function(ball) {
 	if (
-		ball.x >= sim.conf.field.width - ball.radius
-		&& ball.y >= sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
-		&& ball.y <= sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
+		ball.x >= sim.config.field.width - ball.radius
+		&& ball.y >= sim.config.field.height / 2 - sim.config.field.goalWidth / 2
+		&& ball.y <= sim.config.field.height / 2 + sim.config.field.goalWidth / 2
 	) {
 		return true;
 	} else {
@@ -297,8 +317,9 @@ Sim.Game.prototype.increaseBlueScore = function() {
 Sim.Game.prototype.checkScore = function() {
 	var totalScore = this.yellowScore + this.blueScore;
 
-	if (totalScore == sim.conf.game.balls) {
+	if (totalScore >= this.ballCount) {
 		this.stop();
+		
 		this.fire({
 			type: Sim.Game.Event.GAME_OVER,
 			yellowScore: this.yellowScore,

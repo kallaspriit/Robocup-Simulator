@@ -135,8 +135,8 @@ Sim.Math.collideWalls = function(obj) {
 		obj.velocityX *= bounceMultiplier;
 	}
 	
-	if (obj.x > sim.conf.field.width - obj.radius) {
-		obj.x = sim.conf.field.width - obj.radius;
+	if (obj.x > sim.config.field.width - obj.radius) {
+		obj.x = sim.config.field.width - obj.radius;
 		obj.velocityX *= bounceMultiplier;
 	}
 	
@@ -145,8 +145,8 @@ Sim.Math.collideWalls = function(obj) {
 		obj.velocityY *= bounceMultiplier;
 	}
 	
-	if (obj.y > sim.conf.field.height - obj.radius) {
-		obj.y = sim.conf.field.height - obj.radius;
+	if (obj.y > sim.config.field.height - obj.radius) {
+		obj.y = sim.config.field.height - obj.radius;
 		obj.velocityY *= bounceMultiplier;
 	}
 	

@@ -4,9 +4,9 @@ Sim.Ball = function(x, y, radius, mass, elasticity) {
 	this.id = Sim.BallId++;
 	this.x = x;
 	this.y = y;
-	this.radius = radius || sim.conf.ball.radius;
-	this.mass = mass || sim.conf.ball.mass;
-	this.elasticity = elasticity || sim.conf.ball.elasticity;
+	this.radius = radius || sim.config.ball.radius;
+	this.mass = mass || sim.config.ball.mass;
+	this.elasticity = elasticity || sim.config.ball.elasticity;
 	this.velocityX = 0.0;
 	this.velocityY = 0.0;
 };
@@ -17,7 +17,7 @@ Sim.Ball.prototype.step = function(dt) {
 	
 	var xSign = this.velocityX > 0 ? 1 : -1,
 		ySign = this.velocityY > 0 ? 1 : -1,
-		stepDrag = sim.conf.ball.drag * dt;
+		stepDrag = sim.config.ball.drag * dt;
 	
 	if (Math.abs(this.velocityX) > stepDrag) {
 		this.velocityX -= stepDrag * xSign;

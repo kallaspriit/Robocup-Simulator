@@ -38,27 +38,27 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 		pos = {x: x, y: y},
 		yellowCenterPos = {
 			x: 0,
-			y: sim.conf.field.height / 2
+			y: sim.config.field.height / 2
 		},
 		yellowLeftPos = {
 			x: 0,
-			y: sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
+			y: sim.config.field.height / 2 - sim.config.field.goalWidth / 2
 		},
 		yellowRightPos = {
 			x: 0,
-			y: sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
+			y: sim.config.field.height / 2 + sim.config.field.goalWidth / 2
 		},
 		blueCenterPos = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2
+			x: sim.config.field.width,
+			y: sim.config.field.height / 2
 		},
 		blueLeftPos = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2
+			x: sim.config.field.width,
+			y: sim.config.field.height / 2 - sim.config.field.goalWidth / 2
 		},
 		blueRightPos = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2 + sim.conf.field.goalWidth / 2
+			x: sim.config.field.width,
+			y: sim.config.field.height / 2 + sim.config.field.goalWidth / 2
 		},
 		yellowDistance,
 		yellowAngle,

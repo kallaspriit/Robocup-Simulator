@@ -1,19 +1,31 @@
 Sim.UI = function() {
-	this.movementJoystick = null;
-	this.forwardDown = false;
 	this.keystates = {};
+	this.tools = [];
+	this.toolKeys = {
+		1: [49, 97],
+		2: [50, 98],
+		3: [51, 99],
+		4: [52, 100],
+		5: [53, 101],
+		6: [54, 102],
+		7: [55, 103],
+		8: [56, 104],
+		9: [57, 105]
+	};
 };
 
 Sim.UI.prototype = new Sim.EventTarget();
 
-Sim.UI.Event = {};
+Sim.UI.Event = {
+	KEY_DOWN: 'key-down',
+	KEY_UP: 'key-up'
+};
 
 Sim.UI.prototype.init = function() {
 	this.initDebugListener();
-	this.initEventListeners();
 	this.initFullscreenToggle();
-	this.initMovementJoystick();
 	this.initKeyboardControls();
+	this.initEventListeners();
 	this.initTools();
 };
 
@@ -53,28 +65,6 @@ Sim.UI.prototype.initDebugListener = function() {
 	});
 };
 
-Sim.UI.prototype.initEventListeners = function() {
-	sim.renderer.bind(Sim.Renderer.Event.DRIVE_TO_REQUESTED, function(e) {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).driveTo(e.x, e.y, e.orientation);
-	});
-	
-	sim.renderer.bind(Sim.Renderer.Event.SPAWN_BALL_REQUESTED, function(e) {
-		sim.game.addBall(new Sim.Ball(e.x, e.y));
-	});
-};
-
-Sim.UI.prototype.initMovementJoystick = function() {
-	this.movementJoystick = new Sim.UI.Joystick('movement-joystick');
-	
-	this.movementJoystick.onMove(function(xPos, yPos) {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).setTargetDir(-yPos, xPos);
-	}).onBlur(function() {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).setTargetDir(0, 0);
-	}).onMouseWheel(function(event, delta, deltaX, deltaY) {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).turnBy(Math.PI / 4 * delta, 0.25);
-	});
-};
-
 Sim.UI.prototype.initKeyboardControls = function() {
 	var self = this;
 
@@ -105,36 +95,56 @@ Sim.UI.prototype.initKeyboardControls = function() {
 	});
 };
 
+Sim.UI.prototype.initEventListeners = function() {
+	sim.renderer.bind(Sim.Renderer.Event.SPAWN_BALL_REQUESTED, function(e) {
+		sim.game.addBall(new Sim.Ball(e.x, e.y));
+	});
+};
+
 Sim.UI.prototype.onKeyDown = function(key) {
 	sim.dbg.console('Key down', key);
 	
-	this.updateRobotDir();
-	
-	if (key == 32) {
-		sim.game.robots.yellow.kick();
-	} else if (key == 97 ||key == 49) {
+	/*if (key == 97 ||key == 49) {
 		sim.renderer.showDriveTo();
 	} else if (key == 98 ||key == 50) {
 		sim.renderer.showSpawnBall();
-	} else if (key == 99 ||key == 51) {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).resetDeviation();
 	} else if (key == 100 ||key == 52) {
 		this.showNoiseDialog();
 	} else if (key == 27) {
 		sim.renderer.cancelActions();
 	} else if (key == 53) {
 		sim.renderer.toggleParticles();
+	} else if (key == 99 ||key == 51) {
+		sim.game.getRobot('yellow').resetDeviation();
+		sim.game.getRobot('blue').resetDeviation();
 	} else if (key == 54) {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).togglePerfectLocalization();
-	} else if (key == 55) {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).toggleAI();
+		sim.game.getRobot('yellow').togglePerfectLocalization();
+		sim.game.getRobot('blue').togglePerfectLocalization();
+	}*/
+	
+	for (var i = 0; i < this.tools.length; i++) {
+		var keys = this.toolKeys[this.tools[i].nr];
+		
+		for (var j = 0; j < keys.length; j++) {
+			if (keys[j] == key) {
+				this.tools[i].callback();
+				
+				break;
+			}
+		}
 	}
+	
+	this.fire({
+		type: Sim.UI.Event.KEY_DOWN,
+		key: key
+	});
 };
 
 Sim.UI.prototype.onKeyUp = function(key) {
-	//sim.dbg.console('Key up', key);
-	
-	this.updateRobotDir();
+	this.fire({
+		type: Sim.UI.Event.KEY_UP,
+		key: key
+	});
 };
 
 Sim.UI.prototype.isKeyDown = function(key) {
@@ -144,13 +154,23 @@ Sim.UI.prototype.isKeyDown = function(key) {
 Sim.UI.prototype.initTools = function() {
 	var self = this;
 	
-	$('#restart-btn').click(function() {
-		$('#game-over').fadeOut(300);
-		
-		sim.game.restart();
+	this.createTool('Restart', function() {
+		self.restart();
 	});
 	
-	$('#drive-to-btn').click(function() {
+	this.createTool('Spawn ball', function() {
+		sim.renderer.showSpawnBall();
+	});
+	
+	this.createTool('Toggle particles', function() {
+		sim.renderer.toggleParticles();
+	});
+	
+	$('#restart-btn').click(function() {
+		self.restart();
+	});
+	
+	/*$('#drive-to-btn').click(function() {
 		sim.renderer.showDriveTo();
 	});
 	
@@ -159,7 +179,7 @@ Sim.UI.prototype.initTools = function() {
 	});
 	
 	$('#reset-deviation-btn').click(function() {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).resetDeviation();
+		sim.game.getRobot('yellow').resetDeviation();
 	});
 	
 	$('#set-noise-btn').click(function() {
@@ -171,11 +191,29 @@ Sim.UI.prototype.initTools = function() {
 	});
 	
 	$('#toggle-perfect-localization-btn').click(function() {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).togglePerfectLocalization();
+		sim.game.getRobot('yellow').togglePerfectLocalization();
+	});*/
+};
+
+Sim.UI.prototype.createTool = function(name, callback) {
+	var toolbar = $('#toolbar'),
+		id = name.replace(' ', '-') + '-tool-btn',
+		nr = this.tools.length + 1,
+		btn;
+	
+	toolbar.append('<li><button id="' + id + '">' +nr  + '. ' + name + '</button></li>');
+	
+	btn = $('#' + id);
+	
+	btn.click(function() {
+		callback();
 	});
 	
-	$('#toggle-ai-btn').click(function() {
-		sim.game.getRobot(Sim.Game.Side.YELLOW).toggleAI();
+	this.tools.push({
+		id: id,
+		nr: nr,
+		btn: btn,
+		callback: callback
 	});
 };
 
@@ -184,181 +222,16 @@ Sim.UI.prototype.initFullscreenToggle = function() {
 };
 
 Sim.UI.prototype.showNoiseDialog = function() {
-	var robot = sim.game.getRobot(Sim.Game.Side.YELLOW),
+	var robot = sim.game.getRobot('yellow'),
 		newLevel = parseFloat(window.prompt('Enter new noise level', robot.omegaDeviation));
 
 	robot.omegaDeviation = newLevel;
 	robot.resetDeviation();
 };
 
-Sim.UI.prototype.updateRobotDir = function() {
-	
-	var forwardDown = this.isKeyDown(87),
-		leftDown = this.isKeyDown(65),
-		reverseDown = this.isKeyDown(83),
-		rightDown = this.isKeyDown(68),
-		turnRightDown = this.isKeyDown(69),
-		turnLeftDown = this.isKeyDown(81),
-		shiftDown = this.isKeyDown(16),
-		speed = shiftDown ? 2.5 : 1,
-		turnRate = Math.PI,
-		x = 0,
-		y = 0,
-		omega = 0;
-	
-	if (forwardDown) {
-		x = speed;
-	} else if (reverseDown) {
-		x = -speed;
-	}
-	
-	if (rightDown) {
-		y = speed;
-	} else if (leftDown) {
-		y = -speed;
-	}
-	
-	if (turnRightDown) {
-		omega = turnRate;
-	} else if (turnLeftDown) {
-		omega = -turnRate;
-	}
-	
-	sim.game.getRobot(Sim.Game.Side.YELLOW).setTargetDir(x, y, omega);
-};
-
-Sim.UI.Joystick = function(
-	id,
-	focusCallback,
-	moveCallback,
-	blurCallback,
-	mouseWheelCallback
-) {
-	this.id = id;
-	this.focusCallback = focusCallback;
-	this.moveCallback = moveCallback;
-	this.blurCallback = blurCallback;
-	this.mouseWheelCallback = mouseWheelCallback;
-	
-	this.dragging = false;
-	this.offsetX = 0;
-	this.offsetY = 0;
-	this.handleWidth = 0;
-	this.handleHeight = 0;
-	
-	this.init();
-};
-
-Sim.UI.Joystick.prototype.init = function() {
-	this.container = $('#' + this.id);
-	this.handle = this.container.find('A');
-	
-	this.handleWidth = this.handle.width();
-	this.handleHeight = this.handle.height();
-	
-	var self = this;
-	
-	this.handle.click(function() {
-		return false;
-	});
-	
-	this.handle.mousedown(function(e) {
-		self.offsetX = e.offsetX;
-		self.offsetY = e.offsetY;
-		self.dragging = true;
+Sim.UI.prototype.restart = function() {
+	$('#game-over').fadeOut(300);
 		
-		if (typeof(self.focusCallback) == 'function') {
-			self.focusCallback();
-		}
-	});
-	
-	$(document.body).mouseup(function(e) {
-		if (!self.dragging) {
-			return;
-		}
-		
-		self.dragging = false;
-		
-		var parentWidth = self.container.width(),
-			parentHeight = self.container.height();
-		
-		self.handle.animate({
-			left: parentWidth / 2,
-			top: parentHeight / 2
-		}, 100, function() {
-			if (typeof(self.blurCallback) == 'function') {
-				self.blurCallback();
-			}
-		});
-	});
-	
-	$(document.body).mousemove(function(e) {
-		if (!self.dragging) {
-			return;
-		}
-		
-		var parentOffset = self.container.offset(),
-			parentWidth = self.container.width(),
-			parentHeight = self.container.height(),
-			left = e.clientX - parentOffset.left - self.offsetX + self.handleWidth / 4,
-			top = e.clientY - parentOffset.top - self.offsetY + self.handleHeight / 4;
-		
-		if (left < 0) {
-			left = 0;
-		} else if (left > parentWidth) {
-			left = parentWidth
-		}
-		
-		if (top < 0) {
-			top = 0;
-		} else if (top > parentHeight) {
-			top = parentHeight
-		}
-		
-		var xOffset = left - parentWidth / 2,
-			yOffset = top - parentHeight / 2;
-		
-		self.handle.css({
-			'left': left + 'px',
-			'top': top + 'px'
-		});
-		
-		if (typeof(self.moveCallback) == 'function') {
-			self.moveCallback(xOffset / (parentWidth / 2), yOffset / (parentHeight / 2));
-		}
-	});
-	
-	$(window).mousewheel(function(event, delta, deltaX, deltaY) {
-		if (!self.dragging) {
-			return;
-		}
-		
-		if (typeof(self.mouseWheelCallback) == 'function') {
-			self.mouseWheelCallback(event, delta, deltaX, deltaY);
-		}
-	});
-};
-
-Sim.UI.Joystick.prototype.onFocus = function(listener) {
-	this.focusCallback = listener;
-	
-	return this;
-};
-
-Sim.UI.Joystick.prototype.onMove = function(listener) {
-	this.moveCallback = listener;
-	
-	return this;
-};
-
-Sim.UI.Joystick.prototype.onBlur = function(listener) {
-	this.blurCallback = listener;
-	
-	return this;
-};
-
-Sim.UI.Joystick.prototype.onMouseWheel = function(listener) {
-	this.mouseWheelCallback = listener;
-	
-	return this;
+	//sim.game.restart();
+	window.location.reload();
 };

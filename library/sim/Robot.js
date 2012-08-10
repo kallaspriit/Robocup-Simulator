@@ -2,11 +2,11 @@ Sim.Robot = function(
 	side,
 	x,
 	y,
+	orientation,
 	options
 ) {
 	this.defaults = {
 		orientation: 0,
-		radius: 0.125,
 		mass: 2.5,
 		wheelRadius: 0.025,
 		wheelOffset: 0.12,
@@ -15,7 +15,8 @@ Sim.Robot = function(
 		kickerForce: 30,
 		dribbleAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0.01
+		distanceDeviation: 0.01,
+		smart: false
 	};
 	
 	this.options = Sim.Util.combine(this.defaults, options);
@@ -23,7 +24,7 @@ Sim.Robot = function(
 	this.side = side;
 	this.x = x;
 	this.y = y;
-	this.orientation = this.options.orientation;
+	this.orientation = orientation;
 	this.radius = this.options.radius;
 	this.mass = this.options.mass;
 	this.wheelRadius = this.options.wheelRadius;
@@ -34,6 +35,7 @@ Sim.Robot = function(
 	this.dribbleAngle = this.options.dribbleAngle;
 	this.omegaDeviation = this.options.omegaDeviation;
 	this.distanceDeviation = this.options.distanceDeviation;
+	this.smart = this.options.smart;
 	
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
@@ -56,51 +58,55 @@ Sim.Robot = function(
 	this.virtualVelocityX = this.velocityX;
 	this.virtualVelocityY = this.velocityY;
 	
-	this.controller = new Sim.AI(this);
-	this.vision = new Sim.Vision();
-	this.robotLocalizer = new Sim.RobotLocalizer(
-		sim.conf.robotLocalizer.particleCount,
-		sim.conf.robotLocalizer.forwardNoise,
-		sim.conf.robotLocalizer.turnNoise,
-		sim.conf.robotLocalizer.senseNoise
-	);
-	this.ballLocalizer = new Sim.BallLocalizer(
-		sim.conf.game.balls
-	);
+	if (this.smart) {
+		this.vision = new Sim.Vision();
+		this.robotLocalizer = new Sim.RobotLocalizer(
+			sim.config.robotLocalizer.particleCount,
+			sim.config.robotLocalizer.forwardNoise,
+			sim.config.robotLocalizer.turnNoise,
+			sim.config.robotLocalizer.senseNoise
+		);
+		this.ballLocalizer = new Sim.BallLocalizer(
+			sim.config.game.balls
+		);
 	
-	// yellow goal
-	this.robotLocalizer.addLandmark(
-		'yellow-goal-center',
-		0,
-		sim.conf.field.height / 2.0
-	);
-	this.robotLocalizer.addLandmark(
-		'yellow-goal-left',
-		0,
-		sim.conf.field.height / 2.0 - sim.conf.field.goalWidth / 2.0
-	);
-	this.robotLocalizer.addLandmark(
-		'yellow-goal-right',
-		0,
-		sim.conf.field.height / 2.0 + sim.conf.field.goalWidth / 2.0
-	);
-	
-	// blue goal
-	this.robotLocalizer.addLandmark(
-		'blue-goal-center',
-		sim.conf.field.width,
-		sim.conf.field.height / 2.0
-	);
-	this.robotLocalizer.addLandmark(
-		'blue-goal-left',
-		sim.conf.field.width,
-		sim.conf.field.height / 2.0 - sim.conf.field.goalWidth / 2.0
-	);
-	this.robotLocalizer.addLandmark(
-		'blue-goal-right',
-		sim.conf.field.width,
-		sim.conf.field.height / 2.0 + sim.conf.field.goalWidth / 2.0
-	);
+		// yellow goal
+		this.robotLocalizer.addLandmark(
+			'yellow-goal-center',
+			0,
+			sim.config.field.height / 2.0
+		);
+		this.robotLocalizer.addLandmark(
+			'yellow-goal-left',
+			0,
+			sim.config.field.height / 2.0 - sim.config.field.goalWidth / 2.0
+		);
+		this.robotLocalizer.addLandmark(
+			'yellow-goal-right',
+			0,
+			sim.config.field.height / 2.0 + sim.config.field.goalWidth / 2.0
+		);
+
+		// blue goal
+		this.robotLocalizer.addLandmark(
+			'blue-goal-center',
+			sim.config.field.width,
+			sim.config.field.height / 2.0
+		);
+		this.robotLocalizer.addLandmark(
+			'blue-goal-left',
+			sim.config.field.width,
+			sim.config.field.height / 2.0 - sim.config.field.goalWidth / 2.0
+		);
+		this.robotLocalizer.addLandmark(
+			'blue-goal-right',
+			sim.config.field.width,
+			sim.config.field.height / 2.0 + sim.config.field.goalWidth / 2.0
+		);
+			
+		this.robotLocalizer.init();
+		this.resetDeviation();
+	}
 	
 	/*
 	this.wheelOmegas = [
@@ -173,14 +179,13 @@ Sim.Robot = function(
 		{x: -this.cameraDistance, y: this.cameraWidth / 2},
 		{x: 0, y: 0}
 	]);
-	
-	this.robotLocalizer.init();
-	
-	this.resetDeviation();
-	this.controller.start();
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
+	if (!this.smart) {
+		return;
+	}
+	
 	for (var i = 0; i < this.robotLocalizer.particles.length; i++) {
 		this.robotLocalizer.particles[i].x = this.x;
 		this.robotLocalizer.particles[i].y = this.y;
@@ -192,12 +197,13 @@ Sim.Robot.prototype.resetDeviation = function() {
 Sim.Robot.prototype.step = function(dt) {
 	this.dt = dt;
 	
-	this.updateVision(dt);
-	this.updateRobotLocalizer(dt);
-	this.updateBallLocalizer(dt);
-	this.updateController(dt);
-	this.updateMovement(dt);
+	if (this.smart) {
+		this.updateVision(dt);
+		this.updateRobotLocalizer(dt);
+		this.updateBallLocalizer(dt);
+	}
 	
+	this.updateMovement(dt);
 	this.handleBalls(dt);
 	this.handleCommands(dt);
 };
@@ -276,12 +282,6 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 	);
 };
 
-Sim.Robot.prototype.updateController = function(dt) {
-	if (this.useController) {
-		this.controller.step(dt);
-	}
-};
-
 Sim.Robot.prototype.updateMovement = function(dt) {
 	/*
 	if ((this.targetDir.x != 0 || this.targetDir.y != 0) && this.targetOmega != 0) {
@@ -304,33 +304,35 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 	Sim.Util.confine(
 		this, 
 		0,
-		sim.conf.field.width,
+		sim.config.field.width,
 		0,
-		sim.conf.field.height,
+		sim.config.field.height,
 		this.radius
 	);
-		
-	this.robotLocalizer.move(
-		noisyMovement.velocityX,
-		noisyMovement.velocityY,
-		noisyMovement.omega,
-		dt
-	);
 	
-	if (this.perfectLocalization) {
-		this.virtualX = this.x;
-		this.virtualY = this.y;
-		this.virtualOrientation = this.orientation;
-		
-		//sim.dbg.box('Evaluation', 'n/a');
-	} else {
-		var position = this.robotLocalizer.getPosition(this);
-	
-		this.virtualX = position.x;
-		this.virtualY = position.y;
-		this.virtualOrientation = position.orientation;
-		
-		//sim.dbg.box('Evaluation', position.evaluation, 2);
+	if (this.smart) {
+		this.robotLocalizer.move(
+			noisyMovement.velocityX,
+			noisyMovement.velocityY,
+			noisyMovement.omega,
+			dt
+		);
+
+		if (this.perfectLocalization) {
+			this.virtualX = this.x;
+			this.virtualY = this.y;
+			this.virtualOrientation = this.orientation;
+
+			//sim.dbg.box('Evaluation', 'n/a');
+		} else {
+			var position = this.robotLocalizer.getPosition(this);
+
+			this.virtualX = position.x;
+			this.virtualY = position.y;
+			this.virtualOrientation = position.orientation;
+
+			//sim.dbg.box('Evaluation', position.evaluation, 2);
+		}
 	}
 	
 	/*
@@ -390,11 +392,11 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	
 	var yellowGoalPos = {
 			x: 0,
-			y: sim.conf.field.height / 2
+			y: sim.config.field.height / 2
 		},
 		blueGoalPos = {
-			x: sim.conf.field.width,
-			y: sim.conf.field.height / 2
+			x: sim.config.field.width,
+			y: sim.config.field.height / 2
 		},
 		yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, noisyYellowDistance),
 		blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, noisyBlueDistance),
@@ -453,11 +455,11 @@ Sim.Robot.prototype.localizeByAngles = function(goals) {
 		return false;
 	}
 	
-	var yellowRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(yellowGoalAngle))),
-		blueRadius = Math.abs(sim.conf.field.goalWidth / (2 * Math.sin(blueGoalAngle))),
-		centerY = sim.conf.field.height / 2.0,
+	var yellowRadius = Math.abs(sim.config.field.goalWidth / (2 * Math.sin(yellowGoalAngle))),
+		blueRadius = Math.abs(sim.config.field.goalWidth / (2 * Math.sin(blueGoalAngle))),
+		centerY = sim.config.field.height / 2.0,
 		yellowCenterX = yellowRadius * Math.cos(yellowGoalAngle),
-		blueCenterX = sim.conf.field.width - blueRadius * Math.cos(blueGoalAngle),
+		blueCenterX = sim.config.field.width - blueRadius * Math.cos(blueGoalAngle),
 		yellowCircle = new Sim.Math.Circle(yellowCenterX, centerY, yellowRadius),
 		blueCircle = new Sim.Math.Circle(blueCenterX, centerY, blueRadius),
 		intersections = yellowCircle.getIntersections(blueCircle);

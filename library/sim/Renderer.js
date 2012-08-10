@@ -52,8 +52,8 @@ Sim.Renderer = function(game) {
 	this.leftGoalStyle = {fill: '#DD0', stroke: 'none'};
 	this.rightGoalStyle = {fill: '#00D', stroke: 'none'};
 	
-	this.fieldOffsetX = -(sim.conf.world.width - sim.conf.field.width) / 2;
-	this.fieldOffsetY = -(sim.conf.world.height - sim.conf.field.height) / 2;
+	this.fieldOffsetX = -(sim.config.world.width - sim.config.field.width) / 2;
+	this.fieldOffsetY = -(sim.config.world.height - sim.config.field.height) / 2;
 	
 	// objects
 	this.field = null;
@@ -80,15 +80,15 @@ Sim.Renderer.prototype.init = function() {
 };
 
 Sim.Renderer.prototype.initCanvas = function() {
-	this.widthToHeightRatio = sim.conf.world.width / sim.conf.world.height;
+	this.widthToHeightRatio = sim.config.world.width / sim.config.world.height;
 	this.wrap = $('#' + this.svgContainerId);
 	this.canvasWidth = this.wrap.width();
 	this.canvasHeight = this.canvasWidth / this.widthToHeightRatio;
-	this.canvasToWorldRatio = this.canvasWidth / sim.conf.world.width;
+	this.canvasToWorldRatio = this.canvasWidth / sim.config.world.width;
 	this.wrap.height(this.canvasHeight);
 	
 	this.c = Raphael(this.svgContainerId, this.canvasWidth, this.canvasHeight);
-	this.c.setViewBox(this.fieldOffsetX, this.fieldOffsetY, sim.conf.world.width, sim.conf.world.height);
+	this.c.setViewBox(this.fieldOffsetX, this.fieldOffsetY, sim.config.world.width, sim.config.world.height);
 	
 	this.draw();
 	
@@ -97,7 +97,7 @@ Sim.Renderer.prototype.initCanvas = function() {
 	this.wrap.resize(function() {
 		self.canvasWidth = $(this).width();
 		self.canvasHeight = self.canvasWidth / self.widthToHeightRatio;
-		self.canvasToWorldRatio = self.canvasWidth / sim.conf.world.width;
+		self.canvasToWorldRatio = self.canvasWidth / sim.config.world.width;
 		
 		self.wrap.height(self.canvasHeight);
 
@@ -165,7 +165,7 @@ Sim.Renderer.prototype.onMouseMove = function(e) {
 	if (this.driveToActive) {
 		pos = this.translateCoords(e.clientX, event.clientY);
 
-		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+		Sim.Util.confine(pos, 0, sim.config.field.width, 0, sim.config.field.height, 0.125);
 
 		this.driveToIndicator.attr({
 			transform: 'R ' + Sim.Math.radToDeg(this.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
@@ -175,7 +175,7 @@ Sim.Renderer.prototype.onMouseMove = function(e) {
 	if (this.spawnBallActive) {
 		pos = this.translateCoords(e.clientX, event.clientY);
 
-		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius);
+		Sim.Util.confine(pos, 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius);
 
 		this.spawnBallIndicator.attr({
 			cx: pos.x,
@@ -189,7 +189,7 @@ Sim.Renderer.prototype.onMouseWheel = function(e, delta, deltaX, deltaY) {
 		
 	var pos = this.translateCoords(e.clientX, e.clientY);
 
-	Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+	Sim.Util.confine(pos, 0, sim.config.field.width, 0, sim.config.field.height, 0.125);
 
 	this.driveToIndicator.attr({
 		transform: 'R ' + Sim.Math.radToDeg(this.driveToOrientation) + 'T' + pos.x + ' ' + pos.y
@@ -202,7 +202,7 @@ Sim.Renderer.prototype.onContainerClick = function(e) {
 	if (this.driveToActive) {
 		pos = this.translateCoords(e.clientX, e.clientY);
 
-		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, 0.125);
+		Sim.Util.confine(pos, 0, sim.config.field.width, 0, sim.config.field.height, 0.125);
 
 		this.driveToIndicator.hide();
 
@@ -221,7 +221,7 @@ Sim.Renderer.prototype.onContainerClick = function(e) {
 	if (this.spawnBallActive) {
 		pos = this.translateCoords(e.clientX, e.clientY);
 
-		Sim.Util.confine(pos, 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius);
+		Sim.Util.confine(pos, 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius);
 
 		this.spawnBallIndicator.hide();
 
@@ -241,6 +241,10 @@ Sim.Renderer.prototype.toggleParticles = function() {
 	this.showParticles = !this.showParticles;
 	
 	for (var name in this.robots) {
+		if (!this.robots[name].robot.smart) {
+			continue;
+		}
+		
 		for (var i = 0; i < this.robots[name].particles.length; i++) {
 			if (!this.showParticles) {
 				this.robots[name].particles[i].dir.hide();
@@ -321,7 +325,7 @@ Sim.Renderer.prototype.draw = function() {
 };
 
 Sim.Renderer.prototype.drawBackground = function() {
-	this.bg = this.c.rect(this.fieldOffsetX, this.fieldOffsetY, sim.conf.world.width, sim.conf.world.height)
+	this.bg = this.c.rect(this.fieldOffsetX, this.fieldOffsetY, sim.config.world.width, sim.config.world.height)
 	this.bg.attr(this.bgStyle);
 };
 
@@ -334,8 +338,8 @@ Sim.Renderer.prototype.drawGrid = function() {
 		y,
 		line;
 	
-	for (x = 0; x < sim.conf.world.width; x += minorStep) {
-		line = this.c.path('M' + x + ' 0L' + x + ' ' + sim.conf.world.height);
+	for (x = 0; x < sim.config.world.width; x += minorStep) {
+		line = this.c.path('M' + x + ' 0L' + x + ' ' + sim.config.world.height);
 		
 		if (x % majorStep == 0) {
 			line.attr({stroke: majorColor, 'stroke-width': 1});
@@ -346,8 +350,8 @@ Sim.Renderer.prototype.drawGrid = function() {
 		line.attr(this.getFieldOffsetTransformAttr());
 	}
 	
-	for (y = 0; y < sim.conf.world.height; y += minorStep) {
-		line = this.c.path('M0 ' + y + 'L ' + sim.conf.world.width + ' ' + y);
+	for (y = 0; y < sim.config.world.height; y += minorStep) {
+		line = this.c.path('M0 ' + y + 'L ' + sim.config.world.width + ' ' + y);
 		
 		if (y % majorStep == 0) {
 			line.attr({stroke: majorColor, 'stroke-width': 1});
@@ -361,35 +365,35 @@ Sim.Renderer.prototype.drawGrid = function() {
 
 Sim.Renderer.prototype.drawField = function() {
 	// main field
-	this.field = this.c.rect(0, 0, sim.conf.field.width, sim.conf.field.height).attr(this.fieldStyle);
+	this.field = this.c.rect(0, 0, sim.config.field.width, sim.config.field.height).attr(this.fieldStyle);
 	
 	// top and bottom wall
-	this.c.rect(-sim.conf.field.wallWidth, -sim.conf.field.wallWidth, sim.conf.field.width + sim.conf.field.wallWidth * 2, sim.conf.field.wallWidth).attr(this.wallStyle);
-	this.c.rect(-sim.conf.field.wallWidth, sim.conf.field.height, sim.conf.field.width + sim.conf.field.wallWidth * 2, sim.conf.field.wallWidth).attr(this.wallStyle);
+	this.c.rect(-sim.config.field.wallWidth, -sim.config.field.wallWidth, sim.config.field.width + sim.config.field.wallWidth * 2, sim.config.field.wallWidth).attr(this.wallStyle);
+	this.c.rect(-sim.config.field.wallWidth, sim.config.field.height, sim.config.field.width + sim.config.field.wallWidth * 2, sim.config.field.wallWidth).attr(this.wallStyle);
 	
 	// left and right wall
-	this.c.rect(-sim.conf.field.wallWidth, 0, sim.conf.field.wallWidth, sim.conf.field.height).attr(this.wallStyle);
-	this.c.rect(sim.conf.field.width, 0, sim.conf.field.wallWidth, sim.conf.field.height).attr(this.wallStyle);
+	this.c.rect(-sim.config.field.wallWidth, 0, sim.config.field.wallWidth, sim.config.field.height).attr(this.wallStyle);
+	this.c.rect(sim.config.field.width, 0, sim.config.field.wallWidth, sim.config.field.height).attr(this.wallStyle);
 	
 	// top and bottom line
-	this.c.rect(0, 0, sim.conf.field.width, sim.conf.field.wallWidth).attr(this.lineStyle);
-	this.c.rect(0, sim.conf.field.height - sim.conf.field.wallWidth, sim.conf.field.width, sim.conf.field.wallWidth).attr(this.lineStyle);
+	this.c.rect(0, 0, sim.config.field.width, sim.config.field.wallWidth).attr(this.lineStyle);
+	this.c.rect(0, sim.config.field.height - sim.config.field.wallWidth, sim.config.field.width, sim.config.field.wallWidth).attr(this.lineStyle);
 	
 	// left and right line
-	this.c.rect(0, sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.height - sim.conf.field.wallWidth * 2).attr(this.lineStyle);
-	this.c.rect(sim.conf.field.width - sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.height - sim.conf.field.wallWidth * 2).attr(this.lineStyle);
+	this.c.rect(0, sim.config.field.wallWidth, sim.config.field.wallWidth, sim.config.field.height - sim.config.field.wallWidth * 2).attr(this.lineStyle);
+	this.c.rect(sim.config.field.width - sim.config.field.wallWidth, sim.config.field.wallWidth, sim.config.field.wallWidth, sim.config.field.height - sim.config.field.wallWidth * 2).attr(this.lineStyle);
 	
 	// center circle
-	this.c.circle(sim.conf.field.width / 2, sim.conf.field.height / 2, sim.conf.field.centerCircleRadius).attr(this.centerCircleOuterStyle);
-	this.c.circle(sim.conf.field.width / 2, sim.conf.field.height / 2, sim.conf.field.centerCircleRadius - sim.conf.field.lineWidth).attr(this.centerCircleInnerStyle);
+	this.c.circle(sim.config.field.width / 2, sim.config.field.height / 2, sim.config.field.centerCircleRadius).attr(this.centerCircleOuterStyle);
+	this.c.circle(sim.config.field.width / 2, sim.config.field.height / 2, sim.config.field.centerCircleRadius - sim.config.field.lineWidth).attr(this.centerCircleInnerStyle);
 	
 	// center vertical line
-	this.c.rect(sim.conf.field.width / 2 - sim.conf.field.wallWidth / 2, sim.conf.field.wallWidth, sim.conf.field.wallWidth, sim.conf.field.height - sim.conf.field.wallWidth * 2).attr(this.lineStyle);
+	this.c.rect(sim.config.field.width / 2 - sim.config.field.wallWidth / 2, sim.config.field.wallWidth, sim.config.field.wallWidth, sim.config.field.height - sim.config.field.wallWidth * 2).attr(this.lineStyle);
 };
 
 Sim.Renderer.prototype.drawGoals = function() {
 	// left goal
-	this.c.rect(-sim.conf.field.goalDepth, sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2, sim.conf.field.goalDepth, sim.conf.field.goalWidth).attr(this.leftGoalStyle);
+	this.c.rect(-sim.config.field.goalDepth, sim.config.field.height / 2 - sim.config.field.goalWidth / 2, sim.config.field.goalDepth, sim.config.field.goalWidth).attr(this.leftGoalStyle);
 	
 	this.blueScore = this.c.text(0, 0);
 	this.blueScore.attr({
@@ -401,14 +405,14 @@ Sim.Renderer.prototype.drawGoals = function() {
 	});
 	
 	// right goal
-	this.c.rect(sim.conf.field.width, sim.conf.field.height / 2 - sim.conf.field.goalWidth / 2, sim.conf.field.goalDepth, sim.conf.field.goalWidth).attr(this.rightGoalStyle);
+	this.c.rect(sim.config.field.width, sim.config.field.height / 2 - sim.config.field.goalWidth / 2, sim.config.field.goalDepth, sim.config.field.goalWidth).attr(this.rightGoalStyle);
 	
 	this.yellowScore = this.c.text(0, 0);
 	this.yellowScore.attr({
 		fill: '#FFF',
 		'font-size': 1,
 		'transform':
-		'S0.4T' + (sim.conf.field.width + 0.12) + ' -0.55',
+		'S0.4T' + (sim.config.field.width + 0.12) + ' -0.55',
 		'text': 0
 	});
 };
@@ -441,7 +445,7 @@ Sim.Renderer.prototype.drawDriveTo = function() {
 };
 
 Sim.Renderer.prototype.drawSpawnBall = function() {
-	this.spawnBallIndicator = this.c.circle(0, 0, sim.conf.ball.radius)
+	this.spawnBallIndicator = this.c.circle(0, 0, sim.config.ball.radius)
 	
 	this.spawnBallIndicator.attr({
 		stroke: 'none',
@@ -481,8 +485,8 @@ Sim.Renderer.prototype.addBall = function(ball) {
 	
 	this.c.setStart();
 	
-	var yellowIndicator = this.c.circle(ball.x, ball.y, sim.conf.ball.radius * 3),
-		body = this.c.circle(ball.x, ball.y, sim.conf.ball.radius);
+	var yellowIndicator = this.c.circle(ball.x, ball.y, sim.config.ball.radius * 3),
+		body = this.c.circle(ball.x, ball.y, sim.config.ball.radius);
 	
 	yellowIndicator.attr({
 		fill: 'rgba(255, 255, 0, 0.8)',
@@ -572,78 +576,80 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	this.robots[name].visual = this.c.setFinish();
 	
 	this.c.setStart();
-			
-	var ghostDirWidth = 0.03,
-		ghostDirLength = 0.125,
-		ghostFrameRadius = 0.05,
-		ghostFrame = this.c.circle(0, 0, ghostFrameRadius),
-		ghostDir = this.c.path('M-' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'M0 -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' ' + (ghostDirWidth / 2) + 'L0 ' + (ghostDirWidth / 2) + 'L0 -' + (ghostDirWidth / 2)),
-		ghostColor = robot.side == Sim.Game.Side.YELLOW ? 'rgb(255, 255, 0)' : 'rgb(0, 0, 255)',
-		i;
+	
+	if (this.robots[name].robot.smart) {
+		var ghostDirWidth = 0.03,
+			ghostDirLength = 0.125,
+			ghostFrameRadius = 0.05,
+			ghostFrame = this.c.circle(0, 0, ghostFrameRadius),
+			ghostDir = this.c.path('M-' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'M0 -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' ' + (ghostDirWidth / 2) + 'L0 ' + (ghostDirWidth / 2) + 'L0 -' + (ghostDirWidth / 2)),
+			ghostColor = robot.side == Sim.Game.Side.YELLOW ? 'rgb(255, 255, 0)' : 'rgb(0, 0, 255)',
+			i;
 
-	ghostFrame.attr({
-		fill: ghostColor,
-		stroke: 'none'
-	});
+		ghostFrame.attr({
+			fill: ghostColor,
+			stroke: 'none'
+		});
 
-	ghostDir.attr({
-		fill: ghostColor,
-		stroke: 'none'
-	});
+		ghostDir.attr({
+			fill: ghostColor,
+			stroke: 'none'
+		});
 
-	this.robots[name].ghost = this.c.setFinish();
-	this.robots[name].particles = [];
-	
-	for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
-		var particle = robot.robotLocalizer.particles[i],
-			particleSize = 0.02,
-			particleDirWidth = 0.02,
-			particleDirLength = 0.05,
-			//particleBody = this.c.circle(0, 0, particleSize),
-			//particleDir = this.c.rect(0, 0, particleSize, particleSize * 3);
-			particleDir = this.c.path('M-' + particleDirLength + ' -' + (particleDirWidth / 2) + 'M0 -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' ' + (particleDirWidth / 2) + 'L0 ' + (particleDirWidth / 2) + 'L0 -' + (particleDirWidth / 2));
-		
-		//particleBody.attr({
-		//	fill: 'rgba(255, 0, 0, 1)',
-		//	stroke: 'none',
-		//	transform: 'T' + particle.x + ' ' + particle.y
-		//});
-		
-		particleDir.attr({
-			fill: 'rgba(255, 0, 0, 1)',
-			//fill: 'rgb(0, 245, 0)',
-			stroke: 'none',
-			transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
-		}).hide();
-		
-		//sim.dbg.console('particle', i, particle);
-		
-		this.robots[name].particles[i] = {
-			//body: particleBody,
-			dir: particleDir
-		};
-	}
-	
-	this.robots[name].balls = {};
-	
-	/*
-	var ballStyle = {
-		fill: '#F00',
-		stroke: 'none',
-		cx: -100,
-		cy: -100
-	};
-	
-	for (i = 0; i < sim.conf.game.balls; i++) {
-		var ballVisual = this.c.circle(0, 0, sim.conf.ball.radius);
-	
-		ballVisual.attr(ballStyle);
-		
-		this.robots[name].balls[i] = {
-			visual: ballVisual
+		this.robots[name].ghost = this.c.setFinish();
+		this.robots[name].particles = [];
+
+		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
+			var particle = robot.robotLocalizer.particles[i],
+				particleSize = 0.02,
+				particleDirWidth = 0.02,
+				particleDirLength = 0.05,
+				//particleBody = this.c.circle(0, 0, particleSize),
+				//particleDir = this.c.rect(0, 0, particleSize, particleSize * 3);
+				particleDir = this.c.path('M-' + particleDirLength + ' -' + (particleDirWidth / 2) + 'M0 -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' ' + (particleDirWidth / 2) + 'L0 ' + (particleDirWidth / 2) + 'L0 -' + (particleDirWidth / 2));
+
+			//particleBody.attr({
+			//	fill: 'rgba(255, 0, 0, 1)',
+			//	stroke: 'none',
+			//	transform: 'T' + particle.x + ' ' + particle.y
+			//});
+
+			particleDir.attr({
+				fill: 'rgba(255, 0, 0, 1)',
+				//fill: 'rgb(0, 245, 0)',
+				stroke: 'none',
+				transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
+			}).hide();
+
+			//sim.dbg.console('particle', i, particle);
+
+			this.robots[name].particles[i] = {
+				//body: particleBody,
+				dir: particleDir
+			};
 		}
+
+		this.robots[name].balls = {};
+
+		/*
+		var ballStyle = {
+			fill: '#F00',
+			stroke: 'none',
+			cx: -100,
+			cy: -100
+		};
+
+		for (i = 0; i < sim.config.game.balls; i++) {
+			var ballVisual = this.c.circle(0, 0, sim.config.ball.radius);
+
+			ballVisual.attr(ballStyle);
+
+			this.robots[name].balls[i] = {
+				visual: ballVisual
+			}
+		}
+		*/
 	}
-	*/
 };
 
 Sim.Renderer.prototype.updateRobot = function(name, robot) {
@@ -655,151 +661,157 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		transform: 'T' + robot.x + ' ' + robot.y + 'R' + Raphael.deg(robot.orientation)
 	});
 	
-	this.robots[name].ghost.attr({
-		transform: 'T' + robot.virtualX + ' ' + robot.virtualY + 'R' + Raphael.deg(robot.virtualOrientation)
-	});
-	
-	/*
-	var maxProbability = null,
-		minProbability = null,
-		totalProbability = 0,
-		avgProbability,
-		i;
-	
-	for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
-		if (maxProbability == null || robot.robotLocalizer.particles[i].probability > maxProbability) {
-			maxProbability = robot.robotLocalizer.particles[i].probability;
-		}
-		
-		if (minProbability == null || robot.robotLocalizer.particles[i].probability < minProbability) {
-			minProbability = robot.robotLocalizer.particles[i].probability;
-		}
-		
-		totalProbability += robot.robotLocalizer.particles[i].probability;
-	}
-	
-	avgProbability = totalProbability / robot.robotLocalizer.particles.length;
-	
-	sim.dbg.console('max', maxProbability, 'avg', avgProbability);
-	*/
-    
-	/*
-	robot.robotLocalizer.particles.sort(function(a, b) {
-		if (a > b) {
-			return -1;
-		} else if (b > a) {
-			return 1;
-		} else {
-			return 0;
-		}
-	});
-	*/
-   
-	var i;
-	
-	if (this.showParticles) {
-		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
-			var particle = robot.robotLocalizer.particles[i],
-				//particleBody = this.robots[name].particles[i].body,
-				particleDir = this.robots[name].particles[i].dir;
-
-			//particleBody.attr({
-			//	transform: 'T' + particle.x + ' ' + particle.y
-			//});
-
-			//if (i < 50) {
-				particleDir.show().attr({
-					transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation),
-					fill: 'rgba(255, 0, 0, ' + Math.max(Math.min(particle.probability, 1.0), 0.1) + ')'
-				});
-			//} else {
-			//	particleDir.hide();
-			//}
-
-			/*this.p.fillStyle = 'rgba(255, 0, 0, 0.5)';
-			this.p.rect(particle.x, particle.y, 0.1, 0.1);
-			this.p.fill();*/
-		}
-	}
-	
-	var ball,
-		ballId,
-		updatedBalls = [];
-	
-	for (i = 0; i < robot.ballLocalizer.balls.length; i++) {
-		ball = robot.ballLocalizer.balls[i];
-		
-		if (typeof(this.robots[name].balls[ball.id]) == 'undefined') {
-			this.robots[name].balls[ball.id] = this.createGuessedBall(ball);
-		} else {
-			this.robots[name].balls[ball.id].body.attr({
-				cx: ball.x,
-				cy: ball.y
-			});
-			this.robots[name].balls[ball.id].id.attr({
-				'transform': this.getGuessedBallTransform(ball)
-			});
-		}
-		
-		updatedBalls.push(ball.id);
-	}
-	
-	for (ballId in this.robots[name].balls) {
-		if (updatedBalls.indexOf(parseInt(ballId)) == -1) {
-			this.robots[name].balls[ballId].body.remove();
-			this.robots[name].balls[ballId].id.remove();
-			
-			delete this.robots[name].balls[ballId];
-		}
-	}
-	
-	/*
-	var ball,
-		ballPosition;
-	
-	for (i = 0; i < sim.conf.game.balls; i++) {
-		if (typeof(robot.ballLocalizer.balls[i]) == 'object') {
-			ball =  robot.ballLocalizer.balls[i];
-
-			this.robots[name].balls[i].visual.attr({
-				cx: ball.x,
-				cy: ball.y
-			});
-		} else {
-			this.robots[name].balls[i].visual.attr({
-				cx: -100,
-				cy: -100
-			});
-		}
-	}
-	*/
-   
 	this.showCommandsQueue(this.robots[name].robot);
+	
+	if (this.robots[name].robot.smart) {
+		this.robots[name].ghost.attr({
+			transform: 'T' + robot.virtualX + ' ' + robot.virtualY + 'R' + Raphael.deg(robot.virtualOrientation)
+		});
+
+		/*
+		var maxProbability = null,
+			minProbability = null,
+			totalProbability = 0,
+			avgProbability,
+			i;
+
+		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
+			if (maxProbability == null || robot.robotLocalizer.particles[i].probability > maxProbability) {
+				maxProbability = robot.robotLocalizer.particles[i].probability;
+			}
+
+			if (minProbability == null || robot.robotLocalizer.particles[i].probability < minProbability) {
+				minProbability = robot.robotLocalizer.particles[i].probability;
+			}
+
+			totalProbability += robot.robotLocalizer.particles[i].probability;
+		}
+
+		avgProbability = totalProbability / robot.robotLocalizer.particles.length;
+
+		sim.dbg.console('max', maxProbability, 'avg', avgProbability);
+		*/
+
+		/*
+		robot.robotLocalizer.particles.sort(function(a, b) {
+			if (a > b) {
+				return -1;
+			} else if (b > a) {
+				return 1;
+			} else {
+				return 0;
+			}
+		});
+		*/
+
+		var i;
+
+		if (this.showParticles) {
+			for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
+				var particle = robot.robotLocalizer.particles[i],
+					//particleBody = this.robots[name].particles[i].body,
+					particleDir = this.robots[name].particles[i].dir;
+
+				//particleBody.attr({
+				//	transform: 'T' + particle.x + ' ' + particle.y
+				//});
+
+				//if (i < 50) {
+					particleDir.show().attr({
+						transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation),
+						fill: 'rgba(255, 0, 0, ' + Math.max(Math.min(particle.probability, 1.0), 0.1) + ')'
+					});
+				//} else {
+				//	particleDir.hide();
+				//}
+
+				/*this.p.fillStyle = 'rgba(255, 0, 0, 0.5)';
+				this.p.rect(particle.x, particle.y, 0.1, 0.1);
+				this.p.fill();*/
+			}
+		}
+
+		var ball,
+			ballId,
+			updatedBalls = [];
+
+		for (i = 0; i < robot.ballLocalizer.balls.length; i++) {
+			ball = robot.ballLocalizer.balls[i];
+
+			if (typeof(this.robots[name].balls[ball.id]) == 'undefined') {
+				this.robots[name].balls[ball.id] = this.createGuessedBall(ball);
+			} else {
+				this.robots[name].balls[ball.id].body.attr({
+					cx: ball.x,
+					cy: ball.y
+				});
+				this.robots[name].balls[ball.id].id.attr({
+					'transform': this.getGuessedBallTransform(ball)
+				});
+			}
+
+			updatedBalls.push(ball.id);
+		}
+
+		for (ballId in this.robots[name].balls) {
+			if (updatedBalls.indexOf(parseInt(ballId)) == -1) {
+				this.robots[name].balls[ballId].body.remove();
+				this.robots[name].balls[ballId].id.remove();
+
+				delete this.robots[name].balls[ballId];
+			}
+		}
+
+		/*
+		var ball,
+			ballPosition;
+
+		for (i = 0; i < sim.config.game.balls; i++) {
+			if (typeof(robot.ballLocalizer.balls[i]) == 'object') {
+				ball =  robot.ballLocalizer.balls[i];
+
+				this.robots[name].balls[i].visual.attr({
+					cx: ball.x,
+					cy: ball.y
+				});
+			} else {
+				this.robots[name].balls[i].visual.attr({
+					cx: -100,
+					cy: -100
+				});
+			}
+		}
+		*/
+	}
 };
 
 Sim.Renderer.prototype.removeRobot = function(name) {
 	this.robots[name].frame.remove();
 	this.robots[name].dir.remove();
 	this.robots[name].visual.remove();
-	this.robots[name].ghost.remove();
+	
 	
 	var newRobots = {},
 		robotName,
 		i;
 	
-	for (i = 0; i < this.robots[name].particles.length; i++) {
-		this.robots[name].particles[i].dir.remove();
-	}
-	
-	for (i = 0; i < this.robots[name].balls.length; i++) {
-		if (
-			typeof(this.robots[name].balls[i]) != 'object'
-			|| typeof(this.robots[name].balls[i].remove) != 'function'
-		) {
-			continue;
-		}
+	if (this.robots[name].robot.smart) {
+		this.robots[name].ghost.remove();
 		
-		this.robots[name].balls[i].remove();
+		for (i = 0; i < this.robots[name].particles.length; i++) {
+			this.robots[name].particles[i].dir.remove();
+		}
+
+		for (i = 0; i < this.robots[name].balls.length; i++) {
+			if (
+				typeof(this.robots[name].balls[i]) != 'object'
+				|| typeof(this.robots[name].balls[i].remove) != 'function'
+			) {
+				continue;
+			}
+
+			this.robots[name].balls[i].remove();
+		}
 	}
 	
 	for (robotName in this.robots) {
@@ -812,7 +824,7 @@ Sim.Renderer.prototype.removeRobot = function(name) {
 };
 
 Sim.Renderer.prototype.createGuessedBall = function(ball) {
-	var body = this.c.circle(ball.x, ball.y, sim.conf.ball.radius * 2),
+	var body = this.c.circle(ball.x, ball.y, sim.config.ball.radius * 2),
 		id = this.c.text(0, 0);
 	
 	body.attr({

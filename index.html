@@ -17,9 +17,12 @@
 		<script src="library/sim/Bootstrapper.js"></script>
 		<script src="library/sim/Game.js"></script>
 		<script src="library/sim/UI.js"></script>
+		<script src="library/sim/Joystick.js"></script>
 		<script src="library/sim/Renderer.js"></script>
 		<script src="library/sim/Vision.js"></script>
-		<script src="library/sim/AI.js"></script>
+		<script src="library/sim/SimpleAI.js"></script>
+		<script src="library/sim/KeyboardController.js"></script>
+		<script src="library/sim/JoystickController.js"></script>
 		<script src="library/sim/RobotLocalizer.js"></script>
 		<script src="library/sim/BallLocalizer.js"></script>
 		<script src="library/sim/Robot.js"></script>
@@ -30,17 +33,13 @@
 	<body>
 		<div id="contents">
 			<div id="canvas"></div>
-			<div class="joystick" id="movement-joystick">
-				<a href="#"></a>
-			</div>
 			<ul id="toolbar">
-				<li><button id="drive-to-btn">1. DriveTo</button></li>
+				<!--<li><button id="drive-to-btn">1. DriveTo</button></li>
 				<li><button id="spawn-ball-btn">2. Spawn ball</button></li>
 				<li><button id="reset-deviation-btn">3. Reset deviation</button></li>
 				<li><button id="set-noise-btn">4. Set noise</button></li>
 				<li><button id="toggle-particles-btn">5. Toggle particles</button></li>
-				<li><button id="toggle-perfect-localization-btn">6. Toggle perfect localization</button></li>
-				<li><button id="toggle-ai-btn">7. Toggle AI</button></li>
+				<li><button id="toggle-perfect-localization-btn">6. Toggle perfect localization</button></li>-->
 			</ul>
 			<div id="game-over">
 				<h1></h1>

@@ -16,8 +16,8 @@ Sim.BallLocalizer.Ball = function(x, y, distance, angle) {
 	this.y = null;
 	this.distance = null;
 	this.angle = null;
-	this.elasticity = sim.conf.ballLocalizer.ballElasticity;
-	this.radius = sim.conf.ball.radius;
+	this.elasticity = sim.config.ballLocalizer.ballElasticity;
+	this.radius = sim.config.ball.radius;
 	this.velocityX = 0;
 	this.velocityY = 0;
 	this.removeTime = null;
@@ -30,17 +30,17 @@ Sim.BallLocalizer.Ball.prototype.addMeasurement = function(x, y, distance, angle
 		sinceLastUpdate = currentTime - this.updated;
 		
 	this.positions[this.positionCounter] = {x: x, y: y};
-	this.positionCounter = (this.positionCounter + 1) % sim.conf.ballLocalizer.ballPositionAverages;
+	this.positionCounter = (this.positionCounter + 1) % sim.config.ballLocalizer.ballPositionAverages;
 	this.updated = currentTime;
 	
 	var position = this.getPosition();
 	
-	if (this.x != null && this.y != null && sinceLastUpdate <= sim.conf.ballLocalizer.velocityUpdateMaxTime) {
+	if (this.x != null && this.y != null && sinceLastUpdate <= sim.config.ballLocalizer.velocityUpdateMaxTime) {
 		var velocityX = (position.x - this.x) / dt,
 			velocityY = (position.y - this.y) / dt;
 		
 		this.velocities[this.velocityCounter] = {x: velocityX, y: velocityY};
-		this.velocityCounter = (this.velocityCounter + 1) % sim.conf.ballLocalizer.ballVelocityAverages;
+		this.velocityCounter = (this.velocityCounter + 1) % sim.config.ballLocalizer.ballVelocityAverages;
 		
 		var velocity = this.getVelocity();
 		
@@ -61,7 +61,7 @@ Sim.BallLocalizer.Ball.prototype.getPosition = function() {
 		ySum = 0,
 		samples = 0;
 	
-	for (var i = 0; i < sim.conf.ballLocalizer.ballPositionAverages; i++) {
+	for (var i = 0; i < sim.config.ballLocalizer.ballPositionAverages; i++) {
 		if (typeof(this.positions[i]) != 'object') {
 			continue;
 		}
@@ -83,7 +83,7 @@ Sim.BallLocalizer.Ball.prototype.getVelocity = function() {
 		ySum = 0,
 		samples = 0;
 	
-	for (var i = 0; i < sim.conf.ballLocalizer.ballVelocityAverages; i++) {
+	for (var i = 0; i < sim.config.ballLocalizer.ballVelocityAverages; i++) {
 		if (typeof(this.velocities[i]) != 'object') {
 			continue;
 		}
@@ -107,7 +107,7 @@ Sim.BallLocalizer.Ball.prototype.stepNotVisible = function(dt) {
 	
 	var xSign = this.velocityX > 0 ? 1 : -1,
 		ySign = this.velocityY > 0 ? 1 : -1,
-		stepDrag = sim.conf.ballLocalizer.ballDrag * dt;
+		stepDrag = sim.config.ballLocalizer.ballDrag * dt;
 	
 	if (Math.abs(this.velocityX) > stepDrag) {
 		this.velocityX -= stepDrag * xSign;
@@ -161,7 +161,7 @@ Sim.BallLocalizer.prototype.update = function(
 		visibleBalls[i].x = robotX + Math.cos(angle) * visibleBalls[i].distance;
 		visibleBalls[i].y = robotY + Math.sin(angle) * visibleBalls[i].distance;
 		
-		Sim.Util.confine(visibleBalls[i], 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius);
+		Sim.Util.confine(visibleBalls[i], 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius);
 		
 		closestBall = this.getBallAround(visibleBalls[i].x, visibleBalls[i].y);
 		
@@ -215,7 +215,7 @@ Sim.BallLocalizer.prototype.getBallAround = function(x, y) {
 		);
 				
 		if (
-			distance <= sim.conf.ballLocalizer.maxBallIdentityDistance
+			distance <= sim.config.ballLocalizer.maxBallIdentityDistance
 			&& (
 				minDistance == null
 				|| distance < minDistance
@@ -239,7 +239,7 @@ Sim.BallLocalizer.prototype.purge = function(visibleBalls, cameraFOV) {
 		}
 		
 		if (!this.isValid(this.balls[i], visibleBalls, cameraFOV)) {
-			this.balls[i].markForRemoval(sim.conf.ballLocalizer.ballRemoveTime);
+			this.balls[i].markForRemoval(sim.config.ballLocalizer.ballRemoveTime);
 		}
 	}
 	
@@ -247,19 +247,19 @@ Sim.BallLocalizer.prototype.purge = function(visibleBalls, cameraFOV) {
 };
 
 Sim.BallLocalizer.prototype.isValid = function(ball, visibleBalls, cameraFOV) {
-	if (Sim.Util.confine(ball, 0, sim.conf.field.width, 0, sim.conf.field.height, sim.conf.ball.radius)) {
+	if (Sim.Util.confine(ball, 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius)) {
 		//return false;
 	}
 	
 	var currentTime = Sim.Util.getMicrotime();
 	
-	if (currentTime - ball.updated > sim.conf.ballLocalizer.ballPurgeLifetime) {
+	if (currentTime - ball.updated > sim.config.ballLocalizer.ballPurgeLifetime) {
 		return false;
 	}
 	
 	var velocityMagnitude = Sim.Math.getVectorLength(ball.velocityX, ball.velocityY);
 	
-	if (velocityMagnitude > sim.conf.ballLocalizer.ballMaxVelocity) {
+	if (velocityMagnitude > sim.config.ballLocalizer.ballMaxVelocity) {
 		return false;
 	}
 	
@@ -276,7 +276,7 @@ Sim.BallLocalizer.prototype.isValid = function(ball, visibleBalls, cameraFOV) {
 		for (i = 0; i < visibleBalls.length; i++) {
 			distance = Sim.Math.getDistanceBetween(ball, visibleBalls[i]);
 			
-			if (distance <= sim.conf.ballLocalizer.maxFovRemoveDistance) {
+			if (distance <= sim.config.ballLocalizer.maxFovRemoveDistance) {
 				ballNear = true;
 				
 				break;
