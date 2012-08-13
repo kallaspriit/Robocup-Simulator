@@ -5,14 +5,21 @@ Sim.SimpleAI = function(robot) {
 	this.totalDuration = 0;
 	this.targetBallId = null;
 	this.running = true;
+	this.stateTick = 0;
 	
 	// configuration parameters
-	this.rotationSpeed = 8.0;
-	this.approachSpeed = 3.0;
+	this.rotationMultiplier = 6.0;
+	this.blindRotationSpeed = 10.0;
+	this.approachSpeedMultiplier = 3.0;
+	this.approachAngleSpeedLimitMultiplier = 2;
 	this.goalKickThresholdAngle = 1.0;
 	this.blindApproachSpeed = 1.0;
 	this.minApproachSpeed = 0.5;
 	this.maxApproachSpeed = 1.5;
+	
+	// state helpers
+	this.turnDirection = null;
+	this.lastTurnDirection = 1;
 };
 
 Sim.SimpleAI.State = {
@@ -33,6 +40,8 @@ Sim.SimpleAI.prototype.stop = function() {
 Sim.SimpleAI.prototype.setState = function(state) {
 	this.state = state;
 	this.stateDuration = 0;
+	this.stateTick = 0;
+	this.turnDirection = null;
 };
 
 Sim.SimpleAI.prototype.step = function(dt) {
@@ -56,6 +65,7 @@ Sim.SimpleAI.prototype.step = function(dt) {
 	
 	this.stateDuration += dt;
 	this.totalDuration += dt;
+	this.stateTick++;
 	
 	this.showDebugInfo();
 };
@@ -78,7 +88,7 @@ Sim.SimpleAI.prototype.stepFindBall = function(dt) {
 		return;
 	}
 	
-	this.robot.setTargetDir(0, 0, Math.PI);
+	this.robot.setTargetDir(0, 0, this.lastTurnDirection * Math.PI);
 };
 
 Sim.SimpleAI.prototype.stepFetchBall = function(dt) {
@@ -108,20 +118,41 @@ Sim.SimpleAI.prototype.stepFetchBall = function(dt) {
 		return;
 	}
 	
-	var targetOmega = 0,
-		targetSpeed = this.blindApproachSpeed;
+	var targetOmega,
+		targetSpeed;
 	
 	if (ball.visible) {
-		targetOmega = ball.angle * this.rotationSpeed;
-		targetSpeed = Sim.Util.limitRange(ball.distance * this.approachSpeed, this.minApproachSpeed, this.maxApproachSpeed);
-	} else {
-		var robotPos = this.robot.getVirtualPos(),
-			angle = Sim.Math.getAngleBetween(ball, robotPos, robotPos.orientation);
+		targetOmega = ball.angle * this.rotationMultiplier;
 		
-		targetOmega = angle * this.rotationSpeed;
-	}
+		var omegaDivider = Math.max(Math.abs(targetOmega) * this.approachAngleSpeedLimitMultiplier, 1),
+			approachSpeed = ball.distance * this.approachSpeedMultiplier / omegaDivider;
+		
+		/*sim.dbg.box('Omega divider', omegaDivider, 2);
+		sim.dbg.box('Speed before', ball.distance * this.approachSpeedMultiplier, 2);
+		sim.dbg.box('Speed after', approachSpeed, 2);*/
+		
+		targetSpeed = Sim.Util.limitRange(
+			approachSpeed,
+			this.minApproachSpeed,
+			this.maxApproachSpeed
+		);
 	
+		this.turnDirection = targetOmega >= 0 ? 1 : -1;
+	} else {
+		if (this.turnDirection == null) {
+			var robotPos = this.robot.getVirtualPos(),
+				angle = Sim.Math.getAngleBetween(ball, robotPos, robotPos.orientation);
+				
+			this.turnDirection = angle >= 0 ? 1 : -1;
+		}
+		
+		targetOmega = this.blindRotationSpeed * this.turnDirection;
+		targetSpeed = this.blindApproachSpeed;
+	}
+
 	this.robot.setTargetDir(targetSpeed, 0, targetOmega);
+	
+	this.lastTurnDirection = targetOmega >= 0 ? 1 : -1;
 };
 
 Sim.SimpleAI.prototype.stepFindGoal = function(dt) {
@@ -137,32 +168,44 @@ Sim.SimpleAI.prototype.stepFindGoal = function(dt) {
 		oppositeSide = this.robot.getOppositeSide(),
 		goalVisible = false,
 		goalAngle,
+		targetOmega,
 		i;
-		
+	
+	// TODO: Pick largest goal
 	for (i = 0; i < visibleGoals.length; i++) {
 		if (visibleGoals[i].side == oppositeSide) {
+			goalAngle = visibleGoals[i].angle;
 			goalVisible = true;
 			
-			goalAngle = visibleGoals[i].angle;
+			break;
 		}
 	}
 	
-	if (!goalVisible) {
-		// TODO: If the guessed orientation is wrong, might be unable to turn to the actual goal
+	if (goalVisible && Math.abs(goalAngle) < Sim.Math.degToRad(this.goalKickThresholdAngle)) {
+		this.robot.kick();
 		
-		var goalPos = this.getOppositeGoalPos(),
-			robotPos = this.robot.getVirtualPos();
-		
-		goalAngle = Sim.Math.getAngleBetween(goalPos, robotPos, robotPos.orientation);
+		return;
 	}
 	
-	var targetOmega = goalAngle * this.rotationSpeed;
+	if (goalVisible) {
+		targetOmega = goalAngle * this.rotationMultiplier;
+		
+		this.turnDirection = targetOmega >= 0 ? 1 : -1;
+	} else {
+		if (this.turnDirection == null) {
+			var goalPos = this.getOppositeGoalPos(),
+				robotPos = this.robot.getVirtualPos(),
+				angle = Sim.Math.getAngleBetween(goalPos, robotPos, robotPos.orientation);
+		
+			this.turnDirection = angle >= 0 ? 1 : -1;
+		}
+		
+		targetOmega = this.blindRotationSpeed * this.turnDirection;
+	}
 
 	this.robot.setTargetDir(0, 0, targetOmega);
 	
-	if (goalVisible && Math.abs(goalAngle) < Sim.Math.degToRad(this.goalKickThresholdAngle)) {
-		this.robot.kick();
-	}
+	this.lastTurnDirection = targetOmega >= 0 ? 1 : -1;
 };
 
 Sim.SimpleAI.prototype.pickBall = function() {

@@ -127,7 +127,7 @@ Sim.UI.prototype.onKeyDown = function(key) {
 		
 		for (var j = 0; j < keys.length; j++) {
 			if (keys[j] == key) {
-				this.tools[i].callback();
+				this.tools[i].callback.call(this.tools[i]);
 				
 				break;
 			}
@@ -153,6 +153,18 @@ Sim.UI.prototype.isKeyDown = function(key) {
 
 Sim.UI.prototype.initTools = function() {
 	var self = this;
+	
+	this.createTool('Pause', function() {
+		if (sim.game.isPaused()) {
+			sim.game.resume();
+			
+			this.btn.html(this.nr + '. Pause');
+		} else {
+			sim.game.pause();
+			
+			this.btn.html(this.nr + '. Resume');
+		}
+	});
 	
 	this.createTool('Restart', function() {
 		self.restart();
@@ -205,16 +217,18 @@ Sim.UI.prototype.createTool = function(name, callback) {
 	
 	btn = $('#' + id);
 	
-	btn.click(function() {
-		callback();
-	});
-	
-	this.tools.push({
+	var tool = {
 		id: id,
 		nr: nr,
 		btn: btn,
 		callback: callback
+	};
+	
+	btn.click(function() {
+		callback.call(tool);
 	});
+	
+	this.tools.push(tool);
 };
 
 Sim.UI.prototype.initFullscreenToggle = function() {

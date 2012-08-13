@@ -13,6 +13,7 @@ Sim.Game = function() {
 	this.ballCount = 0;
 	this.stepTimeout = null;
 	this.running = false;
+	this.paused = false;
 };
 
 Sim.Game.prototype = new Sim.EventTarget();
@@ -54,6 +55,18 @@ Sim.Game.prototype.stop = function() {
 		
 		this.stepTimeout = null;
 	}
+};
+
+Sim.Game.prototype.pause = function() {
+	this.paused = true;
+};
+
+Sim.Game.prototype.resume = function() {
+	this.paused = false;
+};
+
+Sim.Game.prototype.isPaused = function() {
+	return this.paused;
 };
 
 Sim.Game.prototype.restart = function() {
@@ -143,43 +156,48 @@ Sim.Game.prototype.initControllers = function() {
 };
 
 Sim.Game.prototype.step = function() {
-	var self = this,
-		time = Sim.Util.getMicrotime(),
-		fps = this.fpsCounter.getLastFPS(),
-		fpsDiff = sim.config.simulation.targetFramerate - fps,
-		dt;
+	var self = this;
 	
-	sim.dbg.box('FPS', fps, 2);
-	//sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
-	//sim.dbg.box('Sleep', this.timeStep * 1000 + this.fpsAdjustTime * 1000, 1);
-		
-	if (this.lastStepTime == null) {
-		dt = this.timeStep;
+	if (this.paused) {
+		this.lastStepTime = null;
 	} else {
-		dt = time - this.lastStepTime;
-	}
-	
-	this.duration += dt;
-	
-	this.fpsCounter.step();
-	
-	this.stepBalls(dt);
-	this.stepRobots(dt);
-	this.stepControllers(dt);
-	this.stepUI(dt);
-	
-	this.lastStepDuration = dt;
-	this.lastStepTime = Sim.Util.getMicrotime();
-	
-	this.fpsAdjustTime += fpsDiff * -0.000001; // add PID
-	
-	if (this.fpsAdjustTime < -this.timeStep) {
-		this.fpsAdjustTime = -this.timeStep;
+		var time = Sim.Util.getMicrotime(),
+			fps = this.fpsCounter.getLastFPS(),
+			fpsDiff = sim.config.simulation.targetFramerate - fps,
+			dt;
+
+		sim.dbg.box('FPS', fps, 2);
+		//sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
+		//sim.dbg.box('Sleep', this.timeStep * 1000 + this.fpsAdjustTime * 1000, 1);
+
+		if (this.lastStepTime == null) {
+			dt = this.timeStep;
+		} else {
+			dt = time - this.lastStepTime;
+		}
+
+		this.duration += dt;
+
+		this.fpsCounter.step();
+
+		this.stepBalls(dt);
+		this.stepRobots(dt);
+		this.stepControllers(dt);
+		this.stepUI(dt);
+
+		this.lastStepDuration = dt;
+		this.lastStepTime = Sim.Util.getMicrotime();
+
+		this.fpsAdjustTime += fpsDiff * -0.000001; // add PID
+
+		if (this.fpsAdjustTime < -this.timeStep) {
+			this.fpsAdjustTime = -this.timeStep;
+		}
 	}
 	
 	if (this.running) {
 		this.stepTimeout = window.setTimeout(function() {
-			self.start();
+			self.step();
 		}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
 	}
 };
