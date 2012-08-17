@@ -13,7 +13,7 @@ Sim.Bootstrapper.prototype.bootstrap = function() {
 	sim.game.start();
 };
 
-$(window).load(function() {
+$(document).ready(function() {
 	window.sim = {};
 	
 	sim.bootstrapper = new Sim.Bootstrapper();

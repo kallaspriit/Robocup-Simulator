@@ -204,3 +204,12 @@ BODY {
 #commands > LI:last-child {
 	border-radius: 0 0 3px 3px;
 }
+#gamepad {
+	position: absolute;
+	left: 0;
+	top: -30px;
+	width: 800px;
+	text-align: center;
+	font-size: 20px;
+	color: #FFF;
+}
