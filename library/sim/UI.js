@@ -178,6 +178,10 @@ Sim.UI.prototype.initTools = function() {
 		sim.renderer.toggleParticles();
 	});
 	
+	this.createTool('Toggle localization', function() {
+		sim.renderer.toggleLocalization();
+	});
+	
 	$('#restart-btn').click(function() {
 		self.restart();
 	});

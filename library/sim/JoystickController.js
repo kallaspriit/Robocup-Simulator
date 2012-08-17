@@ -55,7 +55,7 @@ Sim.JoystickController.prototype.init = function() {
 		
 		self.robot.setTargetDir(
 			gamepads[0].state.RIGHT_STICK_Y * -2,
-			gamepads[0].state.RIGHT_STICK_X * -2,
+			gamepads[0].state.RIGHT_STICK_X * 2,
 			gamepads[0].state.LEFT_STICK_X * 5
 		);
 			

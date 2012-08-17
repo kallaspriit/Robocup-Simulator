@@ -40,6 +40,7 @@ Sim.Renderer = function(game) {
 	this.driveToActive = false;
 	this.spawnBallActive = false;
 	this.showParticles = false;
+	this.showLocalization = false;
 	this.driveToOrientation = 0;
 	
 	// appearance
@@ -251,6 +252,29 @@ Sim.Renderer.prototype.toggleParticles = function() {
 			} else {
 				this.robots[name].particles[i].dir.show();
 			}
+		}
+	}
+};
+
+Sim.Renderer.prototype.toggleLocalization = function() {
+	this.showLocalization = !this.showLocalization;
+	
+	for (var name in this.robots) {
+		if (!this.robots[name].robot.smart) {
+			continue;
+		}
+		
+		if (!this.showLocalization) {
+			this.robots[name].ghost.hide();
+			
+			for (var ballId in this.robots[name].balls) {
+				this.robots[name].balls[ballId].body.remove();
+				this.robots[name].balls[ballId].id.remove();
+				
+				delete this.robots[name].balls[ballId];
+			}
+		} else {
+			this.robots[name].ghost.show();
 		}
 	}
 };
@@ -598,6 +622,10 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 
 		this.robots[name].ghost = this.c.setFinish();
 		this.robots[name].particles = [];
+		
+		if (!this.showLocalization) {
+			this.robots[name].ghost.hide();
+		}
 
 		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
 			var particle = robot.robotLocalizer.particles[i],
@@ -663,7 +691,7 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	
 	this.showCommandsQueue(this.robots[name].robot);
 	
-	if (this.robots[name].robot.smart) {
+	if (this.robots[name].robot.smart && this.showLocalization) {
 		this.robots[name].ghost.attr({
 			transform: 'T' + robot.virtualX + ' ' + robot.virtualY + 'R' + Raphael.deg(robot.virtualOrientation)
 		});
