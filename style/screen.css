@@ -1,215 +1,215 @@
 /* Layout */
 HTML,
 BODY {
-	padding: 0;
-	margin: 0;
-	height: 100%;
-	background: url(../images/body-bg.jpg) no-repeat center center;
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    background: url(../images/body-bg.jpg) no-repeat center center;
 }
 #contents {
-	position: absolute;
-	width: 820px;
-	height: 557px;
-	left: 50%;
-	top: 50%;
-	margin-left: -410px;
-	margin-top: -310px;
-	overflow: visible;
+    position: absolute;
+    width: 820px;
+    height: 557px;
+    left: 50%;
+    top: 50%;
+    margin-left: -410px;
+    margin-top: -310px;
+    overflow: visible;
 }
 #canvas {
-	width: 800px;
-	height: 537px;
-	border: 10px solid rgba(50, 100, 200, 0.5);
-	border-radius: 10px;
+    width: 800px;
+    height: 537px;
+    border: 10px solid rgba(50, 100, 200, 0.5);
+    border-radius: 10px;
 }
 
 /* Toolbar */
 #toolbar {
-	position: absolute;
-	left: 10px;
-	top: 560px;
-	padding: 0;
-	margin: 0;
-	list-style: none;
+    position: absolute;
+    left: 10px;
+    top: 560px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
 }
 #toolbar > LI {
-	float: left;
-	padding: 0;
-	margin: 0;
+    float: left;
+    padding: 0;
+    margin: 0;
 }
 #toolbar > LI > BUTTON {
-	padding: 6px 12px;
+    padding: 6px 12px;
 }
 
 /* Dialog 
 .dialog {
-	position: absolute;
-	width: 300px;
-	left: 50%;
-	top: 50%;
-	padding: 5px;
-	margin-left: -155px;
-	margin-top: -130px;
-	background-color: rgba(0, 0, 0, 0.5);
+        position: absolute;
+        width: 300px;
+        left: 50%;
+        top: 50%;
+        padding: 5px;
+        margin-left: -155px;
+        margin-top: -130px;
+        background-color: rgba(0, 0, 0, 0.5);
 }
 .dialog .dialog-inner {
-	background-color: #FFF;
-	padding: 20px 40px;
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
+        background-color: #FFF;
+        padding: 20px 40px;
+        border-radius: 5px;
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px;
 }*/
 
 /* Joystick */
 .joystick {
-	position: absolute;
-	top: 0;
-	width: 100px;
-	height: 100px;
-	border-radius: 20px;
-	background-color: rgba(0, 0, 0, 0.25);
+    position: absolute;
+    top: 0;
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.25);
 }
 .joystick.yellow {
-	left: -140px;
-	border: 5px solid rgba(255, 255, 0, 0.5);
+    left: -140px;
+    border: 5px solid rgba(255, 255, 0, 0.5);
 }
 .joystick.blue {
-	right: -140px;
-	border: 5px solid rgba(0, 0, 255, 0.5);
+    right: -140px;
+    border: 5px solid rgba(0, 0, 255, 0.5);
 }
 .joystick > A {
-	display: block;
-	position: absolute;
-	width: 40px;
-	height: 40px;
-	left: 50%;
-	top: 50%;
-	margin-left: -20px;
-	margin-top: -20px;
-	
-	border-radius: 20px;
+    display: block;
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    left: 50%;
+    top: 50%;
+    margin-left: -20px;
+    margin-top: -20px;
+
+    border-radius: 20px;
 }
 .joystick.yellow > A {
-	background-color: rgba(255, 255, 0, 0.5);
+    background-color: rgba(255, 255, 0, 0.5);
 }
 .joystick.blue > A {
-	background-color: rgba(0, 0, 255, 0.5);
+    background-color: rgba(0, 0, 255, 0.5);
 }
 
 /* Game-over */
 #game-over {
-	position: absolute;
-	width: 400px;
-	height: 300px;
-	left: 50%;
-	top: 50%;
-	margin: -150px 0 0 -200px;
-	background-color: #FFF;
-	border-radius: 10px;
-	box-shadow: 0 0 80px #666;
-	display: none;
+    position: absolute;
+    width: 400px;
+    height: 300px;
+    left: 50%;
+    top: 50%;
+    margin: -150px 0 0 -200px;
+    background-color: #FFF;
+    border-radius: 10px;
+    box-shadow: 0 0 80px #666;
+    display: none;
 }
 #game-over > H1 {
-	display: block;
-	margin: 0;
-	padding: 0;
-	height: 60px;
-	line-height: 60px;
-	font-family: serif;
-	font-size: 40px;
-	color: #333;
-	text-shadow: 2px 2px 2px #CCC;
-	text-align: center;
-	background-color: #F8F8F8;
-	border-bottom: 1px solid #CCC;
-	border-radius: 10px 10px 0 0;
+    display: block;
+    margin: 0;
+    padding: 0;
+    height: 60px;
+    line-height: 60px;
+    font-family: serif;
+    font-size: 40px;
+    color: #333;
+    text-shadow: 2px 2px 2px #CCC;
+    text-align: center;
+    background-color: #F8F8F8;
+    border-bottom: 1px solid #CCC;
+    border-radius: 10px 10px 0 0;
 }
 #yellow-score,
 #blue-score {
-	position: absolute;
-	top: 80px;
-	width: 120px;
-	height: 100px;
-	line-height: 100px;
-	text-align: center;
-	font-size: 80px;
-	color: #FFF;
-	border-radius: 3px;
+    position: absolute;
+    top: 80px;
+    width: 120px;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+    font-size: 80px;
+    color: #FFF;
+    border-radius: 3px;
 }
 #yellow-score {
-	left: 70px;
-	background-color: #DD0;
+    left: 70px;
+    background-color: #DD0;
 }
 #blue-score {
-	right: 70px;
-	background-color: #00D;
+    right: 70px;
+    background-color: #00D;
 }
 #match-duration {
-	position: absolute;
-	left: 70px;
-	top: 200px;
-	font-size: 22px;
+    position: absolute;
+    left: 70px;
+    top: 200px;
+    font-size: 22px;
 }
 #restart-btn {
-	position: absolute;
-	left: 70px;
-	right: 70px;
-	top: 240px;
-	text-align: center;
-	line-height: 30px;
+    position: absolute;
+    left: 70px;
+    right: 70px;
+    top: 240px;
+    text-align: center;
+    line-height: 30px;
 }
 
 /* Debugging */
 #debug-wrap {
-	position: absolute;
-	left: 20px;
-	top: 20px;
-	list-style: none;
-	margin: 0;
-	padding: 0;
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 #debug-wrap > LI {
-	float: left;
-	clear: both;
-	background-color: rgba(0, 0, 0, 0.5);
-	border-radius: 3px;
-	padding: 5px 10px;
-	margin: 0 0 10px;
-	color: #FFF;
+    float: left;
+    clear: both;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    padding: 5px 10px;
+    margin: 0 0 10px;
+    color: #FFF;
 }
 #commands {
-	position: absolute;
-	top: 20px;
-	right: 20px;
-	margin: 0;
-	padding: 4px;
-	max-height: 90%;
-	list-style: none;
-	background-color: rgba(0, 0, 0, 0.25);
-	border-radius: 5px;
-	overflow: hidden;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    margin: 0;
+    padding: 4px;
+    max-height: 90%;
+    list-style: none;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 5px;
+    overflow: hidden;
 }
 #commands > LI {
-	width: 200px;
-	padding: 5px 10px;
-	margin: 1px 0 0;
-	background-color: rgba(0, 0, 0, 0.5);
-	color: #FFF;
+    width: 200px;
+    padding: 5px 10px;
+    margin: 1px 0 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #FFF;
 }
 #commands > LI:first-child {
-	margin-top: 0;
-	border-radius: 3px 3px 0 0;
-	background-color: rgba(0, 255, 0, 0.5);
+    margin-top: 0;
+    border-radius: 3px 3px 0 0;
+    background-color: rgba(0, 255, 0, 0.5);
 }
 #commands > LI:last-child {
-	border-radius: 0 0 3px 3px;
+    border-radius: 0 0 3px 3px;
 }
 #gamepad {
-	position: absolute;
-	left: 0;
-	top: -30px;
-	width: 800px;
-	text-align: center;
-	font-size: 20px;
-	color: #FFF;
+    position: absolute;
+    left: 0;
+    top: -30px;
+    width: 800px;
+    text-align: center;
+    font-size: 20px;
+    color: #FFF;
 }

@@ -174,13 +174,18 @@ Sim.Math.createNormalizedVector = function(vec) {
 	};
 };
 
+Sim.Math.createMultipliedVector = function(vec, scalar) {
+	return {
+		x: vec.x * scalar,
+		y: vec.y * scalar
+	};
+};
+
 Sim.Math.createDirVector = function(from, to) {
 	return Sim.Math.createNormalizedVector({
 		x: from.x - to.x,
 		y: from.y - to.y
 	});
-	
-	//return $V2(from.x - to.x, from.y - to.y).toUnitVector();
 };
 
 Sim.Math.createForwardVector = function(orientation) {
@@ -268,4 +273,140 @@ Sim.Math.Circle.prototype.getIntersections = function(other) {
 		x2: solutionX2,
 		y2: solutionY2
 	};
+};
+
+// Matrices implementation
+Sim.Math.Matrix3x3 = function(
+	a11, a12, a13,
+	a21, a22, a23,
+	a31, a32, a33
+) {
+	this.a11 = a11; this.a12 = a12; this.a13 = a13;
+	this.a21 = a21; this.a22 = a22; this.a23 = a23;
+	this.a31 = a31; this.a32 = a32; this.a33 = a33;
+};
+
+Sim.Math.Matrix3x3.prototype.getType = function() {
+	return '3x3';
+};
+
+Sim.Math.Matrix3x3.prototype.getDeterminant = function() {
+	return this.a11 * (this.a33 * this.a22 - this.a32 * this.a23)
+		- this.a21 * (this.a33 * this.a12 - this.a32 * this.a13)
+		+ this.a31 * (this.a23 * this.a12 - this.a22 * this.a13);
+};
+
+Sim.Math.Matrix3x3.prototype.getMultiplied = function(b) {
+	if (typeof(b) == 'number') {
+		return new Sim.Math.Matrix3x3(
+			this.a11 * b, this.a12 * b, this.a13 * b,
+			this.a21 * b, this.a22 * b, this.a23 * b,
+			this.a31 * b, this.a32 * b, this.a33 * b
+		);
+	} else if (typeof(b) == 'object') {
+		if (b.getType() == '3x3') {
+			return new Sim.Math.Matrix3x3(
+				this.a11 * b.a11 + this.a12 * b.a21 + this.a13 * b.a31, this.a11 * b.a12 + this.a12 * b.a22 + this.a13 * b.a32, this.a11 * b.a13 + this.a12 * b.a23 + this.a13 * b.a33,
+				this.a21 * b.a11 + this.a22 * b.a21 + this.a23 * b.a31, this.a21 * b.a12 + this.a22 * b.a22 + this.a23 * b.a32, this.a21 * b.a13 + this.a22 * b.a23 + this.a23 * b.a33,
+				this.a31 * b.a11 + this.a32 * b.a21 + this.a33 * b.a31, this.a31 * b.a12 + this.a32 * b.a22 + this.a33 * b.a32, this.a31 * b.a13 + this.a32 * b.a23 + this.a33 * b.a33
+			);
+		} else if (b.getType() == '3x1') {
+			return new Sim.Math.Matrix3x1(
+				this.a11 * b.a11 + this.a12 * b.a21 + this.a13 * b.a31,
+				this.a21 * b.a11 + this.a22 * b.a21 + this.a23 * b.a31,
+				this.a31 * b.a11 + this.a32 * b.a21 + this.a33 * b.a31
+			);
+		}
+	} else {
+		return null;
+	}
+};
+
+Sim.Math.Matrix3x3.prototype.getInversed = function() {
+	var d = this.getDeterminant(),
+		m = new Sim.Math.Matrix3x3(
+			this.a33 * this.a22 - this.a32 * this.a23, -(this.a33 * this.a12 - this.a32 * this.a13), this.a23 * this.a12 - this.a22 * this.a13,
+			-(this.a33 * this.a21 - this.a31 * this.a23), this.a33 * this.a11 - this.a31 * this.a13, -(this.a23 * this.a11 - this.a21 * this.a13),
+			this.a32 * this.a21 - this.a31 * this.a22, -(this.a32 * this.a11 - this.a31 * this.a12), this.a22 * this.a11 - this.a21 * this.a12
+		);
+	
+	return m.getMultiplied(1.0 / d);
+};
+
+Sim.Math.Matrix4x3 = function(
+	a11, a12, a13,
+	a21, a22, a23,
+	a31, a32, a33,
+	a41, a42, a43
+) {
+	this.a11 = a11; this.a12 = a12; this.a13 = a13;
+	this.a21 = a21; this.a22 = a22; this.a23 = a23;
+	this.a31 = a31; this.a32 = a32; this.a33 = a33;
+	this.a41 = a41; this.a42 = a42; this.a43 = a43;
+};
+
+Sim.Math.Matrix4x3.prototype.getType = function() {
+	return '4x3';
+};
+
+Sim.Math.Matrix4x3.prototype.getMultiplied = function(b) {
+	if (typeof(b) == 'number') {
+		return new Sim.Math.Matrix4x3(
+			this.a11 * b, this.a12 * b, this.a13 * b,
+			this.a21 * b, this.a22 * b, this.a23 * b,
+			this.a31 * b, this.a32 * b, this.a33 * b,
+			this.a41 * b, this.a42 * b, this.a43 * b
+		);
+	} else if (typeof(b) == 'object') {
+		return new Sim.Math.Matrix4x1(
+			this.a11 * b.a11 + this.a12 * b.a21 + this.a13 * b.a31,
+			this.a21 * b.a11 + this.a22 * b.a21 + this.a23 * b.a31,
+			this.a31 * b.a11 + this.a32 * b.a21 + this.a33 * b.a31,
+			this.a41 * b.a11 + this.a42 * b.a21 + this.a43 * b.a31
+		);
+	} else {
+		return null;
+	}
+};
+
+Sim.Math.Matrix3x1 = function(
+	a11,
+	a21,
+	a31
+) {
+	this.a11 = a11;
+	this.a21 = a21;
+	this.a31 = a31;
+};
+
+Sim.Math.Matrix3x1.prototype.getMultiplied = function(b) {
+	if (typeof(b) == 'number') {
+		return new Sim.Math.Matrix3x1(
+			this.a11 * b,
+			this.a21 * b,
+			this.a31 * b
+		);
+	} else {
+		return null;
+	}
+};
+
+Sim.Math.Matrix3x1.prototype.getType = function() {
+	return '3x1';
+};
+
+Sim.Math.Matrix4x1 = function(
+	a11,
+	a21,
+	a31,
+	a41
+) {
+	this.a11 = a11;
+	this.a21 = a21;
+	this.a31 = a31;
+	this.a41 = a41;
+};
+
+Sim.Math.Matrix4x1.prototype.getType = function() {
+	return '4x1';
 };

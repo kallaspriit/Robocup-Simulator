@@ -108,24 +108,6 @@ Sim.Robot = function(
 		this.resetDeviation();
 	}
 	
-	/*
-	this.wheelOmegas = [
-		0.0, 0.0, 0.0
-	];
-	
-	this.wheelAngles = [
-		Sim.Math.degToRad(-60.0),
-		Sim.Math.degToRad(120),
-		Sim.Math.degToRad(0.0)
-	];
-	
-	this.omegaMatrix = $M([
-		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset]
-	]);
-	*/
-    
 	this.wheelOmegas = [
 		0.0, 0.0, 0.0, 0.0
 	];
@@ -137,38 +119,37 @@ Sim.Robot = function(
 		Sim.Math.degToRad(135.0)
 	];
 
-	this.omegaMatrix = $M([
-		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
-	]);
-	this.omegaMatrixA = $M([
-		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset]
-	]);
-	this.omegaMatrixB = $M([
-		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
-	]);
-	this.omegaMatrixC = $M([
-		[-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
-	]);
-	this.omegaMatrixD = $M([
-		[-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset],
-		[-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset]
-	]);
+	this.omegaMatrix = new Sim.Math.Matrix4x3(
+		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
+	);
+	this.omegaMatrixA = new Sim.Math.Matrix3x3(
+		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset
+	);
+	this.omegaMatrixB = new Sim.Math.Matrix3x3(
+		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
+	);
+	this.omegaMatrixC = new Sim.Math.Matrix3x3(
+		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
+	);
+	this.omegaMatrixD = new Sim.Math.Matrix3x3(
+		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset,
+		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
+	);
 	
-	this.omegaMatrixInv = this.omegaMatrix.inverse();
-	this.omegaMatrixInvA = this.omegaMatrixA.inverse();
-	this.omegaMatrixInvB = this.omegaMatrixB.inverse();
-	this.omegaMatrixInvC = this.omegaMatrixC.inverse();
-	this.omegaMatrixInvD = this.omegaMatrixD.inverse();
+	this.omegaMatrixInvA = this.omegaMatrixA.getInversed();
+	this.omegaMatrixInvB = this.omegaMatrixB.getInversed();
+	this.omegaMatrixInvC = this.omegaMatrixC.getInversed();
+	this.omegaMatrixInvD = this.omegaMatrixD.getInversed();
 	
 	this.cameraFOV = new Sim.Math.Polygon([
 		{x: 0, y: 0},
@@ -334,17 +315,6 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 			//sim.dbg.box('Evaluation', position.evaluation, 2);
 		}
 	}
-	
-	/*
-	this.virtualOrientation = (this.virtualOrientation + noisyMovement.omega) % (Math.PI * 2.0);
-	this.virtualVelocityX = noisyMovement.velocityX * Math.cos(this.virtualOrientation) - noisyMovement.velocityY * Math.sin(this.virtualOrientation),
-	this.virtualVelocityY = noisyMovement.velocityX * Math.sin(this.virtualOrientation) + noisyMovement.velocityY * Math.cos(this.virtualOrientation);
-	this.virtualX += this.virtualVelocityX;
-	this.virtualY += this.virtualVelocityY;
-	*/
-   
-	//sim.dbg.box('Omega', Sim.Math.round(this.wheelOmegas[0], 2) + ',' + Sim.Math.round(this.wheelOmegas[1], 2) + ',' + Sim.Math.round(this.wheelOmegas[2], 2) + ',' + Sim.Math.round(this.wheelOmegas[3], 2));
-	//sim.dbg.box('Velocity', $V2(movement.velocityX, movement.velocityY).modulus(), 2);
 };
 
 Sim.Robot.prototype.localizeByDistances = function(goals) {
@@ -515,35 +485,35 @@ Sim.Robot.prototype.getMovement = function(noisy) {
 		];
 	}
 	
-	var wheelMatrixA = $M([
-			[omegas[0]],
-			[omegas[1]],
-			[omegas[2]]
-		]),
-		wheelMatrixB = $M([
-			[omegas[0]],
-			[omegas[1]],
-			[omegas[3]]
-		]),
-		wheelMatrixC = $M([
-			[omegas[0]],
-			[omegas[2]],
-			[omegas[3]]
-		]),
-		wheelMatrixD = $M([
-			[omegas[1]],
-			[omegas[2]],
-			[omegas[3]]
-		]),
-		movementA = this.omegaMatrixInvA.multiply(wheelMatrixA).multiply(this.wheelRadius),
-		movementB = this.omegaMatrixInvB.multiply(wheelMatrixB).multiply(this.wheelRadius),
-		movementC = this.omegaMatrixInvC.multiply(wheelMatrixC).multiply(this.wheelRadius),
-		movementD = this.omegaMatrixInvD.multiply(wheelMatrixD).multiply(this.wheelRadius);
+	var wheelMatrixA = new Sim.Math.Matrix3x1(
+			omegas[0],
+			omegas[1],
+			omegas[2]
+		),
+		wheelMatrixB = new Sim.Math.Matrix3x1(
+			omegas[0],
+			omegas[1],
+			omegas[3]
+		),
+		wheelMatrixC = new Sim.Math.Matrix3x1(
+			omegas[0],
+			omegas[2],
+			omegas[3]
+		),
+		wheelMatrixD = new Sim.Math.Matrix3x1(
+			omegas[1],
+			omegas[2],
+			omegas[3]
+		),
+		movementA = this.omegaMatrixInvA.getMultiplied(wheelMatrixA).getMultiplied(this.wheelRadius),
+		movementB = this.omegaMatrixInvB.getMultiplied(wheelMatrixB).getMultiplied(this.wheelRadius),
+		movementC = this.omegaMatrixInvC.getMultiplied(wheelMatrixC).getMultiplied(this.wheelRadius),
+		movementD = this.omegaMatrixInvD.getMultiplied(wheelMatrixD).getMultiplied(this.wheelRadius);
 	
 	return {
-		velocityX: (movementA.elements[0][0] + movementB.elements[0][0] + movementC.elements[0][0] + movementD.elements[0][0]) / 4.0,
-		velocityY: (movementA.elements[1][0] + movementB.elements[1][0] + movementC.elements[1][0] + movementD.elements[1][0]) / 4.0,
-		omega: (movementA.elements[2][0] + movementB.elements[2][0] + movementC.elements[2][0] + movementD.elements[2][0]) / 4.0
+		velocityX: (movementA.a11 + movementB.a11 + movementC.a11 + movementD.a11) / 4.0,
+		velocityY: (movementA.a21 + movementB.a21 + movementC.a21 + movementD.a21) / 4.0,
+		omega: (movementA.a31 + movementB.a31 + movementC.a31 + movementD.a31) / 4.0
 	};
 };
 
@@ -599,24 +569,18 @@ Sim.Robot.prototype.queueCommand = function(command) {
 };
 
 Sim.Robot.prototype.updateWheelSpeeds = function() {
-	/*
-	this.wheelOmegas[0] = (this.wheelOffset * omega - dir.x * Math.sin(Sim.Math.degToRad(this.wheelAngle[0])) + dir.y * Math.cos(Sim.Math.degToRad(this.wheelAngle[0]))) / this.wheelRadius;
-	this.wheelOmegas[1] = (this.wheelOffset * omega - dir.x * Math.sin(Sim.Math.degToRad(this.wheelAngle[1])) + dir.y * Math.cos(Sim.Math.degToRad(this.wheelAngle[1]))) / this.wheelRadius;
-	this.wheelOmegas[2] = (this.wheelOffset * omega - dir.x * Math.sin(Sim.Math.degToRad(this.wheelAngle[2])) + dir.y * Math.cos(Sim.Math.degToRad(this.wheelAngle[2]))) / this.wheelRadius;
-	*/
-    
-	var targetMatrix = $M([
-		[this.targetDir.x],
-		[this.targetDir.y],
-		[this.targetOmega]
-	]);
+	var targetMatrix = new Sim.Math.Matrix3x1(
+		this.targetDir.x,
+		this.targetDir.y,
+		this.targetOmega
+	);
 	
-	var wheelOmegas = this.omegaMatrix.multiply(1.0 / this.wheelRadius).multiply(targetMatrix).elements;
+	var wheelOmegas = this.omegaMatrix.getMultiplied(1.0 / this.wheelRadius).getMultiplied(targetMatrix);
 	
-	this.wheelOmegas[0] = wheelOmegas[0][0];
-	this.wheelOmegas[1] = wheelOmegas[1][0];
-	this.wheelOmegas[2] = wheelOmegas[2][0];
-	this.wheelOmegas[3] = wheelOmegas[3][0];
+	this.wheelOmegas[0] = wheelOmegas.a11;
+	this.wheelOmegas[1] = wheelOmegas.a21;
+	this.wheelOmegas[2] = wheelOmegas.a31;
+	this.wheelOmegas[3] = wheelOmegas.a41;
 };
 
 Sim.Robot.prototype.turnBy = function(angle, duration) {
@@ -646,11 +610,17 @@ Sim.Robot.prototype.handleBalls = function(dt) {
 		holdDistance = this.radius + this.dribbledBall.radius * 1.1;
 		
 		if (distance <= maxDistance) {
-			var forwardVec = $V2(Math.cos(this.orientation), Math.sin(this.orientation)).toUnitVector(),
+			/*var forwardVec = $V2(Math.cos(this.orientation), Math.sin(this.orientation)).toUnitVector(),
 				pos = forwardVec.multiply(holdDistance);
 			
 			this.dribbledBall.x = this.x + pos.x();
-			this.dribbledBall.y = this.y + pos.y();
+			this.dribbledBall.y = this.y + pos.y();*/
+			
+			var forwardVec = Sim.Math.createForwardVector(this.orientation),
+				pos = Sim.Math.createMultipliedVector(forwardVec, holdDistance);
+			
+			this.dribbledBall.x = this.x + pos.x;
+			this.dribbledBall.y = this.y + pos.y;
 		} else {
 			this.dribbledBall._dribbled = false;
 			
