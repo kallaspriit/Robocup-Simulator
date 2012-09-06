@@ -13,7 +13,9 @@ Sim.Config = {
 		goalWidth: 0.7
 	},
 	game: {
-		balls: 11
+		balls: 11,
+		ballRemoveThreshold: 0.5,
+		robotConfineThreshold: 0.5
 	},
 	ball: {
 		radius: 0.021335,

@@ -161,7 +161,7 @@ Sim.BallLocalizer.prototype.update = function(
 		visibleBalls[i].x = robotX + Math.cos(angle) * visibleBalls[i].distance;
 		visibleBalls[i].y = robotY + Math.sin(angle) * visibleBalls[i].distance;
 		
-		Sim.Util.confine(visibleBalls[i], 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius);
+		//Sim.Util.confine(visibleBalls[i], 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius);
 		
 		closestBall = this.getBallAround(visibleBalls[i].x, visibleBalls[i].y);
 		
@@ -247,9 +247,9 @@ Sim.BallLocalizer.prototype.purge = function(visibleBalls, cameraFOV) {
 };
 
 Sim.BallLocalizer.prototype.isValid = function(ball, visibleBalls, cameraFOV) {
-	if (Sim.Util.confine(ball, 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius)) {
-		//return false;
-	}
+	/*if (Sim.Util.confine(ball, 0, sim.config.field.width, 0, sim.config.field.height, sim.config.ball.radius)) {
+		return false;
+	}*/
 	
 	var currentTime = Sim.Util.getMicrotime();
 	

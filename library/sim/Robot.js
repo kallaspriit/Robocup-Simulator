@@ -307,7 +307,7 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 		sim.config.field.width,
 		0,
 		sim.config.field.height,
-		this.radius
+		this.radius - sim.config.game.robotConfineThreshold
 	);
 	
 	if (this.smart) {
