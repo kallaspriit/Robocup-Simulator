@@ -11,6 +11,7 @@ Sim.Game = function() {
 	this.blueScore = 0;
 	this.duration = 0;
 	this.ballCount = 0;
+	this.remainingBallCount = 0;
 	this.stepTimeout = null;
 	this.running = false;
 	this.paused = false;
@@ -100,6 +101,7 @@ Sim.Game.prototype.getRobot = function(name) {
 Sim.Game.prototype.addBall = function(ball) {
 	this.balls.push(ball);
 	this.ballCount++;
+	this.remainingBallCount++;
 
 	this.fire({
 		type: Sim.Game.Event.BALL_ADDED,
@@ -235,8 +237,23 @@ Sim.Game.prototype.stepBalls = function(dt) {
 		} else {
 			this.balls[i].step(dt);
 
-			if (Sim.Math.collideWalls(this.balls[i])) {
+			/*if (Sim.Math.collideWalls(this.balls[i])) {
 				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
+			}*/
+			
+			var x = this.balls[i].x,
+				y = this.balls[i].y,
+				t = sim.config.game.ballRemoveThreshold;
+			
+			if (
+				x < -t
+				|| x > sim.config.field.width + t
+				|| y < -t
+				|| y > sim.config.field.height + t
+			) {
+				removeBalls.push(i);
+				
+				this.remainingBallCount--;
 			}
 		}
 		
@@ -335,7 +352,7 @@ Sim.Game.prototype.increaseBlueScore = function() {
 Sim.Game.prototype.checkScore = function() {
 	var totalScore = this.yellowScore + this.blueScore;
 
-	if (totalScore >= this.ballCount) {
+	if (totalScore >= this.remainingBallCount) {
 		this.stop();
 		
 		this.fire({

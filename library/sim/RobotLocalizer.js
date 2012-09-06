@@ -148,7 +148,7 @@ Sim.RobotLocalizer.prototype.getPosition = function(robot) {
 		i;
 	
 	for (i = 0; i < this.particles.length; i++) {
-		Sim.Util.confine(this.particles[i], 0, sim.config.field.width, 0, sim.config.field.height, robot.radius);
+		//Sim.Util.confine(this.particles[i], 0, sim.config.field.width, 0, sim.config.field.height, robot.radius);
 		
 		xSum += this.particles[i].x;
 		ySum += this.particles[i].y;
