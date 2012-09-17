@@ -40,8 +40,8 @@ Sim.Game.prototype.init = function() {
 	this.fpsCounter = new Sim.FpsCounter();
 	
 	this.initBalls();
-	this.initRobots();
-	this.initControllers();
+	//this.initRobots();
+	//this.initControllers();
 };
 
 Sim.Game.prototype.start = function() {
@@ -128,18 +128,20 @@ Sim.Game.prototype.initBalls = function() {
 	}
 };
 
-Sim.Game.prototype.initRobots = function() {
+Sim.Game.prototype.initRobots = function(yellowSmart, blueSmart) {
 	var yellowRobot = new Sim.Robot(
 			Sim.Game.Side.YELLOW,
 			sim.config.yellowRobot.startX,
 			sim.config.yellowRobot.startY,
 			sim.config.yellowRobot.startOrientation,
+			yellowSmart,
 			sim.config.yellowRobot
 		), blueRobot = new Sim.Robot(
 			Sim.Game.Side.BLUE,
 			sim.config.blueRobot.startX,
 			sim.config.blueRobot.startY,
 			sim.config.blueRobot.startOrientation,
+			blueSmart,
 			sim.config.blueRobot
 		);
 	
@@ -152,9 +154,13 @@ Sim.Game.prototype.initControllers = function() {
 		blueController1 = new Sim.KeyboardController(this.getRobot('blue')),
 		blueController2 = new Sim.JoystickController(this.getRobot('blue'));
 	
-	this.controllers.push(yellowController);
-	this.controllers.push(blueController1);
-	this.controllers.push(blueController2);
+	this.addController(yellowController);
+	this.addController(blueController1);
+	this.addController(blueController2);
+};
+
+Sim.Game.prototype.addController = function(controller) {
+	this.controllers.push(controller);
 };
 
 Sim.Game.prototype.step = function() {
@@ -237,9 +243,9 @@ Sim.Game.prototype.stepBalls = function(dt) {
 		} else {
 			this.balls[i].step(dt);
 
-			/*if (Sim.Math.collideWalls(this.balls[i])) {
+			if (sim.config.game.useWalls && Sim.Math.collideWalls(this.balls[i])) {
 				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
-			}*/
+			}
 			
 			var x = this.balls[i].x,
 				y = this.balls[i].y,
@@ -265,7 +271,9 @@ Sim.Game.prototype.stepBalls = function(dt) {
 	
 	if (removeBalls.length > 0) {
 		for (i = 0; i < removeBalls.length; i++) {
-			this.balls[removeBalls[i]]._goaled = true;
+			if (typeof(this.balls[removeBalls[i]]) == 'object') {
+				this.balls[removeBalls[i]]._goaled = true;
+			}
 			
 			this.fire({
 				type: Sim.Game.Event.BALL_REMOVED,

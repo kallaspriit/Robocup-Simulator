@@ -221,13 +221,15 @@ Sim.SimpleAI.prototype.pickBall = function() {
 	}
 	
 	for (i = 0; i < balls.length; i++) {
-		if (
-			balls[i].x < 0
-			|| balls[i].x > sim.config.field.width
-			|| balls[i].y < 0
-			|| balls[i].y > sim.config.field.height
-		) {	
-			continue;
+		if (!sim.config.game.useWalls) {
+			if (
+				balls[i].x < 0
+				|| balls[i].x > sim.config.field.width
+				|| balls[i].y < 0
+				|| balls[i].y > sim.config.field.height
+			) {	
+				continue;
+			}
 		}
 		
 		distance = Sim.Math.getDistanceBetween(robotPos, balls[i]);

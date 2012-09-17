@@ -15,7 +15,8 @@ Sim.Config = {
 	game: {
 		balls: 11,
 		ballRemoveThreshold: 0.5,
-		robotConfineThreshold: 0.5
+		robotConfineThreshold: 0.5,
+		useWalls: true
 	},
 	ball: {
 		radius: 0.021335,
@@ -39,8 +40,7 @@ Sim.Config = {
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0.01,
-		smart: true
+		distanceDeviation: 0.01
 	},
 	blueRobot: {
 		startX: 4.5 - 0.125,
@@ -55,8 +55,7 @@ Sim.Config = {
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0.01,
-		smart: false
+		distanceDeviation: 0.01
 	},
 	robotLocalizer: {
 		particleCount: 1000,

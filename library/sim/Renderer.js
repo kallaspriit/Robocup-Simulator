@@ -153,11 +153,9 @@ Sim.Renderer.prototype.initEventListeners = function() {
 		self.onMouseWheel(e, delta, deltaX, deltaY);
 	});
 	
-	for (var name in sim.game.robots) {
-		sim.game.bind(Sim.Game.Event.GAME_OVER, function(e) {
-			self.showGameOver(e.yellowScore, e.blueScore, e.duration);
-		});
-	}
+	sim.game.bind(Sim.Game.Event.GAME_OVER, function(e) {
+		self.showGameOver(e.yellowScore, e.blueScore, e.duration);
+	});
 };
 
 Sim.Renderer.prototype.onMouseMove = function(e) {
@@ -324,18 +322,21 @@ Sim.Renderer.prototype.showGameOver = function(yellowScore, blueScore, duration)
 	var scoreText;
 	
 	if (yellowScore > blueScore) {
-		scoreText = 'Yellow wins!';
+		scoreText = 'Yellow Wins!';
 	} else if (blueScore > yellowScore) {
-		scoreText = 'Blue wins!';
+		scoreText = 'Blue Wins!';
 	} else {
-		scoreText = 'It\'s a draw!';
+		scoreText = 'It\'s a Draw!';
 	}
 	
-	$('#yellow-score').html(yellowScore);
-	$('#blue-score').html(blueScore);
-	$('#match-duration').html('The match took ' + Sim.Math.round(duration, 1) + ' seconds');
-	$('#game-over > H1').html(scoreText)
-	$('#game-over').fadeIn(150);
+	sim.ui.showModal(
+		'<h1>' + scoreText + '</h1>' +
+		'<div id="yellow-wrap"><span>' + yellowScore + '</span></div>' +
+		'<div id="blue-wrap"><span>' + blueScore + '</span></div>' +
+		'<div id="match-duration">The match took ' + Sim.Math.round(duration, 1) + ' seconds</div>' +
+		'<button id="restart-btn" class="modal-btn">Restart the match</button>',
+		'game-over'
+	);
 };
 
 Sim.Renderer.prototype.draw = function() {
@@ -536,8 +537,12 @@ Sim.Renderer.prototype.updateBall = function(ball) {
 	
 	var ballObj = this.balls[ball._id];
 	
-	if (ball._yellowVisible) {
+	if (ball._yellowVisible && ball._blueVisible) {
+		ballObj.yellowIndicator.attr({fill: 'rgba(255, 255, 255, 0.8)'});
+	} else if (ball._yellowVisible) {
 		ballObj.yellowIndicator.attr({fill: 'rgba(255, 255, 0, 0.8)'});
+	} else if (ball._blueVisible) {
+		ballObj.yellowIndicator.attr({fill: 'rgba(0, 0, 255, 0.8)'});
 	} else {
 		ballObj.yellowIndicator.attr({fill: 'none'});
 	}
@@ -577,7 +582,6 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 	var dirWidth = 0.03,
 		frame = this.c.circle(0, 0, robot.radius),
 		dir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
-		cameraFocus = this.c.path(Sim.Util.polygonToPath(robot.cameraFOV, robot.cameraDistance, 0)),
 		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
 	
 	frame.attr({
@@ -590,10 +594,14 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 		stroke: 'none'
 	});
 	
-	cameraFocus.attr({
-		fill: 'rgba(255, 255, 255, 0.35)',
-		stroke: 'none'
-	});
+	if (this.robots[name].robot.smart) {
+		var cameraFocus = this.c.path(Sim.Util.polygonToPath(robot.cameraFOV, robot.cameraDistance, 0));
+
+		cameraFocus.attr({
+			fill: 'rgba(255, 255, 255, 0.35)',
+			stroke: 'none'
+		});
+	}
 	
 	this.robots[name].frame = frame;
 	this.robots[name].dir = dir;

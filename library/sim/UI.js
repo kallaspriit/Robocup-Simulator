@@ -27,6 +27,7 @@ Sim.UI.prototype.init = function() {
 	this.initKeyboardControls();
 	this.initEventListeners();
 	this.initTools();
+	this.initGameOptions();
 };
 
 Sim.UI.prototype.initDebugListener = function() {
@@ -182,7 +183,7 @@ Sim.UI.prototype.initTools = function() {
 		sim.renderer.toggleLocalization();
 	});
 	
-	$('#restart-btn').click(function() {
+	$(document.body).on('click', '#restart-btn', function() {
 		self.restart();
 	});
 	
@@ -209,6 +210,45 @@ Sim.UI.prototype.initTools = function() {
 	$('#toggle-perfect-localization-btn').click(function() {
 		sim.game.getRobot('yellow').togglePerfectLocalization();
 	});*/
+};
+
+Sim.UI.prototype.initGameOptions = function() {
+	this.showModal(
+		'<h1>Start Match</h1>' +
+		'<div id="yellow-wrap">' +
+		'	<select id="yellow-controller">' +
+		'		<option value="SimpleAI" selected="selected">AI</option>' +
+		'		<option value="KeyboardController">Keyboard</option>' +
+		'		<option value="JoystickController">Joystick</option>' +
+		'	</select>' +
+		'</div>' +
+		'<div id="blue-wrap">' +
+		'	<select id="blue-controller">' +
+		'		<option value="SimpleAI">AI</option>' +
+		'		<option value="KeyboardController" selected="selected">Keyboard</option>' +
+		'		<option value="JoystickController">Joystick</option>' +
+		'	</select>' +
+		'</div>' +
+		'<button id="start-btn" class="modal-btn">Start the match</button>',
+		'start-match'
+	);
+		
+	$('#start-btn').click(function() {
+		var yellowControllerType = $('#yellow-controller').val(),
+			blueControllerType = $('#blue-controller').val(),
+			yellowSmart = yellowControllerType.indexOf('AI') != -1,
+			blueSmart = blueControllerType.indexOf('AI') != -1;
+		
+		sim.game.initRobots(yellowSmart, blueSmart);
+			
+		var yellowController = new Sim[yellowControllerType](sim.game.robots.yellow),
+			blueController = new Sim[blueControllerType](sim.game.robots.blue);
+		
+		sim.game.addController(yellowController);
+		sim.game.addController(blueController);
+		
+		sim.ui.hideModal();
+	});
 };
 
 Sim.UI.prototype.createTool = function(name, callback) {
@@ -247,9 +287,23 @@ Sim.UI.prototype.showNoiseDialog = function() {
 	robot.resetDeviation();
 };
 
-Sim.UI.prototype.restart = function() {
-	$('#game-over').fadeOut(300);
-		
+Sim.UI.prototype.showModal = function(content, className) {
+	var wrap = $('#modal');
+	
+	wrap.removeAttr('class');
+	
+	if (typeof(className) == 'string') {
+		wrap.addClass(className);
+	}
+	
+	wrap.html(content).fadeIn(250);
+};
+
+Sim.UI.prototype.hideModal = function() {
+	$('#modal').hide(100);
+};
+
+Sim.UI.prototype.restart = function() {	
 	//sim.game.restart();
 	window.location.reload();
 };

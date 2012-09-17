@@ -3,6 +3,7 @@ Sim.Robot = function(
 	x,
 	y,
 	orientation,
+	isSmart,
 	options
 ) {
 	this.defaults = {
@@ -35,7 +36,7 @@ Sim.Robot = function(
 	this.dribbleAngle = this.options.dribbleAngle;
 	this.omegaDeviation = this.options.omegaDeviation;
 	this.distanceDeviation = this.options.distanceDeviation;
-	this.smart = this.options.smart;
+	this.smart = isSmart;
 	
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
@@ -282,14 +283,25 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 	this.x += this.velocityX * dt;
 	this.y += this.velocityY * dt;
 	
-	Sim.Util.confine(
-		this, 
-		0,
-		sim.config.field.width,
-		0,
-		sim.config.field.height,
-		this.radius - sim.config.game.robotConfineThreshold
-	);
+	if (sim.config.game.useWalls) {
+		Sim.Util.confine(
+			this, 
+			0,
+			sim.config.field.width,
+			0,
+			sim.config.field.height,
+			this.radius
+		);
+	} else {
+		Sim.Util.confine(
+			this, 
+			0,
+			sim.config.field.width,
+			0,
+			sim.config.field.height,
+			this.radius - sim.config.game.robotConfineThreshold
+		);
+	}
 	
 	if (this.smart) {
 		this.robotLocalizer.move(

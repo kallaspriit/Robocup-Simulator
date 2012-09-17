@@ -96,8 +96,8 @@ BODY {
     background-color: rgba(0, 0, 255, 0.5);
 }
 
-/* Game-over */
-#game-over {
+/* Modal */
+#modal {
     position: absolute;
     width: 400px;
     height: 300px;
@@ -109,7 +109,7 @@ BODY {
     box-shadow: 0 0 80px #666;
     display: none;
 }
-#game-over > H1 {
+#modal > H1 {
     display: block;
     margin: 0;
     padding: 0;
@@ -124,39 +124,63 @@ BODY {
     border-bottom: 1px solid #CCC;
     border-radius: 10px 10px 0 0;
 }
-#yellow-score,
-#blue-score {
+#yellow-wrap,
+#blue-wrap {
     position: absolute;
     top: 80px;
-    width: 120px;
-    height: 100px;
-    line-height: 100px;
+    width: 100px;
     text-align: center;
-    font-size: 80px;
+	padding: 10px;
     color: #FFF;
     border-radius: 3px;
 }
-#yellow-score {
+#yellow-wrap {
     left: 70px;
     background-color: #DD0;
 }
-#blue-score {
+#blue-wrap {
     right: 70px;
     background-color: #00D;
 }
-#match-duration {
-    position: absolute;
-    left: 70px;
-    top: 200px;
-    font-size: 22px;
+#yellow-wrap SPAN,
+#blue-wrap SPAN {
+	font-size: 80px;
 }
-#restart-btn {
+#yellow-wrap SELECT,
+#blue-wrap SELECT {
+	font-size: 20px;
+	text-align: center;
+	width: 100px;
+	padding: 4px;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	border: none;
+	background-color: rgba(255, 255, 255, 0.25) !important;
+}
+.modal-btn {
     position: absolute;
     left: 70px;
     right: 70px;
     top: 240px;
     text-align: center;
     line-height: 30px;
+}
+
+/* Start match */
+.start-match {
+	height: 210px !important;
+}
+.start-match .modal-btn {
+	top: 150px;
+}
+
+/* Game over */
+#match-duration {
+    position: absolute;
+    left: 70px;
+    top: 200px;
+    font-size: 22px;
 }
 
 /* Debugging */
