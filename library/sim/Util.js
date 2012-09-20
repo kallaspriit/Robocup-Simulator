@@ -4,7 +4,7 @@ Sim.Util = {};
 
 Sim.Util.getMicrotime = function() {
 	return (new Date()).getTime() / 1000.0;
-}
+};
 
 Sim.Util.getTime = function() {
 	var date = new Date();

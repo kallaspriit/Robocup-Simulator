@@ -62,7 +62,7 @@ Sim.Cmd.DriveTo.prototype.step = function(robot, dt) {
 	var distance = Sim.Math.getDistanceBetween(robot, {x: this.x, y: this.y}),
 		orientationDiff = Math.abs(robot.orientation - this.orientation) % (Math.PI * 2),
 		omega = orientationDiff / distance,
-		dir = $V2(this.x - robot.x, this.y - robot.y).toUnitVector();
+		dir = Sim.Math.createDirVector(this, robot);
 	
 	if (this.orientation < robot.orientation) {
 		omega *= -1.0;
@@ -75,11 +75,11 @@ Sim.Cmd.DriveTo.prototype.step = function(robot, dt) {
 	//sim.dbg.console('diff', Sim.Math.radToDeg(orientationDiff), omega);
 	
 	//dir = dir.rotate(this.orientation, {x: this.x, y: this.y});
-	dir = Sim.Math.rotatePoint(dir.x(), dir.y(), -robot.orientation);
+	var targetDir = Sim.Math.rotatePoint(dir.x, dir.y, -robot.orientation);
 	
 	//sim.dbg.console('drive to', x, y, dir, this.orientation);
 	
-	robot.setTargetDir(dir.x, dir.y, omega);
+	robot.setTargetDir(targetDir.x, targetDir.y, omega);
 	
 	return true;
 };

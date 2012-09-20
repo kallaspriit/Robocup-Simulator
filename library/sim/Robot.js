@@ -622,12 +622,6 @@ Sim.Robot.prototype.handleBalls = function(dt) {
 		holdDistance = this.radius + this.dribbledBall.radius * 1.1;
 		
 		if (distance <= maxDistance) {
-			/*var forwardVec = $V2(Math.cos(this.orientation), Math.sin(this.orientation)).toUnitVector(),
-				pos = forwardVec.multiply(holdDistance);
-			
-			this.dribbledBall.x = this.x + pos.x();
-			this.dribbledBall.y = this.y + pos.y();*/
-			
 			var forwardVec = Sim.Math.createForwardVector(this.orientation),
 				pos = Sim.Math.createMultipliedVector(forwardVec, holdDistance);
 			

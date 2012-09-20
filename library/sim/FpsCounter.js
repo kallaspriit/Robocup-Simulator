@@ -14,7 +14,7 @@ Sim.FpsCounter.prototype.step = function() {
 	}
 	
 	if (this.frames >= this.interval) {
-		var currentTime = Sim.Util.getMicrotime()
+		var currentTime = Sim.Util.getMicrotime(),
 			elapsedTime = currentTime - this.startTime;
 		
 		this.lastFPS = this.frames / elapsedTime;
