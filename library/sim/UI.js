@@ -213,42 +213,63 @@ Sim.UI.prototype.initTools = function() {
 };
 
 Sim.UI.prototype.initGameOptions = function() {
-	this.showModal(
-		'<h1>Start Match</h1>' +
-		'<div id="yellow-wrap">' +
-		'	<select id="yellow-controller">' +
-		'		<option value="SimpleAI" selected="selected">AI</option>' +
-		'		<option value="KeyboardController">Keyboard</option>' +
-		'		<option value="JoystickController">Joystick</option>' +
-		'	</select>' +
-		'</div>' +
-		'<div id="blue-wrap">' +
-		'	<select id="blue-controller">' +
-		'		<option value="SimpleAI">AI</option>' +
-		'		<option value="KeyboardController" selected="selected">Keyboard</option>' +
-		'		<option value="JoystickController">Joystick</option>' +
-		'	</select>' +
-		'</div>' +
-		'<button id="start-btn" class="modal-btn">Start the match</button>',
-		'start-match'
-	);
+	var self = this,
+		restart = $.cookie('restart');
 		
-	$('#start-btn').click(function() {
-		var yellowControllerType = $('#yellow-controller').val(),
-			blueControllerType = $('#blue-controller').val(),
-			yellowSmart = yellowControllerType.indexOf('AI') != -1,
-			blueSmart = blueControllerType.indexOf('AI') != -1;
+	sim.dbg.console('cookie restart', restart, typeof(restart));
+	
+	if (restart == '1') {
+		var yellowControllerType = $.cookie('yellow-controller'),
+			blueControllerType = $.cookie('blue-controller');
 		
-		sim.game.initRobots(yellowSmart, blueSmart);
-			
-		var yellowController = new Sim[yellowControllerType](sim.game.robots.yellow),
-			blueController = new Sim[blueControllerType](sim.game.robots.blue);
-		
-		sim.game.addController(yellowController);
-		sim.game.addController(blueController);
-		
-		sim.ui.hideModal();
-	});
+		self.startMatch(yellowControllerType, blueControllerType);
+		$.cookie('restart', '0');
+	} else {
+		this.showModal(
+			'<h1>Start Match</h1>' +
+			'<div id="yellow-wrap">' +
+			'	<select id="yellow-controller">' +
+			'		<option value="SimpleAI" selected="selected">AI</option>' +
+			'		<option value="KeyboardController">Keyboard</option>' +
+			'		<option value="JoystickController">Joystick</option>' +
+			'	</select>' +
+			'</div>' +
+			'<div id="blue-wrap">' +
+			'	<select id="blue-controller">' +
+			'		<option value="SimpleAI">AI</option>' +
+			'		<option value="KeyboardController" selected="selected">Keyboard</option>' +
+			'		<option value="JoystickController">Joystick</option>' +
+			'	</select>' +
+			'</div>' +
+			'<button id="start-btn" class="modal-btn">Start the match</button>',
+			'start-match'
+		);
+
+		$('#start-btn').click(function() {
+			var yellowControllerType = $('#yellow-controller').val(),
+				blueControllerType = $('#blue-controller').val();
+
+			$.cookie('yellow-controller', yellowControllerType);
+			$.cookie('blue-controller', blueControllerType);
+
+			sim.ui.hideModal();
+
+			self.startMatch(yellowControllerType, blueControllerType);
+		});
+	}
+};
+
+Sim.UI.prototype.startMatch = function(yellowControllerType, blueControllerType) {
+	var yellowSmart = yellowControllerType.indexOf('AI') != -1,
+		blueSmart = blueControllerType.indexOf('AI') != -1;
+
+	sim.game.initRobots(yellowSmart, blueSmart);
+
+	var yellowController = new Sim[yellowControllerType](sim.game.robots.yellow),
+		blueController = new Sim[blueControllerType](sim.game.robots.blue);
+
+	sim.game.addController(yellowController);
+	sim.game.addController(blueController);
 };
 
 Sim.UI.prototype.createTool = function(name, callback) {
@@ -304,6 +325,8 @@ Sim.UI.prototype.hideModal = function() {
 };
 
 Sim.UI.prototype.restart = function() {	
+	$.cookie('restart', '1');
+	
 	//sim.game.restart();
 	window.location.reload();
 };
