@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>SoccerBot :: Simulator</title>
+        <script src="library/raphael/raphael.js"></script>
+        <script src="library/jquery/jquery-1.7.2.min.js"></script>
+        <script src="library/jquery/jquery.ba-resize.min.js"></script>
+        <script src="library/jquery/jquery.mousewheel.js"></script>
+        <script src="library/jquery/jquery.cookie.js"></script>
+        <script src="library/gamepad/gamepad.js"></script>
+        <script src="library/sim/Util.js"></script>
+        <script src="library/sim/Math.js"></script>
+        <script src="library/sim/Config.js"></script>
+        <script src="library/sim/EventTarget.js"></script>
+        <script src="library/sim/Debug.js"></script>
+        <script src="library/sim/FpsCounter.js"></script>
+        <script src="library/sim/Bootstrapper.js"></script>
+        <script src="library/sim/Game.js"></script>
+        <script src="library/sim/UI.js"></script>
+        <script src="library/sim/Joystick.js"></script>
+        <script src="library/sim/Renderer.js"></script>
+        <script src="library/sim/Vision.js"></script>
+        <script src="library/sim/SimpleAI.js"></script>
+        <script src="library/sim/KeyboardController.js"></script>
+        <script src="library/sim/JoystickController.js"></script>
+        <script src="library/sim/RobotLocalizer.js"></script>
+        <script src="library/sim/BallLocalizer.js"></script>
+        <script src="library/sim/Robot.js"></script>
+        <script src="library/sim/Ball.js"></script>
+        <script src="library/sim/Commands.js"></script>
+        <link rel="stylesheet" href="style/screen.css" type="text/css"/>
+    </head>
+    <body>
+        <div id="contents">
+            <div id="canvas"></div>
+            <ul id="toolbar">
+                <!--<li><button id="drive-to-btn">1. DriveTo</button></li>
+                <li><button id="spawn-ball-btn">2. Spawn ball</button></li>
+                <li><button id="reset-deviation-btn">3. Reset deviation</button></li>
+                <li><button id="set-noise-btn">4. Set noise</button></li>
+                <li><button id="toggle-particles-btn">5. Toggle particles</button></li>
+                <li><button id="toggle-perfect-localization-btn">6. Toggle perfect localization</button></li>-->
+            </ul>
+            <div id="modal"></div>
+            <div id="gamepad"></div>
+        </div>
+        <ul id="commands"></ul>
+        <!--button id="toggle-fullscreen-btn">Toggle fullscreen</button-->
+        <!--button id="render-camera-btn">Render camera</button-->
+    </body>
+</html>
