@@ -33,10 +33,14 @@ Sim.RobotLocalizer.prototype.init = function() {
 };
 
 Sim.RobotLocalizer.prototype.move = function(velocityX, velocityY, omega, dt) {
-	var noisyVelocityX = velocityX + Sim.Util.randomGaussian(this.forwardNoise),
+	var noisyVelocityX,
+		noisyVelocityY,
+		i;
+
+	for (i = 0; i < this.particles.length; i++) {
+		noisyVelocityX = velocityX + Sim.Util.randomGaussian(this.forwardNoise);
 		noisyVelocityY = velocityY + Sim.Util.randomGaussian(this.forwardNoise);
-	
-	for (var i = 0; i < this.particles.length; i++) {
+		
 		this.particles[i].orientation = (this.particles[i].orientation + omega * dt + Sim.Util.randomGaussian(this.turnNoise) * dt) % (Math.PI * 2.0);
 		this.particles[i].x += (noisyVelocityX * Math.cos(this.particles[i].orientation) - noisyVelocityY * Math.sin(this.particles[i].orientation)) * dt;
 		this.particles[i].y += (noisyVelocityX * Math.sin(this.particles[i].orientation) + noisyVelocityY * Math.cos(this.particles[i].orientation)) * dt;

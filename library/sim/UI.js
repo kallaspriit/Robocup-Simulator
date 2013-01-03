@@ -12,6 +12,7 @@ Sim.UI = function() {
 		8: [56, 104],
 		9: [57, 105]
 	};
+	this.fullscreen = false;
 };
 
 Sim.UI.prototype = new Sim.EventTarget();
@@ -69,7 +70,7 @@ Sim.UI.prototype.initDebugListener = function() {
 Sim.UI.prototype.initKeyboardControls = function() {
 	var self = this;
 
-	$(window).keydown(function(e) {
+	$(document.body).keydown(function(e) {
 		if (typeof(self.keystates[e.keyCode]) == 'undefined' || self.keystates[e.keyCode] == false) {
 			self.keystates[e.keyCode] = true;
 			
@@ -77,7 +78,7 @@ Sim.UI.prototype.initKeyboardControls = function() {
 		}
 	});
 	
-	$(window).keyup(function(e) {
+	$(document.body).keyup(function(e) {
 		if (typeof(self.keystates[e.keyCode]) == 'undefined' || self.keystates[e.keyCode] == true) {
 			self.keystates[e.keyCode] = false;
 			
@@ -146,6 +147,10 @@ Sim.UI.prototype.onKeyUp = function(key) {
 		type: Sim.UI.Event.KEY_UP,
 		key: key
 	});
+	
+	if (key == 27 && this.fullscreen) {
+		this.toggleFullscreen();
+	}
 };
 
 Sim.UI.prototype.isKeyDown = function(key) {
@@ -220,10 +225,17 @@ Sim.UI.prototype.initGameOptions = function() {
 	
 	if (restart == '1') {
 		var yellowControllerType = $.cookie('yellow-controller'),
-			blueControllerType = $.cookie('blue-controller');
+			blueControllerType = $.cookie('blue-controller'),
+			fullscreen = $.cookie('fullscreen');
 		
 		self.startMatch(yellowControllerType, blueControllerType);
+		
+		if (fullscreen == '1') {
+			this.toggleFullscreen();
+		}
+		
 		$.cookie('restart', '0');
+		$.cookie('fullscreen', '0');
 	} else {
 		this.showModal(
 			'<h1>Start Match</h1>' +
@@ -297,7 +309,32 @@ Sim.UI.prototype.createTool = function(name, callback) {
 };
 
 Sim.UI.prototype.initFullscreenToggle = function() {
+	var self = this;
 	
+	$('#toggle-fullscreen-btn').click(function() {
+		self.toggleFullscreen();
+		
+		return false;
+	});
+};
+
+Sim.UI.prototype.toggleFullscreen = function() {
+	$(document.body).toggleClass('fullscreen');
+	
+	this.fullscreen = !this.fullscreen;
+	
+	if(this.fullscreen && $.support.fullscreen){
+		$('#contents').fullScreen({
+			background: '#0C0',
+			callback: function(success) {}
+		});
+	}
+	
+	window.setTimeout(function() {
+		$(window).focus();
+	}, 500);
+	
+	$.cookie('fullscreen', '1');
 };
 
 Sim.UI.prototype.showNoiseDialog = function() {

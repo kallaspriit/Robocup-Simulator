@@ -82,6 +82,7 @@ Sim.Renderer.prototype.init = function() {
 
 Sim.Renderer.prototype.initCanvas = function() {
 	this.widthToHeightRatio = sim.config.world.width / sim.config.world.height;
+	this.heightToWidthRatio = sim.config.world.height / sim.config.world.width;
 	this.wrap = $('#' + this.svgContainerId);
 	this.canvasWidth = this.wrap.width();
 	this.canvasHeight = this.canvasWidth / this.widthToHeightRatio;
@@ -96,14 +97,31 @@ Sim.Renderer.prototype.initCanvas = function() {
 	var self = this;
 	
 	this.wrap.resize(function() {
-		self.canvasWidth = $(this).width();
-		self.canvasHeight = self.canvasWidth / self.widthToHeightRatio;
-		self.canvasToWorldRatio = self.canvasWidth / sim.config.world.width;
-		
-		self.wrap.height(self.canvasHeight);
-
-		self.c.setSize(self.canvasWidth, self.canvasHeight);
+		self.onResize();
 	});
+};
+
+Sim.Renderer.prototype.onResize = function() {
+	var maxWidth = $(window).width(),
+		maxHeight = $(window).height();
+
+	this.canvasWidth = this.wrap.width();
+	this.canvasHeight = this.canvasWidth / this.widthToHeightRatio;
+
+	if (this.canvasHeight > maxHeight) {
+		var div = this.canvasHeight / maxHeight;
+		
+		this.canvasWidth /= div;
+		this.canvasHeight /= div;
+		
+		this.wrap.css('margin-left', maxWidth / 2 - this.canvasWidth / 2);
+	} else {
+		this.wrap.css('margin-left', '0');
+	}
+
+	this.canvasToWorldRatio = this.canvasWidth / sim.config.world.width;
+	this.wrap.height(this.canvasHeight);
+	this.c.setSize(this.canvasWidth, this.canvasHeight);
 };
 
 Sim.Renderer.prototype.initGameListeners = function() {
