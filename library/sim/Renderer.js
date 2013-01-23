@@ -476,6 +476,15 @@ Sim.Renderer.prototype.drawLocalization = function() {
 	
 	this.a1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
 	this.a2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
+
+    this.odometerPos = this.c.circle(0, 0, 0.15);
+    this.odometerPos.attr({stroke: 'none', fill: 'rgba(0, 255, 255, 0.5)'}).hide();
+
+    this.intersectionPos = this.c.circle(0, 0, 0.15);
+    this.intersectionPos.attr({stroke: 'none', fill: 'rgba(255, 255, 0, 0.5)'}).hide();
+
+	this.kalmanPos = this.c.circle(0, 0, 0.15);
+	this.kalmanPos.attr({stroke: 'none', fill: 'rgba(0, 0, 255, 0.5)'}).hide();
 };
 
 Sim.Renderer.prototype.drawDriveTo = function() {
@@ -653,8 +662,8 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 			this.robots[name].ghost.hide();
 		}
 
-		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
-			var particle = robot.robotLocalizer.particles[i],
+		for (i = 0; i < robot.particleLocalizer.particles.length; i++) {
+			var particle = robot.particleLocalizer.particles[i],
 				particleSize = 0.02,
 				particleDirWidth = 0.02,
 				particleDirLength = 0.05,
@@ -729,25 +738,25 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 			avgProbability,
 			i;
 
-		for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
-			if (maxProbability == null || robot.robotLocalizer.particles[i].probability > maxProbability) {
-				maxProbability = robot.robotLocalizer.particles[i].probability;
+		for (i = 0; i < robot.particleLocalizer.particles.length; i++) {
+			if (maxProbability == null || robot.particleLocalizer.particles[i].probability > maxProbability) {
+				maxProbability = robot.particleLocalizer.particles[i].probability;
 			}
 
-			if (minProbability == null || robot.robotLocalizer.particles[i].probability < minProbability) {
-				minProbability = robot.robotLocalizer.particles[i].probability;
+			if (minProbability == null || robot.particleLocalizer.particles[i].probability < minProbability) {
+				minProbability = robot.particleLocalizer.particles[i].probability;
 			}
 
-			totalProbability += robot.robotLocalizer.particles[i].probability;
+			totalProbability += robot.particleLocalizer.particles[i].probability;
 		}
 
-		avgProbability = totalProbability / robot.robotLocalizer.particles.length;
+		avgProbability = totalProbability / robot.particleLocalizer.particles.length;
 
 		sim.dbg.console('max', maxProbability, 'avg', avgProbability);
 		*/
 
 		/*
-		robot.robotLocalizer.particles.sort(function(a, b) {
+		robot.particleLocalizer.particles.sort(function(a, b) {
 			if (a > b) {
 				return -1;
 			} else if (b > a) {
@@ -761,8 +770,8 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 		var i;
 
 		if (this.showParticles) {
-			for (i = 0; i < robot.robotLocalizer.particles.length; i++) {
-				var particle = robot.robotLocalizer.particles[i],
+			for (i = 0; i < robot.particleLocalizer.particles.length; i++) {
+				var particle = robot.particleLocalizer.particles[i],
 					//particleBody = this.robots[name].particles[i].body,
 					particleDir = this.robots[name].particles[i].dir;
 

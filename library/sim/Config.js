@@ -57,10 +57,10 @@ Sim.Config = {
 		omegaDeviation: 2.5,
 		distanceDeviation: 0.01
 	},
-	robotLocalizer: {
+	particleLocalizer: {
 		particleCount: 1000,
 		forwardNoise: 0.8,
-		turnNoise: 0.3,
+		turnNoise: 1.0,
 		senseNoise: 0.5
 	},
 	ballLocalizer: {

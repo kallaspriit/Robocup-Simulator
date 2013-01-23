@@ -1,4 +1,4 @@
-Sim.RobotLocalizer = function(particleCount, forwardNoise, turnNoise, senseNoise) {
+Sim.ParticleLocalizer = function(particleCount, forwardNoise, turnNoise, senseNoise) {
 	this.particleCount = particleCount || 1000;
 	this.forwardNoise = forwardNoise || 0.1;
 	this.turnNoise = turnNoise || 0.1;
@@ -7,23 +7,23 @@ Sim.RobotLocalizer = function(particleCount, forwardNoise, turnNoise, senseNoise
 	this.particles = [];
 };
 
-Sim.RobotLocalizer.Particle = function(x, y, orientation, probability) {
+Sim.ParticleLocalizer.Particle = function(x, y, orientation, probability) {
 	this.x = x;
 	this.y = y;
 	this.orientation = orientation;
 	this.probability = probability;
 };
 
-Sim.RobotLocalizer.prototype.addLandmark = function(name, x, y) {
+Sim.ParticleLocalizer.prototype.addLandmark = function(name, x, y) {
 	this.landmarks[name] = {
 		x: x,
 		y: y
 	};
 };
 
-Sim.RobotLocalizer.prototype.init = function() {
+Sim.ParticleLocalizer.prototype.init = function() {
 	for (var i = 0; i < this.particleCount; i++) {
-		this.particles.push(new Sim.RobotLocalizer.Particle(
+		this.particles.push(new Sim.ParticleLocalizer.Particle(
 			Sim.Util.random(0, sim.config.field.width * 1000) / 1000.0,
 			Sim.Util.random(0, sim.config.field.height * 1000) / 1000.0,
 			Sim.Util.random(0, Math.PI * 2 * 1000) / 1000.0,
@@ -32,7 +32,17 @@ Sim.RobotLocalizer.prototype.init = function() {
 	}
 };
 
-Sim.RobotLocalizer.prototype.move = function(velocityX, velocityY, omega, dt) {
+
+Sim.ParticleLocalizer.prototype.setPosition = function(x, y, orientation) {
+    for (var i = 0; i < this.particles.length; i++) {
+        this.particles[i].x = x;
+        this.particles[i].y = y;
+        this.particles[i].orientation = orientation;
+        this.particles[i].probability = 1;
+    }
+};
+
+Sim.ParticleLocalizer.prototype.move = function(velocityX, velocityY, omega, dt) {
 	var noisyVelocityX,
 		noisyVelocityY,
 		i;
@@ -50,7 +60,7 @@ Sim.RobotLocalizer.prototype.move = function(velocityX, velocityY, omega, dt) {
 /**
  * Calculates mean error
  */
-Sim.RobotLocalizer.prototype.evaluate = function(robot, particles) {
+Sim.ParticleLocalizer.prototype.evaluate = function(robot, particles) {
     var sum = 0.0,
 		dx,
 		dy,
@@ -69,7 +79,7 @@ Sim.RobotLocalizer.prototype.evaluate = function(robot, particles) {
 /**
  * Calculates how likely a measurement should be
  */
-Sim.RobotLocalizer.prototype.getMeasurementProbability = function(
+Sim.ParticleLocalizer.prototype.getMeasurementProbability = function(
 	particle,
 	measurements
 ) {
@@ -89,7 +99,7 @@ Sim.RobotLocalizer.prototype.getMeasurementProbability = function(
 	return probability;
 };
 
-Sim.RobotLocalizer.prototype.update = function(measurements) {
+Sim.ParticleLocalizer.prototype.update = function(measurements) {
 	var particle,
 		probabilities = [],
 		maxProbability = null,
@@ -116,7 +126,7 @@ Sim.RobotLocalizer.prototype.update = function(measurements) {
 	this.particles = this.resample(probabilities);
 };
 
-Sim.RobotLocalizer.prototype.resample = function(probabilities) {
+Sim.ParticleLocalizer.prototype.resample = function(probabilities) {
 	var resampledParticles = [],
 		particleCount = this.particles.length,
 		index = Sim.Util.random(0, particleCount - 1),
@@ -133,7 +143,7 @@ Sim.RobotLocalizer.prototype.resample = function(probabilities) {
 			index = (index + 1) % particleCount;
 		}
 		
-		resampledParticles.push(new Sim.RobotLocalizer.Particle(
+		resampledParticles.push(new Sim.ParticleLocalizer.Particle(
 			this.particles[index].x,
 			this.particles[index].y,
 			this.particles[index].orientation,
@@ -144,7 +154,7 @@ Sim.RobotLocalizer.prototype.resample = function(probabilities) {
 	return resampledParticles;
 };
 
-Sim.RobotLocalizer.prototype.getPosition = function(robot) {
+Sim.ParticleLocalizer.prototype.getPosition = function(robot) {
 	var evaluation = this.evaluate(robot, this.particles),
 		xSum = 0,
 		ySum = 0,
