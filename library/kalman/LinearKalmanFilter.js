@@ -71,7 +71,7 @@ LinearKalmanFilter.prototype.inspect = function() {
 			continue;
 		}
 
-		console.log(key, this[key].inspect());
+		console.log(key, '\n' + this[key].inspect());
 	}
 };
 
