@@ -14,39 +14,70 @@ function LinearKalmanFilter(
 	this.covarianceEstimate = initialCovarianceEstimate;
 	this.processErrorEstimate = processErrorEstimate;
 	this.measurementErrorEstimate = measurementErrorEstimate;
-};
+
+	this.predictedStateEstimate = null;
+	this.predictedProbabilityEstimate = null;
+	this.innovation = null;
+	this.innovationCovariance = null;
+	this.kalmanGain = null;
+}
 
 LinearKalmanFilter.prototype.getStateEstimate = function() {
 	return this.stateEstimate;
 };
 
-LinearKalmanFilter.prototype.step = function(controlVector, measurementVector) {
-	// prediction step
-	var predictedStateEstimate = this.stateTransitionMatrix
-			.mul(this.stateEstimate)
-			.add(this.controlMatrix.mul(controlVector)),
-		predictedProbabilityEstimate = this.stateTransitionMatrix
-			.mul(this.covarianceEstimate)
-			.mul(this.stateTransitionMatrix.transpose())
-			.add(this.processErrorEstimate);
-	
-	// observation step
-	var innovation = measurementVector
-			.sub(this.observationMatrix.mul(predictedStateEstimate)),
-		innovationCovariance = this.observationMatrix
-			.mul(predictedProbabilityEstimate)
-			.mul(this.observationMatrix.transpose())
+LinearKalmanFilter.prototype.predict = function(controlVector) {
+	this.predictedStateEstimate = this.stateTransitionMatrix
+			.multiply(this.stateEstimate)
+			.add(this.controlMatrix.multiply(controlVector));
+
+	this.predictedProbabilityEstimate = this.stateTransitionMatrix
+		.multiply(this.covarianceEstimate)
+		.multiply(this.stateTransitionMatrix.transpose())
+		.add(this.processErrorEstimate);
+};
+
+LinearKalmanFilter.prototype.observe = function(measurementVector) {
+	if (measurementVector !== null) {
+		this.innovation = measurementVector
+				.subtract(this.observationMatrix.multiply(this.predictedStateEstimate));
+
+		this.innovationCovariance = this.observationMatrix
+			.multiply(this.predictedProbabilityEstimate)
+			.multiply(this.observationMatrix.transpose())
 			.add(this.measurementErrorEstimate);
-	
-	// update step
-	var kalmanGain = predictedProbabilityEstimate
-			.mul(this.observationMatrix.transpose())
-			.mul(innovationCovariance.inverse());
-	
-	this.stateEstimate = predictedStateEstimate
-			.add(kalmanGain.mul(innovation));
-	
-	this.covarianceEstimate = this.covarianceEstimate.identity()
-			.sub(kalmanGain.mul(this.observationMatrix))
-			.mul(predictedProbabilityEstimate);
+	} else {
+		this.innovation = Matrix.Zero(measurementVector.dimensions().rows, measurementVector.dimensions().cols);
+	}
+};
+
+LinearKalmanFilter.prototype.update = function() {
+	this.kalmanGain = this.predictedProbabilityEstimate
+		.multiply(this.observationMatrix.transpose())
+		.multiply(this.innovationCovariance.inverse());
+
+	this.stateEstimate = this.predictedStateEstimate
+			.add(this.kalmanGain.multiply(this.innovation));
+
+	//this.covarianceEstimate = this.covarianceEstimate.identity()
+	this.covarianceEstimate = Matrix.I(this.covarianceEstimate.dimensions().rows)
+			.subtract(this.kalmanGain.multiply(this.observationMatrix))
+			.multiply(this.predictedProbabilityEstimate);
+};
+
+LinearKalmanFilter.prototype.inspect = function() {
+	for (var key in this) {
+		if (this[key] === null || typeof(this[key]) !== 'object' || typeof(this[key].inspect) !== 'function') {
+			continue;
+		}
+
+		console.log(key, this[key].inspect());
+	}
+};
+
+Math.randomGaussian = function(deviation, mean) {
+	deviation = typeof(deviation) !== 'undefined' ? deviation : 0.5;
+	mean = typeof(mean) !== 'undefined' ? mean : 0;
+
+	return ((Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1)) * deviation + mean;
 };
