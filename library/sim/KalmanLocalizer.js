@@ -3,8 +3,8 @@ Sim.KalmanLocalizer = function() {
     this.y = 0.0;
     this.orientation = 0.0;
 
-	this.processError = 0.1;
-	this.measurementError = 0.1;
+	this.processError = 0.0001;
+	this.measurementError = 0.5;
 
     this.stateTransitionMatrix = null;
     this.controlMatrix = null;
@@ -22,21 +22,35 @@ Sim.KalmanLocalizer.prototype.init = function(x, y, orientation) {
 	// This is the state transition vector, which represents part of the kinematics.
 	//   x(n+1) = x(n) + vx(n)
 	//   y(n+1) =                y(n) + vy(n)
-	//   vx(n+1) =       vx(n)
-	//   vy(n+1) =                      vy(n)
-	this.stateTransitionMatrix = $M([
+	//   vx(n+1) =       0.25vx(n)
+	//   vy(n+1) =                      0.25vy(n)
+	/*this.stateTransitionMatrix = $M([
 		[1, 0, 1, 0],
 		[0, 1, 0, 1],
 		[0, 0, 1, 0],
 		[0, 0, 0, 1]
+	]);*/
+	this.stateTransitionMatrix = $M([
+		[1.00, 0.00, 1.00, 0.00],
+		[0.00, 1.00, 0.00, 1.00],
+		[0.00, 0.00, 0.25, 0.00],
+		[0.00, 0.00, 0.00, 0.25]
 	]);
 
 	// The control matrix
-	this.controlMatrix = $M([
+	/*this.controlMatrix = $M([
 		[0, 0, 0, 0],
 		[0, 0, 0, 0],
 		[0, 0, 0, 0],
 		[0, 0, 0, 0]
+	]);*/
+	// Vx' = 0.25 * Vx + 0.75 * Vx''
+	// Vy' = 0.25 * Vy + 0.75 * Vy''
+	this.controlMatrix = $M([
+		[0.00, 0.00, 0.00, 0.00],
+		[0.00, 0.00, 0.00, 0.00],
+		[0.75, 0.00, 0.00, 0.00],
+		[0.00, 0.75, 0.00, 0.00]
 	]);
 
 	// Observation matrix is the identity matrix, since we can get direct measurements of all values.
@@ -71,10 +85,10 @@ Sim.KalmanLocalizer.prototype.init = function(x, y, orientation) {
 	]);
 
 	this.measurementErrorEstimate = $M([
-		[1.0 * this.measurementError, 0, 0, 0],
-		[0, 1.0 * this.measurementError, 0, 0],
-		[0, 0, 1.0 * this.measurementError, 0],
-		[0, 0, 0, 1.0 * this.measurementError]
+		[this.measurementError, 0, 0, 0],
+		[0, this.measurementError, 0, 0],
+		[0, 0, this.measurementError, 0],
+		[0, 0, 0, this.measurementError]
 	]);
 
 	this.filter = new LinearKalmanFilter(
@@ -92,14 +106,19 @@ Sim.KalmanLocalizer.prototype.setPosition = function(x, y, orientation) {
     this.init(x, y, orientation);
 };
 
-Sim.KalmanLocalizer.prototype.move = function(x, y, orientation, velocityX, velocityY, omega, dt) {
-	var globalVelocityX = (velocityX * Math.cos(this.orientation) - velocityY * Math.sin(this.orientation)) * dt,
-		globalVelocityY = (velocityX * Math.sin(this.orientation) + velocityY * Math.cos(this.orientation)) * dt,
+Sim.KalmanLocalizer.prototype.move = function(
+	x, y, orientation,
+	cmdVelocityX, cmdVelocityY, cmdOmega,
+	odoVelocityX, odoVelocityY, odoOmega,
+	dt
+) {
+	var globalVelocityX = (odoVelocityX * Math.cos(this.orientation) - odoVelocityY * Math.sin(this.orientation)) * dt,
+		globalVelocityY = (odoVelocityX * Math.sin(this.orientation) + odoVelocityY * Math.cos(this.orientation)) * dt,
 		controlVector = $M([
 			[0],
 			[0],
-			[0],
-			[0]
+			[cmdVelocityX],
+			[cmdVelocityY]
 		]),
 		measurementVector = $M([
 			[x],
@@ -115,9 +134,17 @@ Sim.KalmanLocalizer.prototype.move = function(x, y, orientation, velocityX, velo
 
 	state = this.filter.getStateEstimate();
 
+	// tarvis abs nurgba mürast vaatlemist
+	// x
+	// y
+	// vx
+	// vy
+	// theta
+	// omega
+
 	this.x = state.e(1, 1);
 	this.y = state.e(2, 1);
-	this.orientation = (this.orientation + omega * dt) % (Math.PI * 2.0);
+	this.orientation = (this.orientation + odoOmega * dt) % (Math.PI * 2.0);
 };
 
 Sim.KalmanLocalizer.prototype.getPosition = function() {

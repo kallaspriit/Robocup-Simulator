@@ -151,18 +151,21 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 Sim.Vision.prototype.getMeasurements = function(polygon, x, y, orientation) {
 	var goals = this.getVisibleGoals(polygon, x, y, orientation),
 		goal,
+		noisyDistance,
 		measurements = {},
 		i;
 	
 	for (i = 0; i < goals.length; i++) {
 		goal = goals[i];
+
+		noisyDistance = goal.distance + goal.distance * Sim.Util.randomGaussian(sim.config.vision.distanceDeviation);
 		
 		if (goal.side == Sim.Game.Side.YELLOW) {
-			measurements['yellow-goal-center'] = goal.distance;
+			measurements['yellow-goal-center'] = noisyDistance;
 			//measurements['yellow-goal-left'] = goal.leftEdgeDistance;
 			//measurements['yellow-goal-right'] = goal.rightEdgeDistance;
 		} else if (goal.side == Sim.Game.Side.BLUE) {
-			measurements['blue-goal-center'] = goal.distance;
+			measurements['blue-goal-center'] = noisyDistance;
 			//measurements['blue-goal-left'] = goal.leftEdgeDistance;
 			//measurements['blue-goal-right'] = goal.rightEdgeDistance;
 		}

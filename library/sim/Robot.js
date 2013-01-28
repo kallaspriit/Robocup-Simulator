@@ -253,7 +253,7 @@ Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
 	
 	this.localizeByOdometer();
 	this.localizeByDistances(this.goals);
-	this.localizeByAngles(this.goals);
+	//this.localizeByAngles(this.goals);
 	this.localizeKalman();
 };
 
@@ -269,15 +269,10 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 };
 
 Sim.Robot.prototype.updateMovement = function(dt) {
-	/*
-	if ((this.targetDir.x != 0 || this.targetDir.y != 0) && this.targetOmega != 0) {
-		this.targetDir = Sim.Math.rotatePoint(this.targetDir.x, this.targetDir.y, -1.0 * this.targetOmega * dt);
-	
-		this.updateWheelSpeeds();
-	}
-	*/
-	var movement = this.getMovement(),
-		noisyMovement = this.getMovement(true);
+	this.wheelOmegas = this.getWheelOmegas(this.targetDir, this.targetOmega);
+
+	var movement = this.getMovement(this.wheelOmegas),
+		noisyMovement = this.getMovement(this.wheelOmegas, true);
 	
 	this.lastMovement = movement;
 	
@@ -332,10 +327,16 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 			y = this.intersectionLocalizer.getPosition().y,
 			orientation = this.intersectionLocalizer.getPosition().orientation;
 
+		var commandOmegas = this.getWheelOmegas(this.targetDir, this.targetOmega),
+			commandMovement = this.getMovement(commandOmegas);
+
 		this.kalmanLocalizer.move(
 			x,
 			y,
 			orientation,
+			commandMovement.velocityX,
+			commandMovement.velocityY,
+			commandMovement.omega,
 			noisyMovement.velocityX,
 			noisyMovement.velocityY,
 			noisyMovement.omega,
@@ -407,15 +408,11 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		return false;
 	}
 
-    this.intersectionLocalizer.update(yellowDistance, blueDistance);
-
-	/*
 	var noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation),
 		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(this.distanceDeviation);
-	*/
 	
-	var noisyYellowDistance = yellowDistance,
-		noisyBlueDistance = blueDistance;
+	/*var noisyYellowDistance = yellowDistance,
+		noisyBlueDistance = blueDistance;*/
 	
 	var yellowGoalPos = {
 			x: 0,
@@ -433,6 +430,8 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		return false;
 	}
 
+	this.intersectionLocalizer.update(noisyYellowDistance, noisyBlueDistance);
+
 	/*sim.renderer.l1.attr({
 		cx: intersections.x1,
 		cy: intersections.y1
@@ -441,7 +440,7 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	sim.renderer.l1c.attr({
 		cx: yellowGoalPos.x,
 		cy: yellowGoalPos.y,
-		r: yellowDistance
+		r: noisyYellowDistance
 	}).show();
 
 	/*sim.renderer.l2.attr({
@@ -452,7 +451,7 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	sim.renderer.l2c.attr({
 		cx: blueGoalPos.x,
 		cy: blueGoalPos.y,
-		r: blueDistance
+		r: noisyBlueDistance
 	}).show();
 
 	return true;
@@ -473,8 +472,7 @@ Sim.Robot.prototype.localizeByAngles = function(goals) {
 			blueGoalAngle = goal.edgeAngleDiff;
 		}
 	}
-	
-	
+
 	sim.renderer.a1c.hide();
 	sim.renderer.a2c.hide();
 	
@@ -539,15 +537,13 @@ Sim.Robot.prototype.getVirtualFOV = function() {
 		.translate(this.virtualX, this.virtualY);
 };
 
-Sim.Robot.prototype.getMovement = function(noisy) {
-	var omegas = this.wheelOmegas;
-	
+Sim.Robot.prototype.getMovement = function(omegas, noisy) {
 	if (noisy) {
 		omegas = [
-			this.wheelOmegas[0] + Sim.Util.randomGaussian(this.omegaDeviation),
-			this.wheelOmegas[1] + Sim.Util.randomGaussian(this.omegaDeviation),
-			this.wheelOmegas[2] + Sim.Util.randomGaussian(this.omegaDeviation),
-			this.wheelOmegas[3] + Sim.Util.randomGaussian(this.omegaDeviation)
+			omegas[0] + Sim.Util.randomGaussian(this.omegaDeviation),
+			omegas[1] + Sim.Util.randomGaussian(this.omegaDeviation),
+			omegas[2] + Sim.Util.randomGaussian(this.omegaDeviation),
+			omegas[3] + Sim.Util.randomGaussian(this.omegaDeviation)
 		];
 	}
 	
@@ -594,9 +590,7 @@ Sim.Robot.prototype.setTargetDir = function(x, y, omega) {
 	}
 	
 	//sim.dbg.console('set target', this.targetDir, this.targetOmega);
-	
-	this.updateWheelSpeeds();
-	
+
 	return this;
 };
 
@@ -616,9 +610,7 @@ Sim.Robot.prototype.getTargetDir = function() {
 
 Sim.Robot.prototype.setTargetOmega = function(omega) {
 	this.targetOmega = Sim.Util.limitValue(omega, Math.PI * 2);
-	
-	this.updateWheelSpeeds();
-	
+
 	return this;
 };
 
@@ -634,19 +626,20 @@ Sim.Robot.prototype.queueCommand = function(command) {
 	this.commands.push(command);
 };
 
-Sim.Robot.prototype.updateWheelSpeeds = function() {
+Sim.Robot.prototype.getWheelOmegas = function(targetDir, targetOmega) {
 	var targetMatrix = new Sim.Math.Matrix3x1(
-		this.targetDir.x,
-		this.targetDir.y,
-		this.targetOmega
-	);
-	
-	var wheelOmegas = this.omegaMatrix.getMultiplied(1.0 / this.wheelRadius).getMultiplied(targetMatrix);
-	
-	this.wheelOmegas[0] = wheelOmegas.a11;
-	this.wheelOmegas[1] = wheelOmegas.a21;
-	this.wheelOmegas[2] = wheelOmegas.a31;
-	this.wheelOmegas[3] = wheelOmegas.a41;
+			targetDir.x,
+			targetDir.y,
+			targetOmega
+		),
+		wheelOmegas = this.omegaMatrix.getMultiplied(1.0 / this.wheelRadius).getMultiplied(targetMatrix);
+
+	return [
+		wheelOmegas.a11,
+		wheelOmegas.a21,
+		wheelOmegas.a31,
+		wheelOmegas.a41
+	];
 };
 
 Sim.Robot.prototype.turnBy = function(angle, duration) {
