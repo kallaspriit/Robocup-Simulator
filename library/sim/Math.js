@@ -181,6 +181,13 @@ Sim.Math.createMultipliedVector = function(vec, scalar) {
 	};
 };
 
+Sim.Math.createVectorSum = function(a, b) {
+	return {
+		x: a.x + b.x,
+		y: a.y + b.y
+	};
+};
+
 Sim.Math.createDirVector = function(from, to) {
 	return Sim.Math.createNormalizedVector({
 		x: from.x - to.x,

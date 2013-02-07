@@ -379,17 +379,14 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 		);
 
 		// input for Kalman
-		var x = this.intersectionLocalizer.getPosition().x,
-			y = this.intersectionLocalizer.getPosition().y,
-			orientation = this.intersectionLocalizer.getPosition().orientation;
-
-		var commandOmegas = this.getWheelOmegas(this.targetDir, this.targetOmega),
+		var pos = this.intersectionLocalizer.getPosition(),
+			commandOmegas = this.getWheelOmegas(this.targetDir, this.targetOmega),
 			commandMovement = this.getMovement(commandOmegas);
 
 		this.kalmanLocalizer.move(
-			x,
-			y,
-			orientation,
+			pos.x,
+			pos.y,
+			pos.orientation,
 			commandMovement.velocityX,
 			commandMovement.velocityY,
 			commandMovement.omega,
@@ -418,7 +415,7 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 };
 
 Sim.Robot.prototype.localizeByOdometer = function() {
-    var pos = this.odometerLocalizer.getPosition();
+
 };
 
 Sim.Robot.prototype.localizeByDistances = function(goals) {
@@ -451,21 +448,9 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	}
 
     // @TODO Dont mess with the renderer directly
-	sim.renderer.l1.hide();
-	sim.renderer.l1c.hide();
-	sim.renderer.l2.hide();
-	sim.renderer.l2c.hide();
-	
-	if (yellowDistance == null || blueDistance == null) {
-		return false;
-	}
+	sim.renderer.intersectionCircle1.hide();
+	sim.renderer.intersectionCircle2.hide();
 
-	var noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation),
-		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(this.distanceDeviation);
-	
-	/*var noisyYellowDistance = yellowDistance,
-		noisyBlueDistance = blueDistance;*/
-	
 	var yellowGoalPos = {
 			x: 0,
 			y: sim.config.field.height / 2
@@ -474,37 +459,43 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 			x: sim.config.field.width,
 			y: sim.config.field.height / 2
 		},
-		yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, noisyYellowDistance),
+		noisyYellowDistance = null,
+		noisyBlueDistance = null;
+
+
+	if (yellowDistance != null) {
+		noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation);
+
+		sim.renderer.intersectionCircle1.attr({
+			cx: yellowGoalPos.x,
+			cy: yellowGoalPos.y,
+			r: noisyYellowDistance
+		}).show();
+	}
+
+	if (blueDistance != null) {
+		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(this.distanceDeviation);
+
+		sim.renderer.intersectionCircle2.attr({
+			cx: blueGoalPos.x,
+			cy: blueGoalPos.y,
+			r: noisyBlueDistance
+		}).show();
+	}
+
+	/*if (yellowDistance == null || blueDistance == null) {
+		return false;
+	}*/
+
+	/*var yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, noisyYellowDistance),
 		blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, noisyBlueDistance),
-		intersections = yellowCircle.getIntersections(blueCircle);
+		intersections = yellowCircle.getIntersections(blueCircle)
 
 	if (intersections === false) {
 		return false;
-	}
+	}*/
 
 	this.intersectionLocalizer.update(noisyYellowDistance, noisyBlueDistance, yellowAngle, blueAngle, frontGoal);
-
-	/*sim.renderer.l1.attr({
-		cx: intersections.x1,
-		cy: intersections.y1
-	}).show();*/
-
-	sim.renderer.l1c.attr({
-		cx: yellowGoalPos.x,
-		cy: yellowGoalPos.y,
-		r: noisyYellowDistance
-	}).show();
-
-	/*sim.renderer.l2.attr({
-		cx: intersections.x2,
-		cy: intersections.y2
-	}).show();*/
-
-	sim.renderer.l2c.attr({
-		cx: blueGoalPos.x,
-		cy: blueGoalPos.y,
-		r: noisyBlueDistance
-	}).show();
 
 	return true;
 };
@@ -525,9 +516,6 @@ Sim.Robot.prototype.localizeByAngles = function(goals) {
 		}
 	}
 
-	sim.renderer.a1c.hide();
-	sim.renderer.a2c.hide();
-	
 	if (yellowGoalAngle == null || blueGoalAngle == null) {
 		return false;
 	}

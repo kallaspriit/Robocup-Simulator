@@ -41,6 +41,7 @@ Sim.Renderer = function(game) {
 	this.spawnBallActive = false;
 	this.showParticles = false;
 	this.showLocalization = false;
+	this.showBallLocalizer = false;
 	this.driveToOrientation = 0;
 	
 	// appearance
@@ -287,6 +288,11 @@ Sim.Renderer.prototype.toggleLocalization = function() {
 				
 				delete this.robots[name].balls[ballId];
 			}
+
+			this.robots[name].intersectionLocalizer.hide();
+			this.robots[name].odometerLocalizer.hide();
+			this.robots[name].kalmanLocalizer.hide();
+			this.robots[name].particleLocalizer.hide();
 		}
 	}
 };
@@ -457,21 +463,8 @@ Sim.Renderer.prototype.drawGoals = function() {
 };
 
 Sim.Renderer.prototype.drawLocalization = function() {
-	this.l1 = this.c.circle(0, 0, 0.15);
-	this.l1c = this.c.circle(0, 0, 0);
-	this.l2 = this.c.circle(0, 0, 0.15);
-	this.l2c = this.c.circle(0, 0, 0);
-	
-	this.a1c = this.c.circle(0, 0, 0);
-	this.a2c = this.c.circle(0, 0, 0);
-	
-	this.l1.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
-	this.l1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
-	this.l2.attr({stroke: 'none', fill: 'rgba(255, 0, 0, 0.5)'}).hide();
-	this.l2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
-	
-	this.a1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
-	this.a2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
+	this.intersectionCircle1 = this.c.circle(0, 0, 0).attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
+	this.intersectionCircle2 = this.c.circle(0, 0, 0).attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
 };
 
 Sim.Renderer.prototype.drawDriveTo = function() {
@@ -777,57 +770,38 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 			}
 		}
 
-		var ball,
-			ballId,
-			updatedBalls = [];
+		if (this.showBallLocalizer) {
+			var ball,
+				ballId,
+				updatedBalls = [];
 
-		for (i = 0; i < robot.ballLocalizer.balls.length; i++) {
-			ball = robot.ballLocalizer.balls[i];
+			for (i = 0; i < robot.ballLocalizer.balls.length; i++) {
+				ball = robot.ballLocalizer.balls[i];
 
-			if (typeof(this.robots[name].balls[ball.id]) == 'undefined') {
-				this.robots[name].balls[ball.id] = this.createGuessedBall(ball);
-			} else {
-				this.robots[name].balls[ball.id].body.attr({
-					cx: ball.x,
-					cy: ball.y
-				});
-				this.robots[name].balls[ball.id].id.attr({
-					'transform': this.getGuessedBallTransform(ball)
-				});
+				if (typeof(this.robots[name].balls[ball.id]) == 'undefined') {
+					this.robots[name].balls[ball.id] = this.createGuessedBall(ball);
+				} else {
+					this.robots[name].balls[ball.id].body.attr({
+						cx: ball.x,
+						cy: ball.y
+					});
+					this.robots[name].balls[ball.id].id.attr({
+						'transform': this.getGuessedBallTransform(ball)
+					});
+				}
+
+				updatedBalls.push(ball.id);
 			}
 
-			updatedBalls.push(ball.id);
-		}
+			for (ballId in this.robots[name].balls) {
+				if (updatedBalls.indexOf(parseInt(ballId)) == -1) {
+					this.robots[name].balls[ballId].body.remove();
+					this.robots[name].balls[ballId].id.remove();
 
-		for (ballId in this.robots[name].balls) {
-			if (updatedBalls.indexOf(parseInt(ballId)) == -1) {
-				this.robots[name].balls[ballId].body.remove();
-				this.robots[name].balls[ballId].id.remove();
-
-				delete this.robots[name].balls[ballId];
+					delete this.robots[name].balls[ballId];
+				}
 			}
 		}
-
-		/*
-		var ball,
-			ballPosition;
-
-		for (i = 0; i < sim.config.game.balls; i++) {
-			if (typeof(robot.ballLocalizer.balls[i]) == 'object') {
-				ball =  robot.ballLocalizer.balls[i];
-
-				this.robots[name].balls[i].visual.attr({
-					cx: ball.x,
-					cy: ball.y
-				});
-			} else {
-				this.robots[name].balls[i].visual.attr({
-					cx: -100,
-					cy: -100
-				});
-			}
-		}
-		*/
 	} else {
 		this.robots[name].kalmanLocalizer.hide();
 		this.robots[name].particleLocalizer.hide();

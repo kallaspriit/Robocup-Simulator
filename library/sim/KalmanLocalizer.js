@@ -3,6 +3,7 @@ Sim.KalmanLocalizer = function() {
     this.y = 0.0;
     this.orientation = 0.0;
 
+	this.filter = null;
 	this.processError = 0.0001;
 	this.measurementError = 0.5;
 
@@ -13,7 +14,6 @@ Sim.KalmanLocalizer = function() {
     this.initialCovarianceEstimate = null;
     this.processErrorEstimate = null;
     this.measurementErrorEstimate = null;
-    this.filter = null;
 };
 
 Sim.KalmanLocalizer.prototype.init = function(x, y, orientation) {

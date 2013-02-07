@@ -34,6 +34,30 @@ Sim.IntersectionLocalizer.prototype.update = function(yellowDistance, blueDistan
         intersections = yellowCircle.getIntersections(blueCircle);
 
     if (intersections === false) {
+	    var currentPos = {
+			    x: this.x,
+			    y: this.y
+		    },
+		    dirVector,
+		    scaledDir,
+		    newPos;
+
+	    if (yellowDistance !== null) {
+		    dirVector = Sim.Math.createDirVector(currentPos, yellowGoalPos);
+			scaledDir = Sim.Math.createMultipliedVector(dirVector, yellowDistance);
+		    newPos = Sim.Math.createVectorSum(yellowGoalPos, scaledDir);
+
+			this.x = newPos.x;
+			this.y = newPos.y;
+	    } else if (blueDistance !== null) {
+		    dirVector = Sim.Math.createDirVector(currentPos, blueGoalPos);
+		    scaledDir = Sim.Math.createMultipliedVector(dirVector, blueDistance);
+		    newPos = Sim.Math.createVectorSum(blueGoalPos, scaledDir);
+
+		    this.x = newPos.x;
+		    this.y = newPos.y;
+	    }
+
         return false;
     }
 
