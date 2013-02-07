@@ -60,20 +60,20 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 			x: sim.config.field.width,
 			y: sim.config.field.height / 2 + sim.config.field.goalWidth / 2
 		},
-		yellowDistance,
-		yellowAngle,
-		blueDistance,
-		blueAngle,
+		distance,
+		angle,
+		realAngle,
 		leftEdgeDistance,
 		rightEdgeDistance,
 		leftEdgeAngle,
 		rightEdgeAngle,
 		edgeAngleDiff,
-		goals = [];
+		goals = [],
+		camera;
 	
 	if (globalPolygon.containsPoint(yellowCenterPos.x, yellowCenterPos.y)) {
-		yellowDistance = Sim.Math.getDistanceBetween(yellowCenterPos, pos);
-		yellowAngle = Sim.Math.getAngleBetween(yellowCenterPos, pos, orientation);
+		distance = Sim.Math.getDistanceBetween(yellowCenterPos, pos);
+		angle = Sim.Math.getAngleBetween(yellowCenterPos, pos, orientation);
 		
 		leftEdgeDistance = null;
 		rightEdgeDistance = null;
@@ -93,11 +93,19 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 
 			//sim.dbg.box('Yellow', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1));
 		}
+
+		camera = Math.abs(angle) < Math.PI / 2 ? 'front' : 'rear';
+		/*realAngle = camera === 'front' ? angle : angle + Math.PI;
+
+		if (realAngle > Math.PI) {
+			realAngle -= Math.PI * 2;
+		}*/
 		
 		goals.push({
 			side: Sim.Game.Side.YELLOW,
-			distance: yellowDistance,
-			angle: yellowAngle,
+			distance: distance,
+			angle: angle,
+			camera: camera,
 			leftEdgeDistance: leftEdgeDistance,
 			rightEdgeDistance: rightEdgeDistance,
 			leftEdgeAngle: leftEdgeAngle,
@@ -109,8 +117,8 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 	}
 	
 	if (globalPolygon.containsPoint(blueCenterPos.x, blueCenterPos.y)) {
-		blueDistance = Sim.Math.getDistanceBetween(blueCenterPos, pos);
-		blueAngle = Sim.Math.getAngleBetween(blueCenterPos, pos, orientation);
+		distance = Sim.Math.getDistanceBetween(blueCenterPos, pos);
+		angle = Sim.Math.getAngleBetween(blueCenterPos, pos, orientation);
 		
 		leftEdgeDistance = null;
 		rightEdgeDistance = null;
@@ -130,11 +138,19 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 
 			//sim.dbg.box('blue', Sim.Math.round(distance1, 3) + ' ; ' + Sim.Math.round(distance2, 3) + ' / ' + Sim.Math.round(Sim.Math.radToDeg(angle1), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(angle2), 1) + ' ; ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1));
 		}
+
+		camera = Math.abs(angle) < Math.PI / 2 ? 'front' : 'rear';
+		/*realAngle = camera === 'front' ? angle : angle + Math.PI;
+
+		if (realAngle > Math.PI) {
+			realAngle -= Math.PI * 2;
+		}*/
 		
 		goals.push({
 			side: Sim.Game.Side.BLUE,
-			distance: blueDistance,
-			angle: blueAngle,
+			distance: distance,
+			angle: angle,
+			camera: camera,
 			leftEdgeDistance: leftEdgeDistance,
 			rightEdgeDistance: rightEdgeDistance,
 			leftEdgeAngle: leftEdgeAngle,

@@ -272,7 +272,7 @@ Sim.UI.prototype.initGameOptions = function() {
 };
 
 Sim.UI.prototype.startMatch = function(yellowControllerType, blueControllerType) {
-	var yellowSmart = yellowControllerType.indexOf('AI') != -1,
+	var yellowSmart = yellowControllerType.indexOf('AI') != -1 || true, // @TEMP
 		blueSmart = blueControllerType.indexOf('AI') != -1;
 
 	sim.game.initRobots(yellowSmart, blueSmart);

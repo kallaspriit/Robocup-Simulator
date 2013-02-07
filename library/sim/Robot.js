@@ -165,6 +165,18 @@ Sim.Robot = function(
 		{x: -this.cameraDistance, y: this.cameraWidth / 2},
 		{x: 0, y: 0}
 	]);
+	/*this.cameraFrontFOV = new Sim.Math.Polygon([
+		{x: 0, y: 0},
+		{x: this.cameraDistance, y: -this.cameraWidth / 2},
+		{x: this.cameraDistance, y: this.cameraWidth / 2},
+		{x: 0, y: 0}
+	]);
+	this.cameraRearFOV = new Sim.Math.Polygon([
+		{x: 0, y: 0},
+		{x: -this.cameraDistance, y: -this.cameraWidth / 2},
+		{x: -this.cameraDistance, y: this.cameraWidth / 2},
+		{x: 0, y: 0}
+	]);*/
 };
 
 Sim.Robot.prototype.resetDeviation = function() {
@@ -190,7 +202,44 @@ Sim.Robot.prototype.step = function(dt) {
 	this.updateMovement(dt);
 	this.handleBalls(dt);
 	this.handleCommands(dt);
+
+	//this.updateTest(dt);
 };
+
+/*Sim.Robot.prototype.updateTest = function(dt) {
+	var yellowDistance = null,
+		blueDistance = null,
+		yellowAngle = null,
+		blueAngle = null,
+		i,
+		goal;
+
+	for (i = 0; i < this.goals.length; i++) {
+		goal = this.goals[i];
+
+		if (goal.side == Sim.Game.Side.YELLOW) {
+			yellowDistance = goal.distance;
+			yellowAngle = goal.angle;
+		} else if (goal.side == Sim.Game.Side.BLUE) {
+			blueDistance = goal.distance;
+			blueAngle = goal.angle;
+		}
+	}
+
+	var yellowGoalPos = {
+			x: 0,
+			y: sim.config.field.height / 2
+		},
+		blueGoalPos = {
+			x: sim.config.field.width,
+			y: sim.config.field.height / 2
+		},
+		yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, yellowDistance),
+		blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, blueDistance),
+		intersections = yellowCircle.getIntersections(blueCircle);
+
+	sim.dbg.box('Real orientation ' + this.side, Sim.Math.radToDeg(this.orientation), 1);
+};*/
 
 Sim.Robot.prototype.togglePerfectLocalization = function() {
 	this.perfectLocalization = !this.perfectLocalization;
@@ -255,6 +304,8 @@ Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
 	this.localizeByDistances(this.goals);
 	//this.localizeByAngles(this.goals);
 	this.localizeKalman();
+
+	sim.dbg.box('Real orientation ' + this.side, Sim.Math.radToDeg(this.orientation), 1);
 };
 
 Sim.Robot.prototype.updateBallLocalizer = function(dt) {
@@ -277,6 +328,11 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 	this.lastMovement = movement;
 	
 	this.orientation = (this.orientation + movement.omega * dt) % (Math.PI * 2.0);
+
+	if (this.orientation < 0) {
+		this.orientation += Math.PI * 2.0;
+	}
+
     this.velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation),
 	this.velocityY = movement.velocityX * Math.sin(this.orientation) + movement.velocityY * Math.cos(this.orientation);
 	this.x += this.velocityX * dt;
@@ -363,11 +419,6 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 
 Sim.Robot.prototype.localizeByOdometer = function() {
     var pos = this.odometerLocalizer.getPosition();
-
-    sim.renderer.odometerPos.attr({
-        cx: pos.x,
-        cy: pos.y
-    }).show();
 };
 
 Sim.Robot.prototype.localizeByDistances = function(goals) {
@@ -375,6 +426,7 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		blueDistance = null,
 		yellowAngle = null,
 		blueAngle = null,
+		frontGoal = 'unknown',
 		i,
 		goal;
 	
@@ -384,9 +436,17 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		if (goal.side == Sim.Game.Side.YELLOW) {
 			yellowDistance = goal.distance;
 			yellowAngle = goal.angle;
+
+			if (goal.camera == 'front') {
+				frontGoal = 'yellow';
+			}
 		} else if (goal.side == Sim.Game.Side.BLUE) {
 			blueDistance = goal.distance;
 			blueAngle = goal.angle;
+
+			if (goal.camera == 'front') {
+				frontGoal = 'blue';
+			}
 		}
 	}
 
@@ -395,14 +455,6 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 	sim.renderer.l1c.hide();
 	sim.renderer.l2.hide();
 	sim.renderer.l2c.hide();
-
-    // show intersections
-    var intersectionsPos = this.intersectionLocalizer.getPosition();
-
-    sim.renderer.intersectionPos.attr({
-        cx: intersectionsPos.x,
-        cy: intersectionsPos.y
-    }).show();
 	
 	if (yellowDistance == null || blueDistance == null) {
 		return false;
@@ -430,7 +482,7 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		return false;
 	}
 
-	this.intersectionLocalizer.update(noisyYellowDistance, noisyBlueDistance);
+	this.intersectionLocalizer.update(noisyYellowDistance, noisyBlueDistance, yellowAngle, blueAngle, frontGoal);
 
 	/*sim.renderer.l1.attr({
 		cx: intersections.x1,
@@ -507,12 +559,7 @@ Sim.Robot.prototype.localizeByAngles = function(goals) {
 };
 
 Sim.Robot.prototype.localizeKalman = function() {
-	var pos = this.kalmanLocalizer.getPosition();
 
-	sim.renderer.kalmanPos.attr({
-		cx: pos.x,
-		cy: pos.y
-	}).show();
 };
 
 /*

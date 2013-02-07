@@ -281,16 +281,12 @@ Sim.Renderer.prototype.toggleLocalization = function() {
 		}
 		
 		if (!this.showLocalization) {
-			this.robots[name].ghost.hide();
-			
 			for (var ballId in this.robots[name].balls) {
 				this.robots[name].balls[ballId].body.remove();
 				this.robots[name].balls[ballId].id.remove();
 				
 				delete this.robots[name].balls[ballId];
 			}
-		} else {
-			this.robots[name].ghost.show();
 		}
 	}
 };
@@ -476,15 +472,6 @@ Sim.Renderer.prototype.drawLocalization = function() {
 	
 	this.a1c.attr({stroke: '#FF0', fill: 'none', 'stroke-width': 1}).hide();
 	this.a2c.attr({stroke: '#00F', fill: 'none', 'stroke-width': 1}).hide();
-
-    this.odometerPos = this.c.circle(0, 0, 0.15);
-    this.odometerPos.attr({stroke: 'none', fill: 'rgba(0, 255, 255, 0.5)'}).hide();
-
-    this.intersectionPos = this.c.circle(0, 0, 0.15);
-    this.intersectionPos.attr({stroke: 'none', fill: 'rgba(255, 255, 0, 0.5)'}).hide();
-
-	this.kalmanPos = this.c.circle(0, 0, 0.15);
-	this.kalmanPos.attr({stroke: 'none', fill: 'rgba(0, 0, 255, 0.5)'}).hide();
 };
 
 Sim.Renderer.prototype.drawDriveTo = function() {
@@ -599,83 +586,85 @@ Sim.Renderer.prototype.removeBall = function(ball) {
 	this.balls = newBalls;
 };
 
-Sim.Renderer.prototype.addRobot = function(name, robot) {
-	this.robots[name] = {
-		robot: robot
-	};
-	
+Sim.Renderer.prototype.createRobotAvatar = function(color, radius, cameraFOV, cameraDistance) {
 	this.c.setStart();
-	
+
 	var dirWidth = 0.03,
-		frame = this.c.circle(0, 0, robot.radius),
-		dir = this.c.path('M-' + robot.radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + robot.radius + ' -' + (dirWidth / 2) + 'L' + robot.radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2)),
-		color = robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F';
-	
+		frame = this.c.circle(0, 0, radius),
+		dir = this.c.path('M-' + radius + ' -' + (dirWidth / 2) + 'M0 -' + (dirWidth / 2) + 'L' + radius + ' -' + (dirWidth / 2) + 'L' + radius + ' ' + (dirWidth / 2) + 'L0 ' + (dirWidth / 2) + 'L0 -' + (dirWidth / 2));
+
 	frame.attr({
 		fill: color,
 		stroke: 'none'
 	});
-	
+
 	dir.attr({
 		fill: '#FFF',
 		stroke: 'none'
 	});
-	
-	if (this.robots[name].robot.smart) {
-		var cameraFocus = this.c.path(Sim.Util.polygonToPath(robot.cameraFOV, robot.cameraDistance, 0));
+
+	if (cameraFOV) {
+		var cameraFocus = this.c.path(Sim.Util.polygonToPath(cameraFOV, cameraDistance, 0));
 
 		cameraFocus.attr({
 			fill: 'rgba(255, 255, 255, 0.35)',
 			stroke: 'none'
 		});
 	}
-	
-	this.robots[name].frame = frame;
-	this.robots[name].dir = dir;
-	this.robots[name].visual = this.c.setFinish();
-	
-	this.c.setStart();
-	
+
+	return {
+		frame: frame,
+		dir: dir,
+		visual: this.c.setFinish()
+	};
+};
+
+Sim.Renderer.prototype.addRobot = function(name, robot) {
+	this.robots[name] = {
+		robot: robot
+	};
+
+	var avatar = this.createRobotAvatar(
+		robot.side == Sim.Game.Side.YELLOW ? '#DD0' : '#00F',
+		robot.radius,
+		this.robots[name].robot.smart ? robot.cameraFOV : null,
+		robot.cameraDistance
+	);
+
+	this.robots[name].frame = avatar.frame;
+	this.robots[name].dir = avatar.dir;
+	this.robots[name].visual = avatar.visual;
+
 	if (this.robots[name].robot.smart) {
-		var ghostDirWidth = 0.03,
-			ghostDirLength = 0.125,
-			ghostFrameRadius = 0.05,
-			ghostFrame = this.c.circle(0, 0, ghostFrameRadius),
-			ghostDir = this.c.path('M-' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'M0 -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' -' + (ghostDirWidth / 2) + 'L' + ghostDirLength + ' ' + (ghostDirWidth / 2) + 'L0 ' + (ghostDirWidth / 2) + 'L0 -' + (ghostDirWidth / 2)),
-			ghostColor = robot.side == Sim.Game.Side.YELLOW ? 'rgb(255, 255, 0)' : 'rgb(0, 0, 255)',
-			i;
+		// localizers
+		this.robots[name].odometerLocalizer = this.createRobotAvatar(
+			'#600',
+			robot.radius / 2
+		).visual.hide();
 
-		ghostFrame.attr({
-			fill: ghostColor,
-			stroke: 'none'
-		});
+		this.robots[name].intersectionLocalizer = this.createRobotAvatar(
+			'#660',
+			robot.radius / 2
+		).visual.hide();
 
-		ghostDir.attr({
-			fill: ghostColor,
-			stroke: 'none'
-		});
+		this.robots[name].kalmanLocalizer = this.createRobotAvatar(
+			'#006',
+			robot.radius / 2
+		).visual.hide();
 
-		this.robots[name].ghost = this.c.setFinish();
+		this.robots[name].particleLocalizer = this.createRobotAvatar(
+			'#060',
+			robot.radius / 2
+		).visual.hide();
+
+		// particles
 		this.robots[name].particles = [];
-		
-		if (!this.showLocalization) {
-			this.robots[name].ghost.hide();
-		}
 
-		for (i = 0; i < robot.particleLocalizer.particles.length; i++) {
+		for (var i = 0; i < robot.particleLocalizer.particles.length; i++) {
 			var particle = robot.particleLocalizer.particles[i],
-				particleSize = 0.02,
 				particleDirWidth = 0.02,
 				particleDirLength = 0.05,
-				//particleBody = this.c.circle(0, 0, particleSize),
-				//particleDir = this.c.rect(0, 0, particleSize, particleSize * 3);
 				particleDir = this.c.path('M-' + particleDirLength + ' -' + (particleDirWidth / 2) + 'M0 -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' -' + (particleDirWidth / 2) + 'L' + particleDirLength + ' ' + (particleDirWidth / 2) + 'L0 ' + (particleDirWidth / 2) + 'L0 -' + (particleDirWidth / 2));
-
-			//particleBody.attr({
-			//	fill: 'rgba(255, 0, 0, 1)',
-			//	stroke: 'none',
-			//	transform: 'T' + particle.x + ' ' + particle.y
-			//});
 
 			particleDir.attr({
 				fill: 'rgba(255, 0, 0, 1)',
@@ -684,34 +673,12 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 				transform: 'T' + particle.x + ' ' + particle.y + 'R' + Raphael.deg(particle.orientation)
 			}).hide();
 
-			//sim.dbg.console('particle', i, particle);
-
 			this.robots[name].particles[i] = {
-				//body: particleBody,
 				dir: particleDir
 			};
 		}
 
 		this.robots[name].balls = {};
-
-		/*
-		var ballStyle = {
-			fill: '#F00',
-			stroke: 'none',
-			cx: -100,
-			cy: -100
-		};
-
-		for (i = 0; i < sim.config.game.balls; i++) {
-			var ballVisual = this.c.circle(0, 0, sim.config.ball.radius);
-
-			ballVisual.attr(ballStyle);
-
-			this.robots[name].balls[i] = {
-				visual: ballVisual
-			}
-		}
-		*/
 	}
 };
 
@@ -725,9 +692,25 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 	});
 	
 	this.showCommandsQueue(this.robots[name].robot);
-	
-	if (this.robots[name].robot.smart && this.showLocalization) {
-		this.robots[name].ghost.attr({
+
+	if (!this.robots[name].robot.smart) {
+		return;
+	}
+
+	if (this.showLocalization) {
+		this.robots[name].odometerLocalizer.show().attr({
+			transform: 'T' + robot.odometerLocalizer.x + ' ' + robot.odometerLocalizer.y + 'R' + Raphael.deg(robot.odometerLocalizer.orientation)
+		});
+
+		this.robots[name].intersectionLocalizer.show().attr({
+			transform: 'T' + robot.intersectionLocalizer.x + ' ' + robot.intersectionLocalizer.y + 'R' + Raphael.deg(robot.intersectionLocalizer.orientation)
+		});
+
+		this.robots[name].kalmanLocalizer.show().attr({
+			transform: 'T' + robot.kalmanLocalizer.x + ' ' + robot.kalmanLocalizer.y + 'R' + Raphael.deg(robot.kalmanLocalizer.orientation)
+		});
+
+		this.robots[name].particleLocalizer.show().attr({
 			transform: 'T' + robot.virtualX + ' ' + robot.virtualY + 'R' + Raphael.deg(robot.virtualOrientation)
 		});
 
@@ -845,6 +828,9 @@ Sim.Renderer.prototype.updateRobot = function(name, robot) {
 			}
 		}
 		*/
+	} else {
+		this.robots[name].kalmanLocalizer.hide();
+		this.robots[name].particleLocalizer.hide();
 	}
 };
 
@@ -859,8 +845,6 @@ Sim.Renderer.prototype.removeRobot = function(name) {
 		i;
 	
 	if (this.robots[name].robot.smart) {
-		this.robots[name].ghost.remove();
-		
 		for (i = 0; i < this.robots[name].particles.length; i++) {
 			this.robots[name].particles[i].dir.remove();
 		}
