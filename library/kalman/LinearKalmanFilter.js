@@ -15,8 +15,8 @@ function LinearKalmanFilter(
 	this.processErrorEstimate = processErrorEstimate;
 	this.measurementErrorEstimate = measurementErrorEstimate;
 
-	this.predictedStateEstimate = null;
-	this.predictedProbabilityEstimate = null;
+	this.predictedStateEstimate = this.stateEstimate.dup();
+	this.predictedProbabilityEstimate = this.processErrorEstimate.dup();
 	this.innovation = null;
 	this.innovationCovariance = null;
 	this.kalmanGain = null;
@@ -35,27 +35,19 @@ LinearKalmanFilter.prototype.predict = function(controlVector) {
 		.multiply(this.covarianceEstimate)
 		.multiply(this.stateTransitionMatrix.transpose())
 		.add(this.processErrorEstimate);
+
+	this.stateEstimate = this.predictedStateEstimate.dup();
 };
 
 LinearKalmanFilter.prototype.observe = function(measurementVector) {
-	if (measurementVector !== null) {
-		this.innovation = measurementVector
-			.subtract(this.observationMatrix.multiply(this.predictedStateEstimate));
+	this.innovation = measurementVector
+		.subtract(this.observationMatrix.multiply(this.predictedStateEstimate));
 
-		this.innovationCovariance = this.observationMatrix
-			.multiply(this.predictedProbabilityEstimate)
-			.multiply(this.observationMatrix.transpose())
-			.add(this.measurementErrorEstimate);
-	} else {
-		this.innovation = Matrix.Zero(this.stateEstimate.dimensions().rows, this.stateEstimate.dimensions().cols);
+	this.innovationCovariance = this.observationMatrix
+		.multiply(this.predictedProbabilityEstimate)
+		.multiply(this.observationMatrix.transpose())
+		.add(this.measurementErrorEstimate);
 
-		if (this.innovationCovariance === null) {
-			this.innovationCovariance = Matrix.I(this.stateEstimate.dimensions().rows);
-		}
-	}
-};
-
-LinearKalmanFilter.prototype.update = function() {
 	this.kalmanGain = this.predictedProbabilityEstimate
 		.multiply(this.observationMatrix.transpose())
 		.multiply(this.innovationCovariance.inverse());
@@ -66,6 +58,8 @@ LinearKalmanFilter.prototype.update = function() {
 	this.covarianceEstimate = Matrix.I(this.covarianceEstimate.dimensions().rows)
 		.subtract(this.kalmanGain.multiply(this.observationMatrix))
 		.multiply(this.predictedProbabilityEstimate);
+
+	this.predictedStateEstimate = this.stateEstimate.dup();
 };
 
 LinearKalmanFilter.prototype.inspect = function() {

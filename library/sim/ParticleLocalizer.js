@@ -1,3 +1,7 @@
+// TODO Take orientation into account
+// TODO Don't let the particles exit the field by much
+// TODO 360 > 0 issue
+
 Sim.ParticleLocalizer = function(particleCount, forwardNoise, turnNoise, senseNoise) {
 	this.particleCount = particleCount || 1000;
 	this.forwardNoise = forwardNoise || 0.1;
@@ -5,6 +9,9 @@ Sim.ParticleLocalizer = function(particleCount, forwardNoise, turnNoise, senseNo
 	this.senseNoise = senseNoise || 0.1;
 	this.landmarks = {};
 	this.particles = [];
+	this.x = 0;
+	this.y = 0;
+	this.orientation = 0;
 };
 
 Sim.ParticleLocalizer.Particle = function(x, y, orientation, probability) {
@@ -26,7 +33,7 @@ Sim.ParticleLocalizer.prototype.init = function() {
 		this.particles.push(new Sim.ParticleLocalizer.Particle(
 			Sim.Util.random(0, sim.config.field.width * 1000) / 1000.0,
 			Sim.Util.random(0, sim.config.field.height * 1000) / 1000.0,
-			Sim.Util.random(0, Math.PI * 2 * 1000) / 1000.0,
+			Sim.Util.random(0, Sim.Math.TWO_PI * 1000) / 1000.0,
 			1
 		));
 	}
@@ -51,7 +58,7 @@ Sim.ParticleLocalizer.prototype.move = function(velocityX, velocityY, omega, dt)
 		noisyVelocityX = velocityX + Sim.Util.randomGaussian(this.forwardNoise);
 		noisyVelocityY = velocityY + Sim.Util.randomGaussian(this.forwardNoise);
 		
-		this.particles[i].orientation = (this.particles[i].orientation + omega * dt + Sim.Util.randomGaussian(this.turnNoise) * dt) % (Math.PI * 2.0);
+		this.particles[i].orientation = this.particles[i].orientation + omega * dt + Sim.Util.randomGaussian(this.turnNoise) * dt;
 		this.particles[i].x += (noisyVelocityX * Math.cos(this.particles[i].orientation) - noisyVelocityY * Math.sin(this.particles[i].orientation)) * dt;
 		this.particles[i].y += (noisyVelocityX * Math.sin(this.particles[i].orientation) + noisyVelocityY * Math.cos(this.particles[i].orientation)) * dt;
 	}
@@ -168,11 +175,19 @@ Sim.ParticleLocalizer.prototype.getPosition = function(robot) {
 		ySum += this.particles[i].y;
 		orientationSum += this.particles[i].orientation;
 	}
-	
+
+	this.x = xSum / this.particles.length;
+	this.y = ySum / this.particles.length;
+	this.orientation = (orientationSum / this.particles.length) % Sim.Math.TWO_PI;
+
+	while (this.orientation < 0) {
+		this.orientation += Sim.Math.TWO_PI;
+	}
+
 	return {
-		x: xSum / this.particles.length,
-		y: ySum / this.particles.length,
-		orientation: (orientationSum / this.particles.length) % (Math.PI * 2),
+		x: this.x,
+		y: this.y,
+		orientation: this.orientation,
 		evaluation: evaluation
 	};
 };

@@ -203,7 +203,7 @@ Sim.Renderer.prototype.onMouseMove = function(e) {
 };
 
 Sim.Renderer.prototype.onMouseWheel = function(e, delta, deltaX, deltaY) {
-	this.driveToOrientation = (this.driveToOrientation + delta * Math.PI / 8) % (Math.PI * 2);
+	this.driveToOrientation = (this.driveToOrientation + delta * Math.PI / 8) % Sim.Math.TWO_PI;
 		
 	var pos = this.translateCoords(e.clientX, e.clientY);
 
@@ -561,9 +561,9 @@ Sim.Renderer.prototype.updateBall = function(ball) {
 };
 
 Sim.Renderer.prototype.removeBall = function(ball) {
-	if (typeof(ball._id) == 'undefined') {
+	if (typeof(ball) == 'undefined' ||typeof(ball._id) == 'undefined') {
 		return;
-	};
+	}
 	
 	this.balls[ball._id].visual.remove();
 	

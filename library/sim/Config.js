@@ -43,7 +43,7 @@ Sim.Config = {
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0//0.05
+		distanceDeviation: 0.025
 	},
 	blueRobot: {
 		startX: 4.5 - 0.125,
@@ -58,7 +58,7 @@ Sim.Config = {
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0.05
+		distanceDeviation: 0.025
 	},
 	particleLocalizer: {
 		particleCount: 1000,

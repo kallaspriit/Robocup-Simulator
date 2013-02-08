@@ -70,6 +70,12 @@ Sim.Robot = function(
 			sim.config.particleLocalizer.senseNoise
 		);
 		this.kalmanLocalizer = new Sim.KalmanLocalizer();
+		this.cartesianError = {
+			odometer: new Sim.CartesianError(),
+			intersection: new Sim.CartesianError(),
+			particle: new Sim.CartesianError(),
+			kalman: new Sim.CartesianError()
+		};
 
 		this.ballLocalizer = new Sim.BallLocalizer(
 			sim.config.game.balls
@@ -305,7 +311,29 @@ Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
 	//this.localizeByAngles(this.goals);
 	this.localizeKalman();
 
+	// record errors
+	this.cartesianError.odometer.record(
+		{x: this.odometerLocalizer.x, y: this.odometerLocalizer.y},
+		{x: this.x, y: this.y}
+	);
+	this.cartesianError.intersection.record(
+		{x: this.intersectionLocalizer.x, y: this.intersectionLocalizer.y},
+		{x: this.x, y: this.y}
+	);
+	this.cartesianError.particle.record(
+		{x: this.particleLocalizer.x, y: this.particleLocalizer.y},
+		{x: this.x, y: this.y}
+	);
+	this.cartesianError.kalman.record(
+		{x: this.kalmanLocalizer.x, y: this.kalmanLocalizer.y},
+		{x: this.x, y: this.y}
+	);
+
 	sim.dbg.box('Real orientation ' + this.side, Sim.Math.radToDeg(this.orientation), 1);
+
+	for (var localizer in this.cartesianError) {
+		sim.dbg.box(localizer + ' localizer error ' + this.side, Sim.Math.round(this.cartesianError[localizer].getAverage(), 2) + ', std-dev: ' + Sim.Math.round(this.cartesianError[localizer].getStdDev(), 2));
+	}
 };
 
 Sim.Robot.prototype.updateBallLocalizer = function(dt) {
@@ -327,10 +355,10 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 	
 	this.lastMovement = movement;
 	
-	this.orientation = (this.orientation + movement.omega * dt) % (Math.PI * 2.0);
+	this.orientation = (this.orientation + movement.omega * dt) % Sim.Math.TWO_PI;
 
 	if (this.orientation < 0) {
-		this.orientation += Math.PI * 2.0;
+		this.orientation += Sim.Math.TWO_PI;
 	}
 
     this.velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation),
@@ -644,7 +672,7 @@ Sim.Robot.prototype.getTargetDir = function() {
 };
 
 Sim.Robot.prototype.setTargetOmega = function(omega) {
-	this.targetOmega = Sim.Util.limitValue(omega, Math.PI * 2);
+	this.targetOmega = Sim.Util.limitValue(omega, Sim.Math.TWO_PI);
 
 	return this;
 };

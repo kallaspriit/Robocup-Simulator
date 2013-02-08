@@ -98,7 +98,7 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 		/*realAngle = camera === 'front' ? angle : angle + Math.PI;
 
 		if (realAngle > Math.PI) {
-			realAngle -= Math.PI * 2;
+			realAngle -= Sim.Math.TWO_PI;
 		}*/
 		
 		goals.push({
@@ -143,7 +143,7 @@ Sim.Vision.prototype.getVisibleGoals = function(polygon, x, y, orientation) {
 		/*realAngle = camera === 'front' ? angle : angle + Math.PI;
 
 		if (realAngle > Math.PI) {
-			realAngle -= Math.PI * 2;
+			realAngle -= Sim.Math.TWO_PI;
 		}*/
 		
 		goals.push({

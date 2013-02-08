@@ -15,7 +15,7 @@ Sim.IntersectionLocalizer.prototype.setPosition = function(x, y, orientation) {
 };
 
 Sim.IntersectionLocalizer.prototype.move = function(velocityX, velocityY, omega, dt) {
-    this.orientation = (this.orientation + omega * dt) % (Math.PI * 2.0);
+    this.orientation = (this.orientation + omega * dt) % Sim.Math.TWO_PI;
     this.x += (velocityX * Math.cos(this.orientation) - velocityY * Math.sin(this.orientation)) * dt;
     this.y += (velocityX * Math.sin(this.orientation) + velocityY * Math.cos(this.orientation)) * dt;
 };
@@ -95,20 +95,31 @@ Sim.IntersectionLocalizer.prototype.update = function(yellowDistance, blueDistan
 	var verticalOffset = this.y - sim.config.field.height / 2.0,
 		zeroAngleBlue = Math.asin(verticalOffset / blueDistance),
 		zeroAngleYellow = Math.asin(verticalOffset / yellowDistance),
-		posYellowAngle = yellowAngle < 0 ? yellowAngle + Math.PI * 2.0 : yellowAngle,
-		posBlueAngle = blueAngle < 0 ? blueAngle + Math.PI * 2.0 : blueAngle,
-		calcOrientationYellow = Math.PI - (posYellowAngle - zeroAngleYellow),
-		calcOrientationBlue = -zeroAngleBlue - posBlueAngle;
+		posYellowAngle = yellowAngle < 0 ? yellowAngle + Sim.Math.TWO_PI : yellowAngle,
+		posBlueAngle = blueAngle < 0 ? blueAngle + Sim.Math.TWO_PI : blueAngle,
+		calcOrientationYellow = (Math.PI - (posYellowAngle - zeroAngleYellow)) % Sim.Math.TWO_PI,
+		calcOrientationBlue = (-zeroAngleBlue - posBlueAngle) % Sim.Math.TWO_PI;
 
 	while (calcOrientationYellow < 0) {
-		calcOrientationYellow += Math.PI * 2.0;
+		calcOrientationYellow += Sim.Math.TWO_PI;
 	}
 
 	while (calcOrientationBlue < 0) {
-		calcOrientationBlue += Math.PI * 2.0;
+		calcOrientationBlue += Sim.Math.TWO_PI;
 	}
 
-	this.orientation = (calcOrientationYellow + calcOrientationBlue) / 2.0;
+	//this.orientation = (calcOrientationYellow + calcOrientationBlue) / 2.0;
+	this.orientation = Sim.Math.getAngleAvg(calcOrientationYellow, calcOrientationBlue);
+
+	if (this.orientation < 0) {
+		this.orientation += Sim.Math.TWO_PI;
+	}
+
+	var angleDiff = Math.abs(Sim.Math.getAngleDiff(this.orientation, sim.game.robots.yellow.orientation));
+
+	if (angleDiff > Math.PI * 0.75) {
+		debugger;
+	}
 
 	/*sim.dbg.box('Real orientation', Sim.Math.radToDeg(sim.game.robots.yellow.orientation), 1);
 	sim.dbg.box('vertical offset', verticalOffset, 1);
