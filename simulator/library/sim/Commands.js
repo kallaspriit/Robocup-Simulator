@@ -60,7 +60,7 @@ Sim.Cmd.DriveTo.prototype.step = function(robot, dt) {
 	}
 	
 	var distance = Sim.Math.getDistanceBetween(robot, {x: this.x, y: this.y}),
-		orientationDiff = Math.abs(robot.orientation - this.orientation) % (Math.PI * 2),
+		orientationDiff = Math.abs(robot.orientation - this.orientation) % Sim.Math.TWO_PI,
 		omega = orientationDiff / distance,
 		dir = Sim.Math.createDirVector(this, robot);
 	

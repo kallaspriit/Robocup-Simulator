@@ -24,6 +24,9 @@ Sim.Config = {
 		drag: 0.2,
 		elasticity: 0.3
 	},
+	vision: {
+		distanceDeviation: 0.1
+	},
 	simulation: {
 		targetFramerate: 60
 	},
@@ -40,7 +43,7 @@ Sim.Config = {
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0.01
+		distanceDeviation: 0.025
 	},
 	blueRobot: {
 		startX: 4.5 - 0.125,
@@ -55,12 +58,12 @@ Sim.Config = {
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
 		omegaDeviation: 2.5,
-		distanceDeviation: 0.01
+		distanceDeviation: 0.025
 	},
-	robotLocalizer: {
+	particleLocalizer: {
 		particleCount: 1000,
 		forwardNoise: 0.8,
-		turnNoise: 0.3,
+		turnNoise: 1.0,
 		senseNoise: 0.5
 	},
 	ballLocalizer: {

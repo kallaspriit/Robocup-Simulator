@@ -120,12 +120,15 @@ Sim.Game.prototype.addRobot = function(name, robot) {
 };
 
 Sim.Game.prototype.initBalls = function() {
-	for (var i = 0; i < sim.config.game.balls; i++) {
-		var x = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.width - sim.config.ball.radius) * 1000) / 1000.0,
+	for (var i = 0; i < Math.floor(sim.config.game.balls / 2); i++) {
+		var x = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.width / 2.0 - sim.config.ball.radius) * 1000) / 1000.0,
 			y = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.height - sim.config.ball.radius) * 1000) / 1000.0;
 		
 		this.addBall(new Sim.Ball(x, y));
+		this.addBall(new Sim.Ball(sim.config.field.width - x, sim.config.field.height - y));
 	}
+
+	this.addBall(new Sim.Ball(sim.config.field.width / 2.0, sim.config.field.height / 2.0));
 };
 
 Sim.Game.prototype.initRobots = function(yellowSmart, blueSmart) {

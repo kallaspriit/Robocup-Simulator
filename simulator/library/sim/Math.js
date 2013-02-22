@@ -1,5 +1,7 @@
 Sim.Math = {};
 
+Sim.Math.TWO_PI = Math.PI * 2.0;
+
 Sim.Math.round = function(number, decimals) {
 	if (typeof(number) != 'number') {
 		return number;
@@ -181,6 +183,13 @@ Sim.Math.createMultipliedVector = function(vec, scalar) {
 	};
 };
 
+Sim.Math.createVectorSum = function(a, b) {
+	return {
+		x: a.x + b.x,
+		y: a.y + b.y
+	};
+};
+
 Sim.Math.createDirVector = function(from, to) {
 	return Sim.Math.createNormalizedVector({
 		x: from.x - to.x,
@@ -209,9 +218,9 @@ Sim.Math.getAngleBetween = function(pointA, pointB, orientationA) {
 		angle = Math.atan2(dirVec.y, dirVec.x) - Math.atan2(forwardVec.y, forwardVec.x);
 	
 	if (angle < -Math.PI) {
-		angle += Math.PI * 2;
+		angle += Sim.Math.TWO_PI;
 	} else if (angle > Math.PI) {
-		angle -= Math.PI * 2;
+		angle -= Sim.Math.TWO_PI;
 	}
 	
 	return angle;
@@ -233,6 +242,51 @@ Sim.Math.addImpulse = function(body, dir, magnitude, dt) {
  */
 Sim.Math.getGaussian = function(mu, sigma, x) {
 	return Math.exp(-Math.pow(mu - x,  2) / Math.pow(sigma, 2) / 2.0) / Math.sqrt(2.0 * Math.PI * Math.pow(sigma, 2));
+};
+
+Sim.Math.getAverage = function(data) {
+	var sum = 0,
+		i;
+
+	for (i = 0; i < data.length; i++) {
+		sum += data[i];
+	}
+
+	return sum / data.length;
+};
+
+Sim.Math.getStdDev = function(data) {
+	var avg = Sim.Math.getAverage(data),
+		squareSum = 0,
+		i;
+
+	for (i = 0; i < data.length; i++) {
+		squareSum += Math.pow(data[i] - avg, 2);
+	}
+
+	return Math.sqrt(squareSum / data.length);
+};
+
+Sim.Math.getAngleAvg = function(a, b) {
+	var x = Math.abs(a - b) % Sim.Math.TWO_PI;
+
+	if (x >= 0 && x <= Math.PI) {
+		return ((a + b) / 2) % Sim.Math.TWO_PI;
+	} else if (x > Math.PI && x < Math.PI * 6.0 / 4.0) {
+		return (((a + b) / 2) % Sim.Math.TWO_PI) + Math.PI;
+	} else {
+		return (((a + b) / 2) % Sim.Math.TWO_PI) - Math.PI;
+	}
+};
+
+Sim.Math.getAngleDiff = function(a, b) {
+	var diff = Math.abs(a - b) % Sim.Math.TWO_PI;
+
+	if (diff > Math.PI) {
+		diff = Sim.Math.TWO_PI - diff;
+	}
+
+	return diff;
 };
 
 /**
