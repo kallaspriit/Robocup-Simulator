@@ -26,10 +26,13 @@ Sim.Robot = function(
 	this.x = x;
 	this.y = y;
 	this.orientation = orientation;
+	this.velocityX = 0;
+	this.velocityY = 0;
 	this.radius = this.options.radius;
 	this.mass = this.options.mass;
 	this.wheelRadius = this.options.wheelRadius;
 	this.wheelOffset = this.options.wheelOffset;
+	this.wheelAngles = this.options.wheelAngles;
 	this.cameraDistance = this.options.cameraDistance;
 	this.cameraWidth = this.options.cameraWidth;
 	this.kickerForce = this.options.kickerForce;
@@ -41,9 +44,6 @@ Sim.Robot = function(
 	this.dribbledBall = null;
 	this.targetDir = {x: 0, y: 0};
 	this.targetOmega = 0;
-	this.lastMovement = null;
-	this.velocityX = 0;
-	this.velocityY = 0;
 	this.dt = 1000 / 60;
 	this.commands = [];
 	this.perfectLocalization = false;
@@ -122,45 +122,15 @@ Sim.Robot = function(
 	this.wheelOmegas = [
 		0.0, 0.0, 0.0, 0.0
 	];
-	
-	this.wheelAngles = [
-		Sim.Math.degToRad(-135.0),
-		Sim.Math.degToRad(-45.0),
-		Sim.Math.degToRad(45.0),
-		Sim.Math.degToRad(135.0)
-	];
 
-	this.omegaMatrix = new Sim.Math.Matrix4x3(
-		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
+	this.motionModel = new Sim.FourWheelOmniDrive(
+		this.wheelRadius,
+		this.wheelAngles,
+		this.wheelOffset,
+		this.x,
+		this.y,
+		this.orientation
 	);
-	this.omegaMatrixA = new Sim.Math.Matrix3x3(
-		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset
-	);
-	this.omegaMatrixB = new Sim.Math.Matrix3x3(
-		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
-	);
-	this.omegaMatrixC = new Sim.Math.Matrix3x3(
-		-Math.sin(this.wheelAngles[0]), Math.cos(this.wheelAngles[0]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
-	);
-	this.omegaMatrixD = new Sim.Math.Matrix3x3(
-		-Math.sin(this.wheelAngles[1]), Math.cos(this.wheelAngles[1]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[2]), Math.cos(this.wheelAngles[2]), this.wheelOffset,
-		-Math.sin(this.wheelAngles[3]), Math.cos(this.wheelAngles[3]), this.wheelOffset
-	);
-	
-	this.omegaMatrixInvA = this.omegaMatrixA.getInversed();
-	this.omegaMatrixInvB = this.omegaMatrixB.getInversed();
-	this.omegaMatrixInvC = this.omegaMatrixC.getInversed();
-	this.omegaMatrixInvD = this.omegaMatrixD.getInversed();
 	
 	this.cameraFOV = new Sim.Math.Polygon([
 		{x: 0, y: 0},
@@ -348,24 +318,30 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 };
 
 Sim.Robot.prototype.updateMovement = function(dt) {
-	this.wheelOmegas = this.getWheelOmegas(this.targetDir, this.targetOmega);
+	this.wheelOmegas = this.motionModel.getWheelOmegas(this.targetDir, this.targetOmega);
 
-	var movement = this.getMovement(this.wheelOmegas),
-		noisyMovement = this.getMovement(this.wheelOmegas, true);
-	
-	this.lastMovement = movement;
-	
+	var noisyOmegas = [
+		this.wheelOmegas[0] + Sim.Util.randomGaussian(this.omegaDeviation),
+		this.wheelOmegas[1] + Sim.Util.randomGaussian(this.omegaDeviation),
+		this.wheelOmegas[2] + Sim.Util.randomGaussian(this.omegaDeviation),
+		this.wheelOmegas[3] + Sim.Util.randomGaussian(this.omegaDeviation)
+	];
+
+	var movement = this.motionModel.getMovement(this.wheelOmegas),
+		noisyMovement = this.motionModel.getMovement(noisyOmegas);
+
 	this.orientation = (this.orientation + movement.omega * dt) % Sim.Math.TWO_PI;
 
 	if (this.orientation < 0) {
 		this.orientation += Sim.Math.TWO_PI;
 	}
 
-    this.velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation),
+	this.velocityX = movement.velocityX * Math.cos(this.orientation) - movement.velocityY * Math.sin(this.orientation),
 	this.velocityY = movement.velocityX * Math.sin(this.orientation) + movement.velocityY * Math.cos(this.orientation);
+
 	this.x += this.velocityX * dt;
 	this.y += this.velocityY * dt;
-	
+
 	if (sim.config.game.useWalls) {
 		Sim.Util.confine(
 			this, 
@@ -408,8 +384,8 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 
 		// input for Kalman
 		var pos = this.intersectionLocalizer.getPosition(),
-			commandOmegas = this.getWheelOmegas(this.targetDir, this.targetOmega),
-			commandMovement = this.getMovement(commandOmegas);
+			commandOmegas = this.motionModel.getWheelOmegas(this.targetDir, this.targetOmega),
+			commandMovement = this.motionModel.getMovement(commandOmegas);
 
 		this.kalmanLocalizer.move(
 			pos.x,
@@ -687,22 +663,6 @@ Sim.Robot.prototype.driveTo = function(x, y, orientation) {
 
 Sim.Robot.prototype.queueCommand = function(command) {
 	this.commands.push(command);
-};
-
-Sim.Robot.prototype.getWheelOmegas = function(targetDir, targetOmega) {
-	var targetMatrix = new Sim.Math.Matrix3x1(
-			targetDir.x,
-			targetDir.y,
-			targetOmega
-		),
-		wheelOmegas = this.omegaMatrix.getMultiplied(1.0 / this.wheelRadius).getMultiplied(targetMatrix);
-
-	return [
-		wheelOmegas.a11,
-		wheelOmegas.a21,
-		wheelOmegas.a31,
-		wheelOmegas.a41
-	];
 };
 
 Sim.Robot.prototype.turnBy = function(angle, duration) {

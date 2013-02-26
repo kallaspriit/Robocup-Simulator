@@ -38,6 +38,12 @@ Sim.Config = {
 		mass: 2.5,
 		wheelRadius: 0.025,
 		wheelOffset: 0.12,
+		wheelAngles: [
+			Sim.Math.degToRad(-135.0),
+			Sim.Math.degToRad(-45.0),
+			Sim.Math.degToRad(45.0),
+			Sim.Math.degToRad(135.0)
+		],
 		cameraDistance: 5.0,
 		cameraWidth: 8.0,
 		kickerForce: 30.0,
@@ -53,6 +59,12 @@ Sim.Config = {
 		mass: 2.5,
 		wheelRadius: 0.025,
 		wheelOffset: 0.12,
+		wheelAngles: [
+			Sim.Math.degToRad(-135.0),
+			Sim.Math.degToRad(-45.0),
+			Sim.Math.degToRad(45.0),
+			Sim.Math.degToRad(135.0)
+		],
 		cameraDistance: 5.0,
 		cameraWidth: 8.0,
 		kickerForce: 30.0,
