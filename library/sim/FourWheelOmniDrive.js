@@ -42,7 +42,9 @@ Sim.FourWheelOmniDrive.prototype.getWheelOmegas = function(targetDir, targetOmeg
 			targetDir.y,
 			targetOmega
 		),
-		wheelOmegas = this.omegaMatrix.getMultiplied(1.0 / this.wheelRadius).getMultiplied(targetMatrix);
+		wheelOmegas = this.omegaMatrix
+			.getMultiplied(1.0 / this.wheelRadius)
+			.getMultiplied(targetMatrix);
 
 	return [
 		wheelOmegas.a11,
@@ -73,10 +75,18 @@ Sim.FourWheelOmniDrive.prototype.getMovement = function(omegas) {
 			omegas[2],
 			omegas[3]
 		),
-		movementA = this.omegaMatrixInvA.getMultiplied(wheelMatrixA).getMultiplied(this.wheelRadius),
-		movementB = this.omegaMatrixInvB.getMultiplied(wheelMatrixB).getMultiplied(this.wheelRadius),
-		movementC = this.omegaMatrixInvC.getMultiplied(wheelMatrixC).getMultiplied(this.wheelRadius),
-		movementD = this.omegaMatrixInvD.getMultiplied(wheelMatrixD).getMultiplied(this.wheelRadius);
+		movementA = this.omegaMatrixInvA
+			.getMultiplied(wheelMatrixA)
+			.getMultiplied(this.wheelRadius),
+		movementB = this.omegaMatrixInvB
+			.getMultiplied(wheelMatrixB)
+			.getMultiplied(this.wheelRadius),
+		movementC = this.omegaMatrixInvC
+			.getMultiplied(wheelMatrixC)
+			.getMultiplied(this.wheelRadius),
+		movementD = this.omegaMatrixInvD
+			.getMultiplied(wheelMatrixD)
+			.getMultiplied(this.wheelRadius);
 
 	return {
 		velocityX: (movementA.a11 + movementB.a11 + movementC.a11 + movementD.a11) / 4.0,

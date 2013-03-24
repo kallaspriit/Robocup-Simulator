@@ -16,7 +16,8 @@ Sim.OdometerLocalizer.prototype.setPosition = function(x, y, orientation) {
 
 Sim.OdometerLocalizer.prototype.move = function(velocityX, velocityY, omega, dt) {
     this.orientation = (this.orientation + omega * dt) % Sim.Math.TWO_PI;
-    this.x += (velocityX * Math.cos(this.orientation) - velocityY * Math.sin(this.orientation)) * dt;
+
+    this.x += (velocityX * Math.cos(this.orientation)- velocityY * Math.sin(this.orientation)) * dt;
     this.y += (velocityX * Math.sin(this.orientation) + velocityY * Math.cos(this.orientation)) * dt;
 };
 

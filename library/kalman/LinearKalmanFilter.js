@@ -6,7 +6,7 @@ function LinearKalmanFilter(
 	initialCovarianceEstimate,	// P
 	processErrorEstimate,		// Q
 	measurementErrorEstimate	// R
-	) {
+) {
 	this.stateTransitionMatrix = stateTransitionMatrix;
 	this.controlMatrix = controlMatrix;
 	this.observationMatrix = observationMatrix;
@@ -41,7 +41,9 @@ LinearKalmanFilter.prototype.predict = function(controlVector) {
 
 LinearKalmanFilter.prototype.observe = function(measurementVector) {
 	this.innovation = measurementVector
-		.subtract(this.observationMatrix.multiply(this.predictedStateEstimate));
+		.subtract(this.observationMatrix.multiply(
+			this.predictedStateEstimate
+		));
 
 	this.innovationCovariance = this.observationMatrix
 		.multiply(this.predictedProbabilityEstimate)

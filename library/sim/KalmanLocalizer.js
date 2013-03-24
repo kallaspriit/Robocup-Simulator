@@ -9,6 +9,7 @@ Sim.KalmanLocalizer = function() {
 	this.processError = 0.0001;
 	this.initialCovariance = 0.1;
 	this.measurementError = 0.5;
+	this.velocityPreserve = 0.5;
 
     this.stateTransitionMatrix = null;
     this.controlMatrix = null;
@@ -27,45 +28,25 @@ Sim.KalmanLocalizer.prototype.init = function(x, y, orientation) {
 	// This is the state transition vector, which represents part of the kinematics.
 	//   x(n+1) = x(n) + vx(n)
 	//   y(n+1) =                y(n) + vy(n)
-	//   vx(n+1) =       0.25vx(n)
-	//   vy(n+1) =                      0.25vy(n)
-	//   o(n+1) =                                  0.25o(n)
-	/*this.stateTransitionMatrix = $M([
-		[1.00, 0.00, 1.00, 0.00, 0.00], // x
-		[0.00, 1.00, 0.00, 1.00, 0.00], // y
-		[0.00, 0.00, 0.25, 0.00, 0.00], // Vx
-		[0.00, 0.00, 0.00, 0.25, 0.00], // Vy
-		[0.00, 0.00, 0.00, 0.00, 0.25]  // orientation
-	]);*/
-
-	this.velocityPreserve = 0.5;
-
+	//   vx(n+1) =       0.5Vx(n)
+	//   vy(n+1) =                      0.5Vy(n)
+	//   o(n+1) =                                  o(n)
 	this.stateTransitionMatrix = $M([
 		[1.00, 0.00, 1.00, 0.00, 0.00], // x
 		[0.00, 1.00, 0.00, 1.00, 0.00], // y
 		[0.00, 0.00, this.velocityPreserve, 0.00, 0.00], // Vx
 		[0.00, 0.00, 0.00, this.velocityPreserve, 0.00], // Vy
-		[0.00, 0.00, 0.00, 0.00, 1.00]  // orientation
+		[0.00, 0.00, 0.00, 0.00, 1.0]  // orientation
 	]);
 
-	// The control matrix
-	/*this.controlMatrix = $M([
-		[0, 0, 0, 0],
-		[0, 0, 0, 0],
-		[0, 0, 0, 0],
-		[0, 0, 0, 0]
-	]);*/
-	// Vx' = 0.25 * Vx + 0.75 * Vx''
-	// Vy' = 0.25 * Vy + 0.75 * Vy''
 	this.controlMatrix = $M([
 		[0.00, 0.00, 0.00, 0.00, 0.00],
 		[0.00, 0.00, 0.00, 0.00, 0.00],
 		[0.00, 0.00, 1.0 - this.velocityPreserve, 0.00, 0.00],
 		[0.00, 0.00, 0.00, 1.0 - this.velocityPreserve, 0.00],
-		[0.00, 0.00, 0.00, 0.00, 1.00]
+		[0.00, 0.00, 0.00, 0.00, 1.0]
 	]);
 
-	// Observation matrix is the identity matrix, since we can get direct measurements of all values.
 	this.observationMatrix = $M([
 		[1, 0, 0, 0, 0],
 		[0, 1, 0, 0, 0],
@@ -74,38 +55,36 @@ Sim.KalmanLocalizer.prototype.init = function(x, y, orientation) {
 		[0, 0, 0, 0, 1]
 	]);
 
-	// Our guess of the initial state.
 	this.initialStateEstimate = $M([
 		[x],
 		[y],
 		[0], // start velocity x
-		[0], // start velocity y,
+		[0], // start velocity y
 		[orientation]
 	]);
 
-	// @TODO Use different values for position, velocity, omega
 	this.initialCovarianceEstimate = $M([
-		[this.initialCovariance, 0, 0, 0, 0], // x
-		[0, this.initialCovariance, 0, 0, 0], // y
-		[0, 0, this.initialCovariance, 0, 0], // Vx
-		[0, 0, 0, this.initialCovariance, 0], // Vy
-		[0, 0, 0, 0, this.initialCovariance]  // omega
+		[this.initialCovariance, 0, 0, 0, 0],
+		[0, this.initialCovariance, 0, 0, 0],
+		[0, 0, this.initialCovariance, 0, 0],
+		[0, 0, 0, this.initialCovariance, 0],
+		[0, 0, 0, 0, this.initialCovariance]
 	]);
 
 	this.processErrorEstimate = $M([
-		[this.processError, 0, 0, 0, 0], // x
-		[0, this.processError, 0, 0, 0], // y
-		[0, 0, this.processError, 0, 0], // Vx
-		[0, 0, 0, this.processError, 0], // Vy
-		[0, 0, 0, 0, this.processError]  // omega
+		[this.processError, 0, 0, 0, 0],
+		[0, this.processError, 0, 0, 0],
+		[0, 0, this.processError, 0, 0],
+		[0, 0, 0, this.processError, 0],
+		[0, 0, 0, 0, this.processError]
 	]);
 
 	this.measurementErrorEstimate = $M([
-		[this.measurementError, 0, 0, 0, 0], // x
-		[0, this.measurementError, 0, 0, 0], // y
-		[0, 0, this.measurementError, 0, 0], // Vx
-		[0, 0, 0, this.measurementError, 0], // Vy
-		[0, 0, 0, 0, this.measurementError]  // omega
+		[this.measurementError, 0, 0, 0, 0],
+		[0, this.measurementError, 0, 0, 0],
+		[0, 0, this.measurementError, 0, 0],
+		[0, 0, 0, this.measurementError, 0],
+		[0, 0, 0, 0, this.measurementError]
 	]);
 
 	this.filter = new LinearKalmanFilter(
@@ -124,30 +103,34 @@ Sim.KalmanLocalizer.prototype.setPosition = function(x, y, orientation) {
 };
 
 Sim.KalmanLocalizer.prototype.move = function(
-	x, y, orientation,
-	cmdVelocityX, cmdVelocityY, cmdOmega,
-	odoVelocityX, odoVelocityY, odoOmega,
-	dt
+	x, y, orientation, cmdVelocityX, cmdVelocityY, cmdOmega,
+	odoVelocityX, odoVelocityY, odoOmega, dt
 ) {
 	var originalOrientation = orientation,
 		jumpThreshold = 0.1;
 
-	if (orientation < jumpThreshold && this.lastInputOrientation > Sim.Math.TWO_PI - jumpThreshold) {
+	if (
+		orientation < jumpThreshold
+		&& this.lastInputOrientation > Sim.Math.TWO_PI - jumpThreshold
+	) {
 		this.rotationCounter++;
-
-		console.log('jump forward', 'last', this.lastInputOrientation, 'current', orientation, 'new', orientation + Sim.Math.TWO_PI * this.rotationCounter);
-	} else if (orientation > Sim.Math.TWO_PI - jumpThreshold && this.lastInputOrientation < jumpThreshold) {
+	} else if (
+		orientation > Sim.Math.TWO_PI - jumpThreshold
+		&& this.lastInputOrientation < jumpThreshold
+	) {
 		this.rotationCounter--;
-
-		console.log('jump back', 'last', this.lastInputOrientation, 'current', orientation, 'new', orientation + Sim.Math.TWO_PI * this.rotationCounter);
 	}
 
 	orientation = orientation + this.rotationCounter * Sim.Math.TWO_PI;
 
-	var globalCmdVelocityX = (cmdVelocityX * Math.cos(this.orientation) - cmdVelocityY * Math.sin(this.orientation)) * dt,
-		globalCmdVelocityY = (cmdVelocityX * Math.sin(this.orientation) + cmdVelocityY * Math.cos(this.orientation)) * dt,
-		globalOdoVelocityX = (odoVelocityX * Math.cos(this.orientation) - odoVelocityY * Math.sin(this.orientation)) * dt,
-		globalOdoVelocityY = (odoVelocityX * Math.sin(this.orientation) + odoVelocityY * Math.cos(this.orientation)) * dt,
+	var globalCmdVelocityX = (cmdVelocityX * Math.cos(this.orientation)
+			- cmdVelocityY * Math.sin(this.orientation)) * dt,
+		globalCmdVelocityY = (cmdVelocityX * Math.sin(this.orientation)
+			+ cmdVelocityY * Math.cos(this.orientation)) * dt,
+		globalOdoVelocityX = (odoVelocityX * Math.cos(this.orientation)
+			- odoVelocityY * Math.sin(this.orientation)) * dt,
+		globalOdoVelocityY = (odoVelocityX * Math.sin(this.orientation)
+			+ odoVelocityY * Math.cos(this.orientation)) * dt,
 		controlVector = $M([
 			[0],
 			[0],
@@ -166,24 +149,10 @@ Sim.KalmanLocalizer.prototype.move = function(
 
 	this.filter.predict(controlVector);
 	this.filter.observe(measurementVector);
-	//this.filter.update();
-
 	state = this.filter.getStateEstimate();
-
-	// tarvis abs nurgba mürast vaatlemist
-	// x
-	// y
-	// vx
-	// vy
-	// theta
-	// omega
-
 	this.x = state.e(1, 1);
 	this.y = state.e(2, 1);
-	this.orientation = state.e(5, 1)/* % Sim.Math.TWO_PI*/;
-
-	// @TODO Both Kalman and Particle filter mess up around 360 > 0
-
+	this.orientation = state.e(5, 1);
 	this.lastInputOrientation = originalOrientation;
 };
 

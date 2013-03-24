@@ -2,11 +2,12 @@
 // TODO Don't let the particles exit the field by much
 // TODO 360 > 0 issue
 
-Sim.ParticleLocalizer = function(particleCount, forwardNoise, turnNoise, senseNoise) {
+Sim.ParticleLocalizer = function(particleCount, forwardNoise, turnNoise, distanceSenseNoise, angleSenseNoise) {
 	this.particleCount = particleCount || 1000;
 	this.forwardNoise = forwardNoise || 0.1;
 	this.turnNoise = turnNoise || 0.1;
-	this.senseNoise = senseNoise || 0.1;
+	this.distanceSenseNoise = distanceSenseNoise || 0.1;
+	this.angleSenseNoise = angleSenseNoise || Sim.Math.degToRad(5);
 	this.landmarks = {};
 	this.particles = [];
 	this.x = 0;
@@ -93,14 +94,21 @@ Sim.ParticleLocalizer.prototype.getMeasurementProbability = function(
 	var probability = 1.0,
 		landmarkName,
 		landmark,
-		measurement,
-		distance;
+		measuredDistance,
+		measuredAngle,
+		expectedDistance,
+		expectedAngle;
 	
 	for (landmarkName in measurements) {
 		landmark = this.landmarks[landmarkName];
-		measurement = measurements[landmarkName];
-		distance = Math.sqrt(Math.pow(particle.x - landmark.x,  2) + Math.pow(particle.y - landmark.y, 2));
-		probability *= Sim.Math.getGaussian(distance, this.senseNoise, measurement);
+		measuredDistance = measurements[landmarkName].distance;
+		measuredAngle = measurements[landmarkName].angle;
+		expectedDistance = Math.sqrt(Math.pow(particle.x - landmark.x,  2) + Math.pow(particle.y - landmark.y, 2));
+		expectedAngle = Sim.Math.getAngleBetween(landmark, particle, particle.orientation);
+		//probability *= Sim.Math.getGaussian(expectedAngle, this.angleSenseNoise, measuredAngle);
+		//probability *= Sim.Math.getGaussian(expectedDistance, this.distanceSenseNoise, measuredDistance);
+		probability *= Sim.Math.getGaussian(expectedAngle, this.angleSenseNoise, measuredAngle)
+			+ Sim.Math.getGaussian(expectedDistance, this.distanceSenseNoise, measuredDistance);
 	}
 	
 	return probability;

@@ -2,6 +2,15 @@ Sim.IntersectionLocalizer = function() {
     this.x = 0.0;
     this.y = 0.0;
     this.orientation = 0.0;
+
+	this.yellowGoalPos = {
+		x: 0,
+		y: sim.config.field.height / 2
+	};
+	this.blueGoalPos = {
+		x: sim.config.field.width,
+		y: sim.config.field.height / 2
+	};
 };
 
 Sim.IntersectionLocalizer.prototype.init = function() {
@@ -21,16 +30,8 @@ Sim.IntersectionLocalizer.prototype.move = function(velocityX, velocityY, omega,
 };
 
 Sim.IntersectionLocalizer.prototype.update = function(yellowDistance, blueDistance, yellowAngle, blueAngle, frontGoal) {
-    var yellowGoalPos = {
-            x: 0,
-            y: sim.config.field.height / 2
-        },
-        blueGoalPos = {
-            x: sim.config.field.width,
-            y: sim.config.field.height / 2
-        },
-        yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, yellowDistance),
-        blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, blueDistance),
+    var yellowCircle = new Sim.Math.Circle(this.yellowGoalPos.x, this.yellowGoalPos.y, yellowDistance),
+        blueCircle = new Sim.Math.Circle(this.blueGoalPos.x, this.blueGoalPos.y, blueDistance),
         intersections = yellowCircle.getIntersections(blueCircle);
 
     if (intersections === false) {
@@ -43,16 +44,16 @@ Sim.IntersectionLocalizer.prototype.update = function(yellowDistance, blueDistan
 		    newPos;
 
 	    if (yellowDistance !== null) {
-		    dirVector = Sim.Math.createDirVector(currentPos, yellowGoalPos);
+		    dirVector = Sim.Math.createDirVector(currentPos, this.yellowGoalPos);
 			scaledDir = Sim.Math.createMultipliedVector(dirVector, yellowDistance);
-		    newPos = Sim.Math.createVectorSum(yellowGoalPos, scaledDir);
+		    newPos = Sim.Math.createVectorSum(this.yellowGoalPos, scaledDir);
 
 			this.x = newPos.x;
 			this.y = newPos.y;
 	    } else if (blueDistance !== null) {
-		    dirVector = Sim.Math.createDirVector(currentPos, blueGoalPos);
+		    dirVector = Sim.Math.createDirVector(currentPos, this.blueGoalPos);
 		    scaledDir = Sim.Math.createMultipliedVector(dirVector, blueDistance);
-		    newPos = Sim.Math.createVectorSum(blueGoalPos, scaledDir);
+		    newPos = Sim.Math.createVectorSum(this.blueGoalPos, scaledDir);
 
 		    this.x = newPos.x;
 		    this.y = newPos.y;
@@ -78,9 +79,11 @@ Sim.IntersectionLocalizer.prototype.update = function(yellowDistance, blueDistan
 			);
 
 		if (distance1 < distance2) {
-			correctIntersection = 'bottom';
+			this.x = intersections.x1;
+			this.y = intersections.y1;
 		} else {
-			correctIntersection = 'top';
+			this.x = intersections.x2;
+			this.y = intersections.y2;
 		}
 	}
 
@@ -97,42 +100,22 @@ Sim.IntersectionLocalizer.prototype.update = function(yellowDistance, blueDistan
 		zeroAngleYellow = Math.asin(verticalOffset / yellowDistance),
 		posYellowAngle = yellowAngle < 0 ? yellowAngle + Sim.Math.TWO_PI : yellowAngle,
 		posBlueAngle = blueAngle < 0 ? blueAngle + Sim.Math.TWO_PI : blueAngle,
-		calcOrientationYellow = (Math.PI - (posYellowAngle - zeroAngleYellow)) % Sim.Math.TWO_PI,
-		calcOrientationBlue = (-zeroAngleBlue - posBlueAngle) % Sim.Math.TWO_PI;
+		yellowGuess = (Math.PI - (posYellowAngle - zeroAngleYellow)) % Sim.Math.TWO_PI,
+		blueGuess = (-zeroAngleBlue - posBlueAngle) % Sim.Math.TWO_PI;
 
-	while (calcOrientationYellow < 0) {
-		calcOrientationYellow += Sim.Math.TWO_PI;
+	while (yellowGuess < 0) {
+		yellowGuess += Sim.Math.TWO_PI;
 	}
 
-	while (calcOrientationBlue < 0) {
-		calcOrientationBlue += Sim.Math.TWO_PI;
+	while (blueGuess < 0) {
+		blueGuess += Sim.Math.TWO_PI;
 	}
 
-	//this.orientation = (calcOrientationYellow + calcOrientationBlue) / 2.0;
-	this.orientation = Sim.Math.getAngleAvg(calcOrientationYellow, calcOrientationBlue);
+	this.orientation = Sim.Math.getAngleAvg(yellowGuess, blueGuess);
 
 	if (this.orientation < 0) {
 		this.orientation += Sim.Math.TWO_PI;
 	}
-
-	var angleDiff = Math.abs(Sim.Math.getAngleDiff(this.orientation, sim.game.robots.yellow.orientation));
-
-	if (angleDiff > Math.PI * 0.75) {
-		debugger;
-	}
-
-	/*sim.dbg.box('Real orientation', Sim.Math.radToDeg(sim.game.robots.yellow.orientation), 1);
-	sim.dbg.box('vertical offset', verticalOffset, 1);
-	sim.dbg.box('blue angle', blueAngle > 0 ? 'POS' : 'NEG');
-	sim.dbg.box('yellow angle', yellowAngle > 0 ? 'POS' : 'NEG');
-	sim.dbg.box('front camera goal', frontGoal);
-	sim.dbg.box('correct intersection', correctIntersection);
-	sim.dbg.box('blue zero angle', Sim.Math.radToDeg(zeroAngleBlue), 1);
-	sim.dbg.box('yellow zero angle', Sim.Math.radToDeg(zeroAngleYellow), 1);
-	sim.dbg.box('blue goal angle', Sim.Math.radToDeg(posBlueAngle), 1);
-	sim.dbg.box('yellow goal angle', Sim.Math.radToDeg(posYellowAngle), 1);
-	sim.dbg.box('blue calculated orientation', Sim.Math.radToDeg(calcOrientationBlue), 1);
-	sim.dbg.box('yellow calculated orientation', Sim.Math.radToDeg(calcOrientationYellow), 1);*/
 };
 
 Sim.IntersectionLocalizer.prototype.getPosition = function() {

@@ -25,7 +25,8 @@ Sim.Config = {
 		elasticity: 0.3
 	},
 	vision: {
-		distanceDeviation: 0.1
+		distanceDeviation: 0.1,
+		angleDeviation: Sim.Math.degToRad(5)
 	},
 	simulation: {
 		targetFramerate: 60
