@@ -40,6 +40,28 @@ Sim.Util.getMax = function(values) {
 	return max;
 };
 
+Sim.Util.isEmpty = function(obj) {
+	if (
+		obj === null
+		|| typeof(obj) === 'undefined'
+		|| (obj.length && obj.length === 0)
+	) {
+		return true;
+	}
+
+	if (obj.length && obj.length > 0) {
+		return false;
+	}
+
+	for (var key in obj) {
+		if (hasOwnProperty.call(obj, key)) {
+			return false;
+		}
+	}
+
+	return true;
+};
+
 Sim.Util.randomGaussian = function(deviation, mean) {
 	deviation = typeof(deviation) != 'undefined' ? deviation : 0.5;
 	mean = typeof(mean) != 'undefined' ? mean : 0;

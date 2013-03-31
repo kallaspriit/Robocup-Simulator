@@ -321,10 +321,10 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 	this.wheelOmegas = this.motionModel.getWheelOmegas(this.targetDir, this.targetOmega);
 
 	var noisyOmegas = [
-		this.wheelOmegas[0] + Sim.Util.randomGaussian(this.omegaDeviation),
-		this.wheelOmegas[1] + Sim.Util.randomGaussian(this.omegaDeviation),
-		this.wheelOmegas[2] + Sim.Util.randomGaussian(this.omegaDeviation),
-		this.wheelOmegas[3] + Sim.Util.randomGaussian(this.omegaDeviation)
+		this.wheelOmegas[0] + this.wheelOmegas[0] * Sim.Util.randomGaussian(this.omegaDeviation),
+		this.wheelOmegas[1] + this.wheelOmegas[1] * Sim.Util.randomGaussian(this.omegaDeviation),
+		this.wheelOmegas[2] + this.wheelOmegas[2] * Sim.Util.randomGaussian(this.omegaDeviation),
+		this.wheelOmegas[3] + this.wheelOmegas[3] * Sim.Util.randomGaussian(this.omegaDeviation)
 	];
 
 	var movement = this.motionModel.getMovement(this.wheelOmegas),
@@ -367,7 +367,8 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 			noisyMovement.velocityX,
 			noisyMovement.velocityY,
 			noisyMovement.omega,
-			dt
+			dt,
+			Sim.Util.isEmpty(this.measurements) ? true : false
 		);
 		this.intersectionLocalizer.move(
 			noisyMovement.velocityX,
