@@ -1,17 +1,25 @@
 Sim.CartesianError = function() {
-	this.measurements = [];
+	this.distances = [];
+	this.orientations = [];
 };
 
-Sim.CartesianError.prototype.record = function(measured, real) {
-	var error = Sim.Math.getDistanceBetween(measured, real);
-
-	this.measurements.push(error);
+Sim.CartesianError.prototype.record = function(measuredDistance, realDistance, measuredOrientation, realOrientation) {
+	this.distances.push(Sim.Math.getDistanceBetween(measuredDistance, realDistance));
+	this.orientations.push(Sim.Math.getAngleDiff(measuredOrientation, realOrientation));
 };
 
-Sim.CartesianError.prototype.getAverage = function() {
-	return Sim.Math.getAverage(this.measurements);
+Sim.CartesianError.prototype.getDistanceAverage = function() {
+	return Sim.Math.getAverage(this.distances);
 };
 
-Sim.CartesianError.prototype.getStdDev = function() {
-	return Sim.Math.getStdDev(this.measurements);
+Sim.CartesianError.prototype.getDistanceStdDev = function() {
+	return Sim.Math.getStdDev(this.distances);
+};
+
+Sim.CartesianError.prototype.getOrientationAverage = function() {
+	return Sim.Math.getAverage(this.orientations);
+};
+
+Sim.CartesianError.prototype.getOrientationStdDev = function() {
+	return Sim.Math.getStdDev(this.orientations);
 };

@@ -213,8 +213,6 @@ Sim.Math.getVectorDotProduct = function(a, b) {
 };
 
 Sim.Math.getAngleBetween = function(pointA, pointB, orientationB) {
-	normalize = typeof(normalize) !== 'undefined' ? normalize : true;
-
 	var forwardVec = Sim.Math.createForwardVector(orientationB),
 		dirVec = Sim.Math.createDirVector(pointA, pointB),
 		angle = Math.atan2(dirVec.y, dirVec.x) - Math.atan2(forwardVec.y, forwardVec.x);

@@ -98,8 +98,14 @@ Sim.UI.prototype.initKeyboardControls = function() {
 };
 
 Sim.UI.prototype.initEventListeners = function() {
+	var self = this;
+
 	sim.renderer.bind(Sim.Renderer.Event.SPAWN_BALL_REQUESTED, function(e) {
 		sim.game.addBall(new Sim.Ball(e.x, e.y));
+	});
+
+	sim.game.bind(Sim.Game.Event.GAME_OVER, function(e) {
+		self.showGameOver(e.yellowScore, e.blueScore, e.duration);
 	});
 };
 
@@ -221,7 +227,7 @@ Sim.UI.prototype.initGameOptions = function() {
 	var self = this,
 		restart = $.cookie('restart');
 		
-	sim.dbg.console('cookie restart', restart, typeof(restart));
+	//sim.dbg.console('cookie restart', restart, typeof(restart));
 	
 	if (restart == '1') {
 		var yellowControllerType = $.cookie('yellow-controller'),
@@ -343,6 +349,29 @@ Sim.UI.prototype.showNoiseDialog = function() {
 
 	robot.omegaDeviation = newLevel;
 	robot.resetDeviation();
+};
+
+Sim.UI.prototype.showGameOver = function(yellowScore, blueScore, duration)  {
+	var scoreText;
+
+	if (yellowScore > blueScore) {
+		scoreText = 'Yellow Wins!';
+	} else if (blueScore > yellowScore) {
+		scoreText = 'Blue Wins!';
+	} else {
+		scoreText = 'It\'s a Draw!';
+	}
+
+	sim.ui.showModal(
+		'<h1>' + scoreText + '</h1>' +
+			'<div id="yellow-wrap"><span>' + yellowScore + '</span></div>' +
+			'<div id="blue-wrap"><span>' + blueScore + '</span></div>' +
+			'<div id="match-duration">The match took ' + Sim.Math.round(duration, 1) + ' seconds</div>' +
+			'<button id="restart-btn" class="modal-btn">Restart the match</button>',
+		'game-over'
+	);
+
+	sim.game.pause();
 };
 
 Sim.UI.prototype.showModal = function(content, className) {

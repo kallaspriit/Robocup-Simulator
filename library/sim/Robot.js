@@ -15,9 +15,9 @@ Sim.Robot = function(
 		cameraWidth: 8.0,
 		kickerForce: 30,
 		dribbleAngle: Sim.Math.degToRad(20.0),
-		omegaDeviation: 2.5,
-		distanceDeviation: 0.01,
-		smart: false
+		omegaDeviation: 0.3,
+		smart: false,
+		perfectLocalization: false
 	};
 	
 	this.options = Sim.Util.combine(this.defaults, options);
@@ -38,7 +38,7 @@ Sim.Robot = function(
 	this.kickerForce = this.options.kickerForce;
 	this.dribbleAngle = this.options.dribbleAngle;
 	this.omegaDeviation = this.options.omegaDeviation;
-	this.distanceDeviation = this.options.distanceDeviation;
+	this.perfectLocalization = this.options.perfectLocalization;
 	this.smart = isSmart;
 	
 	this.dribbledBall = null;
@@ -46,12 +46,12 @@ Sim.Robot = function(
 	this.targetOmega = 0;
 	this.dt = 1000 / 60;
 	this.commands = [];
-	this.perfectLocalization = false;
+
 	this.useController = true;
 	
 	this.goals = [];
 	this.balls = [];
-	this.measurements = {};
+	this.distances = {};
 	
 	this.virtualX = x;
 	this.virtualY = y;
@@ -67,7 +67,8 @@ Sim.Robot = function(
 			sim.config.particleLocalizer.particleCount,
 			sim.config.particleLocalizer.forwardNoise,
 			sim.config.particleLocalizer.turnNoise,
-			sim.config.particleLocalizer.senseNoise
+			sim.config.particleLocalizer.distanceSenseNoise,
+			sim.config.particleLocalizer.angleSenseNoise
 		);
 		this.kalmanLocalizer = new Sim.KalmanLocalizer();
 		this.cartesianError = {
@@ -262,7 +263,7 @@ Sim.Robot.prototype.updateVision = function(dt) {
 	
 	this.balls = this.vision.getVisibleBalls(this.cameraFOV, this.x, this.y, this.orientation + Math.PI);
 	this.goals = this.vision.getVisibleGoals(this.cameraFOV, this.x, this.y, this.orientation);
-	this.measurements = this.vision.getMeasurements(this.cameraFOV, this.x, this.y, this.orientation);
+	this.distances = this.vision.getMeasurements(this.cameraFOV, this.x, this.y, this.orientation);
 	
 	for (i = 0; i < this.balls.length; i++) {
 		if (this.side == Sim.Game.Side.YELLOW) {
@@ -274,7 +275,14 @@ Sim.Robot.prototype.updateVision = function(dt) {
 };
 
 Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
-	this.particleLocalizer.update(this.measurements);
+	this.particleLocalizer.update(
+		this.distances,
+		{
+			x: this.intersectionLocalizer.x,
+			y: this.intersectionLocalizer.y,
+			orientation: this.intersectionLocalizer.orientation
+		}
+	);
 	
 	this.localizeByOdometer();
 	this.localizeByDistances(this.goals);
@@ -284,25 +292,47 @@ Sim.Robot.prototype.updateRobotLocalizer = function(dt) {
 	// record errors
 	this.cartesianError.odometer.record(
 		{x: this.odometerLocalizer.x, y: this.odometerLocalizer.y},
-		{x: this.x, y: this.y}
+		{x: this.x, y: this.y},
+		this.odometerLocalizer.orientation,
+		this.orientation
 	);
 	this.cartesianError.intersection.record(
 		{x: this.intersectionLocalizer.x, y: this.intersectionLocalizer.y},
-		{x: this.x, y: this.y}
+		{x: this.x, y: this.y},
+		this.intersectionLocalizer.orientation,
+		this.orientation
 	);
 	this.cartesianError.particle.record(
 		{x: this.particleLocalizer.x, y: this.particleLocalizer.y},
-		{x: this.x, y: this.y}
+		{x: this.x, y: this.y},
+		this.particleLocalizer.orientation,
+		this.orientation
 	);
 	this.cartesianError.kalman.record(
 		{x: this.kalmanLocalizer.x, y: this.kalmanLocalizer.y},
-		{x: this.x, y: this.y}
+		{x: this.x, y: this.y},
+		this.kalmanLocalizer.orientation,
+		this.orientation
 	);
 
 	sim.dbg.box('Real orientation ' + this.side, Sim.Math.radToDeg(this.orientation), 1);
+	var table = $('#error-results');
+
+	table.find('TBODY').empty();
 
 	for (var localizer in this.cartesianError) {
-		sim.dbg.box(localizer + ' localizer error ' + this.side, Sim.Math.round(this.cartesianError[localizer].getAverage(), 2) + ', std-dev: ' + Sim.Math.round(this.cartesianError[localizer].getStdDev(), 2));
+		sim.dbg.box(localizer + ' localizer distance error ' + this.side, Sim.Math.round(this.cartesianError[localizer].getDistanceAverage(), 2) + ', std-dev: ' + Sim.Math.round(this.cartesianError[localizer].getDistanceStdDev(), 2));
+		sim.dbg.box(localizer + ' localizer orientation error ' + this.side, Sim.Math.round(Sim.Math.radToDeg(this.cartesianError[localizer].getOrientationAverage()), 2) + '°, std-dev: ' + Sim.Math.round(Sim.Math.radToDeg(this.cartesianError[localizer].getOrientationStdDev()), 2) + '°');
+
+		table.find('TBODY').append(
+			'<tr>' +
+				'<td>' + localizer + '</td>' +
+				'<td>' + (Sim.Math.round(this.cartesianError[localizer].getDistanceAverage(), 2) + '').replace('.', ',') + '</td>' +
+				'<td>' + (Sim.Math.round(this.cartesianError[localizer].getDistanceStdDev(), 2) + '').replace('.', ',') + '</td>' +
+				'<td>' + (Sim.Math.round(Sim.Math.radToDeg(this.cartesianError[localizer].getOrientationAverage()), 2) + '').replace('.', ',') + '</td>' +
+				'<td>' + (Sim.Math.round(Sim.Math.radToDeg(this.cartesianError[localizer].getOrientationStdDev()), 2) + '').replace('.', ',') + '</td>' +
+			'</tr>'
+		);
 	}
 };
 
@@ -320,15 +350,21 @@ Sim.Robot.prototype.updateBallLocalizer = function(dt) {
 Sim.Robot.prototype.updateMovement = function(dt) {
 	this.wheelOmegas = this.motionModel.getWheelOmegas(this.targetDir, this.targetOmega);
 
-	var noisyOmegas = [
-		this.wheelOmegas[0] + this.wheelOmegas[0] * Sim.Util.randomGaussian(this.omegaDeviation),
-		this.wheelOmegas[1] + this.wheelOmegas[1] * Sim.Util.randomGaussian(this.omegaDeviation),
-		this.wheelOmegas[2] + this.wheelOmegas[2] * Sim.Util.randomGaussian(this.omegaDeviation),
-		this.wheelOmegas[3] + this.wheelOmegas[3] * Sim.Util.randomGaussian(this.omegaDeviation)
-	];
+	var noisyOmegas1 = [
+			this.wheelOmegas[0] + this.wheelOmegas[0] * Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[1] + this.wheelOmegas[1] * Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[2] + this.wheelOmegas[2] * Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[3] + this.wheelOmegas[3] * Sim.Util.randomGaussian(this.omegaDeviation)
+		],
+		noisyOmegas2 = [
+			this.wheelOmegas[0] + this.wheelOmegas[0] * Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[1] + this.wheelOmegas[1] * Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[2] + this.wheelOmegas[2] * Sim.Util.randomGaussian(this.omegaDeviation),
+			this.wheelOmegas[3] + this.wheelOmegas[3] * Sim.Util.randomGaussian(this.omegaDeviation)
+		];
 
-	var movement = this.motionModel.getMovement(this.wheelOmegas),
-		noisyMovement = this.motionModel.getMovement(noisyOmegas);
+	var movement = this.motionModel.getMovement(noisyOmegas1),
+		noisyMovement = this.motionModel.getMovement(noisyOmegas2);
 
 	this.orientation = (this.orientation + movement.omega * dt) % Sim.Math.TWO_PI;
 
@@ -368,7 +404,7 @@ Sim.Robot.prototype.updateMovement = function(dt) {
 			noisyMovement.velocityY,
 			noisyMovement.omega,
 			dt,
-			Sim.Util.isEmpty(this.measurements) ? true : false
+			Sim.Util.isEmpty(this.distances) ? true : false
 		);
 		this.intersectionLocalizer.move(
 			noisyMovement.velocityX,
@@ -452,9 +488,13 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 		}
 	}
 
+
+
     // @TODO Dont mess with the renderer directly
-	sim.renderer.intersectionCircle1.hide();
-	sim.renderer.intersectionCircle2.hide();
+	/*if (sim.renderer.ready) {
+		sim.renderer.intersectionCircle1.hide();
+		sim.renderer.intersectionCircle2.hide();
+	}*/
 
 	var yellowGoalPos = {
 			x: 0,
@@ -469,36 +509,28 @@ Sim.Robot.prototype.localizeByDistances = function(goals) {
 
 
 	if (yellowDistance != null) {
-		noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(this.distanceDeviation);
+		noisyYellowDistance = yellowDistance + yellowDistance * Sim.Util.randomGaussian(sim.config.vision.distanceDeviation);
 
-		sim.renderer.intersectionCircle1.attr({
-			cx: yellowGoalPos.x,
-			cy: yellowGoalPos.y,
-			r: noisyYellowDistance
-		}).show();
+		/*if (sim.renderer.ready) {
+			sim.renderer.intersectionCircle1.attr({
+				cx: yellowGoalPos.x,
+				cy: yellowGoalPos.y,
+				r: noisyYellowDistance
+			}).show();
+		}*/
 	}
 
 	if (blueDistance != null) {
-		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(this.distanceDeviation);
+		noisyBlueDistance = blueDistance + blueDistance * Sim.Util.randomGaussian(sim.config.vision.distanceDeviation);
 
-		sim.renderer.intersectionCircle2.attr({
-			cx: blueGoalPos.x,
-			cy: blueGoalPos.y,
-			r: noisyBlueDistance
-		}).show();
+		/*if (sim.renderer.ready) {
+			sim.renderer.intersectionCircle2.attr({
+				cx: blueGoalPos.x,
+				cy: blueGoalPos.y,
+				r: noisyBlueDistance
+			}).show();
+		}*/
 	}
-
-	/*if (yellowDistance == null || blueDistance == null) {
-		return false;
-	}*/
-
-	/*var yellowCircle = new Sim.Math.Circle(yellowGoalPos.x, yellowGoalPos.y, noisyYellowDistance),
-		blueCircle = new Sim.Math.Circle(blueGoalPos.x, blueGoalPos.y, noisyBlueDistance),
-		intersections = yellowCircle.getIntersections(blueCircle)
-
-	if (intersections === false) {
-		return false;
-	}*/
 
 	this.intersectionLocalizer.update(noisyYellowDistance, noisyBlueDistance, yellowAngle, blueAngle, frontGoal);
 
@@ -534,18 +566,20 @@ Sim.Robot.prototype.localizeByAngles = function(goals) {
 		blueCircle = new Sim.Math.Circle(blueCenterX, centerY, blueRadius),
 		intersections = yellowCircle.getIntersections(blueCircle);
 
-	sim.renderer.a1c.attr({
-		cx: yellowCircle.x,
-		cy: yellowCircle.y,
-		r: yellowCircle.radius
-	}).show();
+	/*if (sim.renderer.ready) {
+		sim.renderer.a1c.attr({
+			cx: yellowCircle.x,
+			cy: yellowCircle.y,
+			r: yellowCircle.radius
+		}).show();
 
-	sim.renderer.a2c.attr({
-		cx: blueCircle.x,
-		cy: blueCircle.y,
-		r: blueCircle.radius
-	}).show();
-		
+		sim.renderer.a2c.attr({
+			cx: blueCircle.x,
+			cy: blueCircle.y,
+			r: blueCircle.radius
+		}).show();
+	}*/
+
 	//sim.dbg.console('intersections', intersections);
 
 	//sim.dbg.box('Goal angles', Sim.Math.round(Sim.Math.radToDeg(yellowGoalAngle), 1) + ' (' + Sim.Math.round(yellowRadius, 2) + '); ' + Sim.Math.round(Sim.Math.radToDeg(blueGoalAngle), 1) + '(' + Sim.Math.round(blueRadius, 2) + ')');
@@ -580,10 +614,10 @@ Sim.Robot.prototype.getVirtualFOV = function() {
 Sim.Robot.prototype.getMovement = function(omegas, noisy) {
 	if (noisy) {
 		omegas = [
-			omegas[0] + Sim.Util.randomGaussian(this.omegaDeviation),
-			omegas[1] + Sim.Util.randomGaussian(this.omegaDeviation),
-			omegas[2] + Sim.Util.randomGaussian(this.omegaDeviation),
-			omegas[3] + Sim.Util.randomGaussian(this.omegaDeviation)
+			omegas[0] + omegas[0] * Sim.Util.randomGaussian(this.omegaDeviation),
+			omegas[1] + omegas[1] * Sim.Util.randomGaussian(this.omegaDeviation),
+			omegas[2] + omegas[2] * Sim.Util.randomGaussian(this.omegaDeviation),
+			omegas[3] + omegas[3] * Sim.Util.randomGaussian(this.omegaDeviation)
 		];
 	}
 	

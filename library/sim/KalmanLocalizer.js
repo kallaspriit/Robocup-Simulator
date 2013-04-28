@@ -1,23 +1,23 @@
 Sim.KalmanLocalizer = function() {
-    this.x = 0.0;
-    this.y = 0.0;
-    this.orientation = 0.0;
-	this.lastInputOrientation = 0.0;
-	this.rotationCounter = 0;
+    this.x                          = 0.0;
+    this.y                          = 0.0;
+    this.orientation                = 0.0;
+	this.lastInputOrientation       = 0.0;
+	this.rotationCounter            = 0;
 
-	this.filter = null;
-	this.processError = 0.0001;
-	this.initialCovariance = 0.1;
-	this.measurementError = 0.5;
-	this.velocityPreserve = 0.5;
+	this.processError               = sim.config.kalmanLocalizer.processError;
+	this.initialCovariance          = sim.config.kalmanLocalizer.initialCovariance;
+	this.measurementError           = sim.config.kalmanLocalizer.measurementError;
+	this.velocityPreserve           = sim.config.kalmanLocalizer.velocityPreserve;
 
-    this.stateTransitionMatrix = null;
-    this.controlMatrix = null;
-    this.observationMatrix = null;
-    this.initialStateEstimate = null;
-    this.initialCovarianceEstimate = null;
-    this.processErrorEstimate = null;
-    this.measurementErrorEstimate = null;
+	this.filter                     = null;
+    this.stateTransitionMatrix      = null;
+    this.controlMatrix              = null;
+    this.observationMatrix          = null;
+    this.initialStateEstimate       = null;
+    this.initialCovarianceEstimate  = null;
+    this.processErrorEstimate       = null;
+	this.measurementErrorEstimate   = null;
 };
 
 Sim.KalmanLocalizer.prototype.init = function(x, y, orientation) {
@@ -107,18 +107,22 @@ Sim.KalmanLocalizer.prototype.move = function(
 	odoVelocityX, odoVelocityY, odoOmega, dt
 ) {
 	var originalOrientation = orientation,
-		jumpThreshold = 0.1;
+		jumpThreshold = Math.PI / 2;
 
 	if (
 		orientation < jumpThreshold
 		&& this.lastInputOrientation > Sim.Math.TWO_PI - jumpThreshold
 	) {
 		this.rotationCounter++;
+
+		//console.log('JUMP FORWARD', this.rotationCounter);
 	} else if (
 		orientation > Sim.Math.TWO_PI - jumpThreshold
 		&& this.lastInputOrientation < jumpThreshold
 	) {
 		this.rotationCounter--;
+
+		//console.log('JUMP BACKWARD', this.rotationCounter);
 	}
 
 	orientation = orientation + this.rotationCounter * Sim.Math.TWO_PI;

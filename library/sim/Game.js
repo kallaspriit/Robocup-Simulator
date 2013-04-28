@@ -120,36 +120,103 @@ Sim.Game.prototype.addRobot = function(name, robot) {
 };
 
 Sim.Game.prototype.initBalls = function() {
-	for (var i = 0; i < Math.floor(sim.config.game.balls / 2); i++) {
-		var x = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.width / 2.0 - sim.config.ball.radius) * 1000) / 1000.0,
-			y = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.height - sim.config.ball.radius) * 1000) / 1000.0;
-		
-		this.addBall(new Sim.Ball(x, y));
-		this.addBall(new Sim.Ball(sim.config.field.width - x, sim.config.field.height - y));
-	}
+	if (sim.config.game.randomBalls) {
+		for (var i = 0; i < Math.floor(sim.config.game.balls / 2); i++) {
+			var x = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.width / 2.0 - sim.config.ball.radius) * 1000) / 1000.0,
+				y = Sim.Util.random(sim.config.ball.radius * 1000, (sim.config.field.height - sim.config.ball.radius) * 1000) / 1000.0;
 
-	this.addBall(new Sim.Ball(sim.config.field.width / 2.0, sim.config.field.height / 2.0));
+			this.addBall(new Sim.Ball(x, y));
+			this.addBall(new Sim.Ball(sim.config.field.width - x, sim.config.field.height - y));
+		}
+
+		this.addBall(new Sim.Ball(sim.config.field.width / 2.0, sim.config.field.height / 2.0));
+
+		/*var ballPositions = [];
+
+		for (var i = 0; i < this.balls.length; i++) {
+			ballPositions.push({
+				x: this.balls[i].x,
+				y: this.balls[i].y
+			});
+		}
+
+		console.log(JSON.stringify(ballPositions, null, ' '));*/
+	} else {
+		var ballPositions = [
+			{
+				"x": 2.195,
+				"y": 2.073
+			},
+			{
+				"x": 2.305,
+				"y": 0.927
+			},
+			{
+				"x": 0.304,
+				"y": 2.115
+			},
+			{
+				"x": 4.196,
+				"y": 0.8849999999999998
+			},
+			{
+				"x": 0.968,
+				"y": 1.979
+			},
+			{
+				"x": 3.532,
+				"y": 1.021
+			},
+			{
+				"x": 2.077,
+				"y": 1.212
+			},
+			{
+				"x": 2.423,
+				"y": 1.788
+			},
+			{
+				"x": 1.115,
+				"y": 2.406
+			},
+			{
+				"x": 3.385,
+				"y": 0.5939999999999999
+			},
+			{
+				"x": 2.25,
+				"y": 1.5
+			}
+		];
+
+		for (var i = 0; i < ballPositions.length; i++) {
+			this.addBall(new Sim.Ball(ballPositions[i].x, ballPositions[i].y));
+		}
+	}
 };
 
 Sim.Game.prototype.initRobots = function(yellowSmart, blueSmart) {
-	var yellowRobot = new Sim.Robot(
+	if (sim.config.yellowRobot.use) {
+		this.addRobot('yellow', new Sim.Robot(
 			Sim.Game.Side.YELLOW,
 			sim.config.yellowRobot.startX,
 			sim.config.yellowRobot.startY,
 			sim.config.yellowRobot.startOrientation,
 			yellowSmart,
 			sim.config.yellowRobot
-		), blueRobot = new Sim.Robot(
+		));
+	}
+
+	if (sim.config.blueRobot.use) {
+		this.addRobot('blue', new Sim.Robot(
 			Sim.Game.Side.BLUE,
 			sim.config.blueRobot.startX,
 			sim.config.blueRobot.startY,
 			sim.config.blueRobot.startOrientation,
 			blueSmart,
 			sim.config.blueRobot
-		);
-	
-	this.addRobot('yellow', yellowRobot);
-	this.addRobot('blue', blueRobot);
+		));
+	}
 };
 
 Sim.Game.prototype.initControllers = function() {
@@ -168,24 +235,31 @@ Sim.Game.prototype.addController = function(controller) {
 
 Sim.Game.prototype.step = function() {
 	var self = this;
-	
+
 	if (this.paused) {
 		this.lastStepTime = null;
 	} else {
 		var time = Sim.Util.getMicrotime(),
 			fps = this.fpsCounter.getLastFPS(),
 			fpsDiff = sim.config.simulation.targetFramerate - fps,
+			delay,
 			dt;
 
 		sim.dbg.box('FPS', fps, 2);
 		//sim.dbg.box('Adjust', this.fpsAdjustTime * 1000, 1);
 		//sim.dbg.box('Sleep', this.timeStep * 1000 + this.fpsAdjustTime * 1000, 1);
 
-		if (this.lastStepTime == null) {
+		/*if (sim.config.simulation.maxSpeed) {
 			dt = this.timeStep;
 		} else {
-			dt = time - this.lastStepTime;
-		}
+			if (this.lastStepTime == null) {
+				dt = this.timeStep;
+			} else {
+				dt = time - this.lastStepTime;
+			}
+		}*/
+
+		dt = this.timeStep;
 
 		this.duration += dt;
 
@@ -207,9 +281,15 @@ Sim.Game.prototype.step = function() {
 	}
 	
 	if (this.running) {
+		if (sim.config.simulation.maxSpeed) {
+			delay = 0;
+		} else {
+			delay = this.timeStep * 1000 + this.fpsAdjustTime * 1000.0;
+		}
+
 		this.stepTimeout = window.setTimeout(function() {
 			self.step();
-		}, this.timeStep * 1000 + this.fpsAdjustTime * 1000.0);
+		}, delay);
 	}
 };
 
@@ -229,7 +309,7 @@ Sim.Game.prototype.stepBalls = function(dt) {
 			}
 			
 			if (Sim.Math.collideCircles(this.balls[i], this.balls[j])) {
-				sim.dbg.console('collided', this.balls[i], this.balls[j]);
+				//sim.dbg.console('collided', this.balls[i], this.balls[j]);
 				
 				sim.renderer.showCollisionAt(this.balls[i].x, this.balls[i].y);
 			}

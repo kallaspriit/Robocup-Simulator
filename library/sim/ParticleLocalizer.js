@@ -4,14 +4,15 @@ Sim.ParticleLocalizer = function(
 ) {
 	this.particleCount      = particleCount || 1000;
 	this.forwardNoise       = forwardNoise || 0.1;
-	this.turnNoise          = turnNoise || 0.1;
-	this.distanceSenseNoise = distanceSenseNoise || 0.1;
+	this.turnNoise          = typeof(turnNoise) !== 'undefined' ? turnNoise : 0.1;
+	this.distanceSenseNoise = typeof(distanceSenseNoise) !== 'undefined' ? distanceSenseNoise : 0.1;
 	this.angleSenseNoise    = angleSenseNoise || Sim.Math.degToRad(5);
 	this.landmarks          = {};
 	this.particles          = [];
 	this.x                  = 0;
 	this.y                  = 0;
 	this.orientation        = 0;
+	this.injectedParticles  = 0;
 };
 
 Sim.ParticleLocalizer.Particle = function(x, y, orientation, probability) {
@@ -56,6 +57,8 @@ Sim.ParticleLocalizer.prototype.move = function(velocityX, velocityY, omega, dt,
 
 	for (i = 0; i < this.particles.length; i++) {
 		if (exact !== true) {
+			/*particleVelocityX = velocityX + velocityX * Sim.Util.randomGaussian(this.forwardNoise);
+			particleVelocityY = velocityY + velocityY * Sim.Util.randomGaussian(this.forwardNoise);*/
 			particleVelocityX = velocityX + Sim.Util.randomGaussian(this.forwardNoise);
 			particleVelocityY = velocityY + Sim.Util.randomGaussian(this.forwardNoise);
 			particleOrientationNoise = Sim.Util.randomGaussian(this.turnNoise) * dt;
@@ -65,16 +68,13 @@ Sim.ParticleLocalizer.prototype.move = function(velocityX, velocityY, omega, dt,
 			particleOrientationNoise = 0;
 		}
 		
-		this.particles[i].orientation = this.particles[i].orientation
-			+ omega * dt + particleOrientationNoise;
-		this.particles[i].x += (particleVelocityX * Math.cos(this.particles[i].orientation)
-			- particleVelocityY * Math.sin(this.particles[i].orientation)) * dt;
-		this.particles[i].y += (particleVelocityX * Math.sin(this.particles[i].orientation)
-			+ particleVelocityY * Math.cos(this.particles[i].orientation)) * dt;
+		this.particles[i].orientation = this.particles[i].orientation + omega * dt + particleOrientationNoise;
+		this.particles[i].x += (particleVelocityX * Math.cos(this.particles[i].orientation) - particleVelocityY * Math.sin(this.particles[i].orientation)) * dt;
+		this.particles[i].y += (particleVelocityX * Math.sin(this.particles[i].orientation) + particleVelocityY * Math.cos(this.particles[i].orientation)) * dt;
 	}
 };
 
-Sim.ParticleLocalizer.prototype.update = function(measurements) {
+Sim.ParticleLocalizer.prototype.update = function(measurements, observedPose) {
 	if (Sim.Util.isEmpty(measurements)) {
 		return;
 	}
@@ -82,6 +82,12 @@ Sim.ParticleLocalizer.prototype.update = function(measurements) {
 	var particle,
 		maxProbability = null,
 		i;
+
+	for (i = 0; i < this.injectedParticles; i++) {
+		this.particles[i].x = observedPose.x;
+		this.particles[i].y = observedPose.y;
+		this.particles[i].orientation = observedPose.orientation;
+	}
 
 	for (i = 0; i < this.particles.length; i++) {
 		particle = this.particles[i];
@@ -118,8 +124,9 @@ Sim.ParticleLocalizer.prototype.getMeasurementProbability = function(
 		measuredAngle = measurements[landmarkName].angle;
 		expectedDistance = Sim.Math.getDistanceBetween(particle, landmark);
 		expectedAngle = Sim.Math.getAngleBetween(landmark, particle, particle.orientation);
-		probability *= Sim.Math.getGaussian(expectedAngle, this.angleSenseNoise, measuredAngle) * 0.0
-			+ Sim.Math.getGaussian(expectedDistance, this.distanceSenseNoise, measuredDistance) * 1.0;
+
+		probability *= Sim.Math.getGaussian(expectedAngle, this.angleSenseNoise, measuredAngle)
+			+ Sim.Math.getGaussian(expectedDistance, this.distanceSenseNoise, measuredDistance);
 	}
 	
 	return probability;

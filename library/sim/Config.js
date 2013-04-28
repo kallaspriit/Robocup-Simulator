@@ -16,7 +16,8 @@ Sim.Config = {
 		balls: 11,
 		ballRemoveThreshold: 0.5,
 		robotConfineThreshold: 0.5,
-		useWalls: true
+		useWalls: true,
+		randomBalls: false
 	},
 	ball: {
 		radius: 0.021335,
@@ -26,10 +27,17 @@ Sim.Config = {
 	},
 	vision: {
 		distanceDeviation: 0.1,
+		//distanceDeviation: 0.0,
 		angleDeviation: Sim.Math.degToRad(5)
 	},
 	simulation: {
-		targetFramerate: 60
+		targetFramerate: 60,
+		render: true,
+		debug: true,
+		maxSpeed: false
+		/*render: false,
+		debug: false,
+		maxSpeed: true*/
 	},
 	yellowRobot: {
 		startX: 0.125,
@@ -49,8 +57,10 @@ Sim.Config = {
 		cameraWidth: 8.0,
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
-		omegaDeviation: 0.20,
-		distanceDeviation: 0.025
+		omegaDeviation: 0.3,
+		//omegaDeviation: 0.0,
+		perfectLocalization: false,
+		use: true
 	},
 	blueRobot: {
 		startX: 4.5 - 0.125,
@@ -70,14 +80,22 @@ Sim.Config = {
 		cameraWidth: 8.0,
 		kickerForce: 30.0,
 		dribblerAngle: Sim.Math.degToRad(20.0),
-		omegaDeviation: 0.20,
-		distanceDeviation: 0.025
+		omegaDeviation: 0.3,
+		perfectLocalization: false,
+		use: true
 	},
 	particleLocalizer: {
 		particleCount: 1000,
-		forwardNoise: 0.8,
-		turnNoise: 1.0,
-		senseNoise: 0.5
+		forwardNoise: 0.75,
+		turnNoise: Sim.Math.degToRad(45.0),
+		distanceSenseNoise: 0.2,
+		angleSenseNoise: Sim.Math.degToRad(10.0)
+	},
+	kalmanLocalizer: {
+		processError: 0.0001,
+		initialCovariance: 0.0001,
+		measurementError: 0.25,
+		velocityPreserve: 0.5
 	},
 	ballLocalizer: {
 		maxBallIdentityDistance: 0.25,

@@ -8,8 +8,11 @@ Sim.Bootstrapper.prototype.bootstrap = function() {
 	window.sim.renderer = new Sim.Renderer(sim.game);
 	sim.ui.init();
 	sim.game.init();
-	
-	sim.renderer.init();
+
+	if (sim.config.simulation.render) {
+		sim.renderer.init();
+	}
+
 	sim.game.start();
 };
 

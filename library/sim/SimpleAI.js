@@ -6,6 +6,8 @@ Sim.SimpleAI = function(robot) {
 	this.targetBallId = null;
 	this.running = true;
 	this.stateTick = 0;
+	this.goalFindDir = 0;
+	this.ballTurnDir = 0;
 	
 	// configuration parameters
 	this.rotationMultiplier = 6.0;
@@ -20,6 +22,7 @@ Sim.SimpleAI = function(robot) {
 	// state helpers
 	this.turnDirection = null;
 	this.lastTurnDirection = 1;
+	this.kickedBalls = [];
 };
 
 Sim.SimpleAI.State = {
@@ -48,7 +51,15 @@ Sim.SimpleAI.prototype.step = function(dt) {
 	if (!this.running) {
 		return;
 	}
-	
+
+	if (this.state !== Sim.SimpleAI.State.FIND_GOAL) {
+		this.goalFindDir = 0;
+	}
+
+	if (this.state !== Sim.SimpleAI.State.FETCH_BALL) {
+		this.ballTurnDir = 0;
+	}
+
 	switch (this.state) {
 		case Sim.SimpleAI.State.FIND_BALL:
 			this.stepFindBall(dt);
@@ -119,23 +130,31 @@ Sim.SimpleAI.prototype.stepFetchBall = function(dt) {
 	}
 	
 	var targetOmega,
-		targetSpeed;
+		targetSpeed = 0;
 	
 	if (ball.visible) {
 		targetOmega = ball.angle * this.rotationMultiplier;
-		
-		var omegaDivider = Math.max(Math.abs(targetOmega) * this.approachAngleSpeedLimitMultiplier, 1),
-			approachSpeed = ball.distance * this.approachSpeedMultiplier / omegaDivider;
-		
-		/*sim.dbg.box('Omega divider', omegaDivider, 2);
-		sim.dbg.box('Speed before', ball.distance * this.approachSpeedMultiplier, 2);
-		sim.dbg.box('Speed after', approachSpeed, 2);*/
-		
-		targetSpeed = Sim.Util.limitRange(
-			approachSpeed,
-			this.minApproachSpeed,
-			this.maxApproachSpeed
-		);
+
+		if (Math.abs(ball.angle) < Math.PI / 2) {
+			var omegaDivider = Math.max(Math.abs(targetOmega) * this.approachAngleSpeedLimitMultiplier, 1),
+				approachSpeed = ball.distance * this.approachSpeedMultiplier / omegaDivider;
+
+			/*sim.dbg.box('Omega divider', omegaDivider, 2);
+			sim.dbg.box('Speed before', ball.distance * this.approachSpeedMultiplier, 2);
+			sim.dbg.box('Speed after', approachSpeed, 2);*/
+
+			targetSpeed = Sim.Util.limitRange(
+				approachSpeed,
+				this.minApproachSpeed,
+				this.maxApproachSpeed
+			);
+		} else {
+			if (this.ballTurnDir === 0) {
+				this.ballTurnDir = targetOmega > 0 ? 1 : -1;
+			}
+
+			targetOmega = Math.abs(targetOmega) * this.ballTurnDir;
+		}
 	
 		this.turnDirection = targetOmega >= 0 ? 1 : -1;
 	} else {
@@ -156,7 +175,7 @@ Sim.SimpleAI.prototype.stepFetchBall = function(dt) {
 };
 
 Sim.SimpleAI.prototype.stepFindGoal = function(dt) {
-	this.targetBallId = null;
+	//this.targetBallId = null;
 	
 	if (!this.robot.hasBall()) {
 		this.setState(Sim.SimpleAI.State.FIND_BALL);
@@ -183,24 +202,35 @@ Sim.SimpleAI.prototype.stepFindGoal = function(dt) {
 	
 	if (goalVisible && Math.abs(goalAngle) < Sim.Math.degToRad(this.goalKickThresholdAngle)) {
 		this.robot.kick();
+
+		this.kickedBalls.push(this.targetBallId);
 		
 		return;
 	}
 	
 	if (goalVisible) {
-		targetOmega = goalAngle * this.rotationMultiplier;
-		
-		this.turnDirection = targetOmega >= 0 ? 1 : -1;
+		if (this.goalFindDir === 0) {
+			targetOmega = goalAngle * this.rotationMultiplier;
+
+			this.turnDirection = targetOmega >= 0 ? 1 : -1;
+			this.goalFindDir = this.turnDirection;
+		} else {
+			targetOmega = Math.abs(goalAngle) * this.rotationMultiplier * this.goalFindDir;
+		}
 	} else {
-		if (this.turnDirection == null) {
-			var goalPos = this.getOppositeGoalPos(),
-				robotPos = this.robot.getVirtualPos(),
-				angle = Sim.Math.getAngleBetween(goalPos, robotPos, robotPos.orientation);
-		
-			this.turnDirection = angle >= 0 ? 1 : -1;
+		if (this.goalFindDir === 0) {
+			if (this.turnDirection == null) {
+				var goalPos = this.getOppositeGoalPos(),
+					robotPos = this.robot.getVirtualPos(),
+					angle = Sim.Math.getAngleBetween(goalPos, robotPos, robotPos.orientation);
+
+				this.turnDirection = angle >= 0 ? 1 : -1;
+			}
+
+			this.goalFindDir = this.turnDirection;
 		}
 		
-		targetOmega = this.blindRotationSpeed * this.turnDirection;
+		targetOmega = this.blindRotationSpeed * this.goalFindDir;
 	}
 
 	this.robot.setTargetDir(0, 0, targetOmega);
@@ -230,6 +260,10 @@ Sim.SimpleAI.prototype.pickBall = function() {
 			) {	
 				continue;
 			}
+		}
+
+		if (this.kickedBalls.indexOf(balls[i].id) !== -1) {
+			continue;
 		}
 		
 		distance = Sim.Math.getDistanceBetween(robotPos, balls[i]);

@@ -37,10 +37,11 @@ Sim.Renderer = function(game) {
 	this.canvasToWorldRatio = null;
 	this.bg = null;
 	this.c = null;
+	this.ready = false;
 	this.driveToActive = false;
 	this.spawnBallActive = false;
 	this.showParticles = false;
-	this.showLocalization = false;
+	this.showLocalization = true;
 	this.showBallLocalizer = false;
 	this.driveToOrientation = 0;
 	
@@ -79,6 +80,8 @@ Sim.Renderer.prototype.init = function() {
 	this.initCanvas();
 	this.initGameListeners();
 	this.initEventListeners();
+
+	this.ready = true;
 };
 
 Sim.Renderer.prototype.initCanvas = function() {
@@ -170,10 +173,6 @@ Sim.Renderer.prototype.initEventListeners = function() {
 	
 	$(window).mousewheel(function(e, delta, deltaX, deltaY) {
 		self.onMouseWheel(e, delta, deltaX, deltaY);
-	});
-	
-	sim.game.bind(Sim.Game.Event.GAME_OVER, function(e) {
-		self.showGameOver(e.yellowScore, e.blueScore, e.duration);
 	});
 };
 
@@ -313,6 +312,10 @@ Sim.Renderer.prototype.showClickAt = function(x, y) {
 };
 
 Sim.Renderer.prototype.showCollisionAt = function(x, y) {
+	if (!this.c) {
+		return;
+	}
+
 	var indicator = this.c.circle(x, y, 0.0);
 
 	indicator.attr({
@@ -336,27 +339,6 @@ Sim.Renderer.prototype.translateCoords = function(clientX, clientY) {
 	svgPoint.y = clientY;
 
 	return svgPoint.matrixTransform(svg.getScreenCTM().inverse());
-};
-
-Sim.Renderer.prototype.showGameOver = function(yellowScore, blueScore, duration)  {
-	var scoreText;
-	
-	if (yellowScore > blueScore) {
-		scoreText = 'Yellow Wins!';
-	} else if (blueScore > yellowScore) {
-		scoreText = 'Blue Wins!';
-	} else {
-		scoreText = 'It\'s a Draw!';
-	}
-	
-	sim.ui.showModal(
-		'<h1>' + scoreText + '</h1>' +
-		'<div id="yellow-wrap"><span>' + yellowScore + '</span></div>' +
-		'<div id="blue-wrap"><span>' + blueScore + '</span></div>' +
-		'<div id="match-duration">The match took ' + Sim.Math.round(duration, 1) + ' seconds</div>' +
-		'<button id="restart-btn" class="modal-btn">Restart the match</button>',
-		'game-over'
-	);
 };
 
 Sim.Renderer.prototype.draw = function() {
@@ -445,7 +427,7 @@ Sim.Renderer.prototype.drawGoals = function() {
 		fill: '#FFF',
 		'font-size': 1,
 		'transform':
-		'S0.4T-0.12 -0.55',
+		'S0.4T-0.125 -0.62',
 		'text': 0
 	});
 	
@@ -457,7 +439,7 @@ Sim.Renderer.prototype.drawGoals = function() {
 		fill: '#FFF',
 		'font-size': 1,
 		'transform':
-		'S0.4T' + (sim.config.field.width + 0.12) + ' -0.55',
+		'S0.4T' + (sim.config.field.width + 0.125) + ' -0.62',
 		'text': 0
 	});
 };
@@ -640,13 +622,13 @@ Sim.Renderer.prototype.addRobot = function(name, robot) {
 			robot.radius / 2
 		).visual.hide();
 
-		this.robots[name].kalmanLocalizer = this.createRobotAvatar(
-			'#006',
+		this.robots[name].particleLocalizer = this.createRobotAvatar(
+			'#060',
 			robot.radius / 2
 		).visual.hide();
 
-		this.robots[name].particleLocalizer = this.createRobotAvatar(
-			'#060',
+		this.robots[name].kalmanLocalizer = this.createRobotAvatar(
+			'#006',
 			robot.radius / 2
 		).visual.hide();
 

@@ -268,3 +268,13 @@ BODY {
 .fullscreen #debug-wrap {
 	display: none;
 }
+
+/* Temp error table */
+#error-results {
+	position: absolute;
+	left: 20px;
+	bottom: 20px;
+}
+#error-results TH, #error-results TD {
+	background-color: #FFF;
+}

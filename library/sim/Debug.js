@@ -34,6 +34,8 @@ Sim.Debug.Event = {
  * @param {string} message Message
  */
 Sim.Debug.prototype.error = function(message) {
+	if (!sim.config.simulation.debug) return;
+
 	this.fire({
 		type: Sim.Debug.Event.ERROR,
 		message: message
@@ -46,6 +48,8 @@ Sim.Debug.prototype.error = function(message) {
  * @param {any} ... Variable number of arguments
  */
 Sim.Debug.prototype.console = function() {
+	if (!sim.config.simulation.debug) return;
+
 	this.fire({
 		type: Sim.Debug.Event.CONSOLE,
 		args: arguments
@@ -53,6 +57,8 @@ Sim.Debug.prototype.console = function() {
 };
 
 Sim.Debug.prototype.box = function(name, value, numberDecimals) {
+	if (!sim.config.simulation.debug) return;
+
 	if (this.boxes[name] == null) {
 		var container = $('#debug-wrap');
 		
@@ -100,6 +106,8 @@ Sim.Debug.prototype.box = function(name, value, numberDecimals) {
 };
 
 Sim.Debug.prototype.step = function(dt) {
+	if (!sim.config.simulation.debug) return;
+
 	for (var name in this.boxes) {
 		if (Sim.Util.getMicrotime() - this.boxes[name].lastUpdated > 1.0) {
 			$(this.boxes[name].element).remove();
