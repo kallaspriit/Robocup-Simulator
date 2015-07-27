@@ -181,7 +181,7 @@ Sim.Vision.prototype.getMeasurements = function(polygon, x, y, orientation) {
 		if (goal.side == Sim.Game.Side.YELLOW) {
 			measurements['yellow-goal-center'] = {
 				distance: noisyDistance,
-				angle: noisyDistance
+				angle: noisyAngle
 			};
 			//measurements['yellow-goal-left'] = goal.leftEdgeDistance;
 			//measurements['yellow-goal-right'] = goal.rightEdgeDistance;
